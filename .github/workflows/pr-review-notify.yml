@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Wait for reviewers to settle
-        run: sleep 10
+        run: sleep 0
 
       - name: Map GitHub usernames to Discord IDs
         id: map-reviewers
@@ -24,7 +24,7 @@ jobs:
             ["64etuor"]="637937081875824650"
             ["wishbornDev"]="1313511515407777865"
             ["gyeongmin03"]="377380180467122178"
-            ["hwan__1023"]="963059572812157010"
+            ["hwan1023"]="963059572812157010"
             ["nineeko"]="821058142795333655"
             ["Jayboo816"]="1326066071676915763"
           )
