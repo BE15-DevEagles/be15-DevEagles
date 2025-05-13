@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Wait for reviewers to settle
-        run: sleep 10
+        run: sleep 0
 
       - name: Map GitHub usernames to Discord IDs
         id: map-reviewers
