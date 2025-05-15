@@ -2,6 +2,16 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.5'
     id 'io.spring.dependency-management' version '1.1.7'
+    id "com.diffplug.spotless" version "6.20.0"
+}
+
+spotless {
+    java {
+        importOrder('java', 'javax', 'org', 'com', '')
+        removeUnusedImports()
+        googleJavaFormat('1.27.0')
+        formatAnnotations()
+    }
 }
 
 group = 'com.deveagles'
@@ -25,4 +35,29 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.register('updateGitHooks', Copy) {
+    from file('scripts/pre-commit')          // 커밋 훅 원본 위치
+    into file('.git/hooks')                  // Git 훅 설치 위치
+}
+
+tasks.register('makeGitHooksExecutable') {
+    dependsOn updateGitHooks
+
+    doLast {
+        def os = System.getProperty("os.name").toLowerCase()
+        if (!os.contains("windows")) {
+            println '🔧 Unix 계열 OS: chmod 실행'
+            exec {
+                commandLine 'chmod', '+x', '.git/hooks/pre-commit'
+            }
+        } else {
+            println '⚠️ Windows 환경: chmod 생략'
+        }
+    }
+}
+
+tasks.named('compileJava') {
+    dependsOn makeGitHooksExecutable
 }
