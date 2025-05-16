@@ -78,6 +78,16 @@ jobs:
           # Format the current time in a readable format
           FORMATTED_DATE=$(date "+%Y년 %m월 %d일")
 
+          # PR 본문을 안전하게 처리 (이스케이프 처리, 줄바꿈 등)
+          if [ -z "$PR_BODY" ]; then
+            ESCAPED_PR_BODY="PR 내용이 없습니다."
+          else
+            # 줄바꿈을 \\n으로 변환하고 쌍따옴표를 이스케이프
+            ESCAPED_PR_BODY=$(echo "$PR_BODY" | jq -Rs .)
+            # jq에서 추가된 바깥쪽 따옴표 제거
+            ESCAPED_PR_BODY="${ESCAPED_PR_BODY:1:-1}"
+          fi
+
           curl -X POST -H "Content-Type: application/json" \
           -d "{
             \"content\": \"📣 $MENTIONS님! Pull Request 리뷰어로 지정됐습니다. 확인해 주세요.\\n🔗 PR: $PR_URL\",
@@ -93,7 +103,7 @@ jobs:
                 \"fields\": [
                   {
                     \"name\": \"📝 내용\",
-                    \"value\": \"${PR_BODY:-PR 내용이 없습니다.}\",
+                    \"value\": \"$ESCAPED_PR_BODY\",
                     \"inline\": false
                   }
                 ],
@@ -113,12 +123,12 @@ jobs:
                   },
                   {
                     \"name\": \"\",
-                    \"value\": \"💬 0 comments • 👀 0 reviews • 📂 $CHANGED_FILES files • +25 -7\",
+                    \"value\": \"💬 0 comments • 👀 0 reviews • 📂 $CHANGED_FILES files\",
                     \"inline\": true
                   }
                 ],
                 \"footer\": {
-                  \"text\": \"$AUTHOR_NAME • $FORMATTED_DATE • 1 commit\",
+                  \"text\": \"$AUTHOR_NAME • $FORMATTED_DATE • $COMMITS commit(s)\",
                   \"icon_url\": \"$AUTHOR_AVATAR\"
                 }
               }
