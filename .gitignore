@@ -291,3 +291,31 @@ be15_DevEagles_FE/yarn-error.log
 be15_DevEagles_FE/.vscode
 be15_DevEagles_FE/.idea
 # End of https://www.toptal.com/developers/gitignore/api/vue,vuejs
+
+# Gradle
+.gradle/
+*.lock
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Logs
+*.log
+
+# Application config
+**/application*.yml
+**/application*.yaml
+**/application*.properties
+
+# IDE
+.idea/
+.vscode/
+.cursor/
+*.iml
+
+# Node/Vue
+node_modules/
+dist/
+*.local
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
