@@ -63,10 +63,80 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           MENTIONS: ${{ steps.map-reviewers.outputs.mentions }}
           PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_NAME: ${{ github.repository }}
+          AUTHOR_NAME: ${{ github.event.pull_request.user.login }}
+          AUTHOR_AVATAR: ${{ github.event.pull_request.user.avatar_url }}
+          CREATED_AT: ${{ github.event.pull_request.created_at }}
+          COMMITS: ${{ github.event.pull_request.commits }}
+          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
         run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          # Format the current time in a readable format
+          FORMATTED_DATE=$(date "+%Y년 %m월 %d일")
+
           curl -X POST -H "Content-Type: application/json" \
           -d "{
             \"content\": \"📣 $MENTIONS님! Pull Request 리뷰어로 지정됐습니다. 확인해 주세요.\\n🔗 PR: $PR_URL\",
+            \"embeds\": [
+              {
+                \"title\": \"$PR_TITLE\",
+                \"url\": \"$PR_URL\",
+                \"color\": 16737792,
+                \"author\": {
+                  \"name\": \"$AUTHOR_NAME\",
+                  \"icon_url\": \"$AUTHOR_AVATAR\"
+                },
+                \"fields\": [
+                  {
+                    \"name\": \"📋 Issue\",
+                    \"value\": \"관련 이슈 정보\",
+                    \"inline\": false
+                  },
+                  {
+                    \"name\": \"📝 작업 내용\",
+                    \"value\": \"PR에 포함된 작업 내용\",
+                    \"inline\": false
+                  },
+                  {
+                    \"name\": \"🔍 논의하고싶은 내용 (선택)\",
+                    \"value\": \"논의가 필요한 사항\",
+                    \"inline\": false
+                  },
+                  {
+                    \"name\": \"✅ Check List (선택)\",
+                    \"value\": \"- [ ] 항목 1\\n- [ ] 항목 2\",
+                    \"inline\": false
+                  }
+                ],
+                \"footer\": {
+                  \"text\": \"$REPO_NAME • #$PR_NUMBER • $FORMATTED_DATE\"
+                },
+                \"thumbnail\": {
+                  \"url\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\"
+                }
+              },
+              {
+                \"color\": 5814783,
+                \"fields\": [
+                  {
+                    \"name\": \"#$PR_NUMBER $PR_TITLE\",
+                    \"value\": \"\"
+                  },
+                  {
+                    \"name\": \"\",
+                    \"value\": \"💬 0 comments • 👀 0 reviews • 📂 $CHANGED_FILES files • +25 -7\",
+                    \"inline\": true
+                  }
+                ],
+                \"footer\": {
+                  \"text\": \"$AUTHOR_NAME • $FORMATTED_DATE • 1 commit\",
+                  \"icon_url\": \"$AUTHOR_AVATAR\"
+                }
+              }
+            ],
             \"allowed_mentions\": {
               \"parse\": [\"users\"]
             }
