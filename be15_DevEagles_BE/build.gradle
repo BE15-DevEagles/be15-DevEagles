@@ -48,12 +48,12 @@ tasks.register('makeGitHooksExecutable') {
     doLast {
         def os = System.getProperty("os.name").toLowerCase()
         if (!os.contains("windows")) {
-            println '🔧 Unix 계열 OS: chmod 실행'
+            println 'Unix OS: chmod executed'
             exec {
                 commandLine 'chmod', '+x', '.git/hooks/pre-commit'
             }
         } else {
-            println '⚠️ Windows 환경: chmod 생략'
+            println 'Windows OS: chmod skipped'
         }
     }
 }
