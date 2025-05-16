@@ -46,15 +46,7 @@ spring-doc:
 # AWS 설정 (현재 비활성화)
 # cloud:
 #   aws:
-#     credentials:
-#       access-key:
-#       secret-key:
-#     region:
-#       static:
-#     s3:
-#       bucket:
-#     stack:
-#       auto: false
+
 
 # MongoDB 설정 (현재 비활성화)
 # spring:
