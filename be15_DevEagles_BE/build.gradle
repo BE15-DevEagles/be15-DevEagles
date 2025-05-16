@@ -38,8 +38,8 @@ tasks.named('test') {
 }
 
 tasks.register('updateGitHooks', Copy) {
-    from file('scripts/pre-commit')          // 커밋 훅 원본 위치
-    into file('.git/hooks')                  // Git 훅 설치 위치
+    from '../scripts/pre-commit'          // 커밋 훅 원본 위치 (루트 기준 상대경로)
+    into '../.git/hooks'                  // Git 훅 설치 위치 (루트 기준 상대경로)
 }
 
 tasks.register('makeGitHooksExecutable') {

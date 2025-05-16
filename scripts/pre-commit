@@ -14,7 +14,29 @@ echo "$stagedFiles"
 # spotlessApply 실행
 echo "[Action] Running spotlessApply..."
 cd "$PROJECT_ROOT" || exit 1
-./gradlew spotlessApply
+
+echo "[Debug] Current directory: $(pwd)"
+
+# 빌드 파일이 있는 BE 디렉토리로 이동
+if [ -d "be15_DevEagles_BE" ]; then
+  echo "[Debug] Changing to be15_DevEagles_BE directory"
+  cd be15_DevEagles_BE || exit 1
+  
+  # gradlew 실행
+  if [ -f "gradlew.bat" ]; then
+    echo "[Debug] Using gradlew.bat"
+    ./gradlew.bat spotlessApply
+  elif [ -f "gradlew" ]; then
+    echo "[Debug] Using gradlew"
+    ./gradlew spotlessApply
+  else
+    echo "[Error] Could not find gradlew or gradlew.bat in BE directory"
+    exit 1
+  fi
+else
+  echo "[Error] be15_DevEagles_BE directory not found"
+  exit 1
+fi
 
 if [ $? -ne 0 ]; then
     echo "❌ [Error] spotlessApply failed!"
