@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.exception;
+package com.deveagles.be15_deveagles_be.common.exception;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

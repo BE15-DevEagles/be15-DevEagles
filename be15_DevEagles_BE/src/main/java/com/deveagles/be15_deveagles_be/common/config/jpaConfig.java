@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.config;
+package com.deveagles.be15_deveagles_be.common.config;
 
 
 import org.springframework.context.annotation.Configuration;
