@@ -1,21 +1,35 @@
 #!/bin/sh
 
-PROJECT_ROOT=$(git rev-parse --show-toplevel)
-stagedFiles=$(git diff --staged --name-only)
+echo "[Hook] Git pre-commit hook started..."
 
-echo "Running spotlessApply. Formatting code..."
-cd $PROJECT_ROOT && ./gradlew spotlessApply
+# Git 루트 디렉토리 이동
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+echo "📂 [Info] Project root: $PROJECT_ROOT"
+
+# 현재 스테이지된 파일 목록 추출
+stagedFiles=$(git diff --cached --name-only)
+echo "[Info] Staged files:"
+echo "$stagedFiles"
+
+# spotlessApply 실행
+echo "[Action] Running spotlessApply..."
+cd "$PROJECT_ROOT" || exit 1
+./gradlew spotlessApply
 
 if [ $? -ne 0 ]; then
-    echo "Spotless apply failed!"
+    echo "❌ [Error] spotlessApply failed!"
     exit 1
+else
+    echo "✅ [Success] spotlessApply completed successfully."
 fi
 
+# 변경된 파일 다시 스테이징
+echo "[Action] Re-adding modified files to staging..."
 for file in $stagedFiles; do
   if test -f "$file"; then
-    git add $file
+    echo "➕ Adding: $file"
+    git add "$file"
   fi
 done
 
-# 최초 적용시 ./.git/hooks/pre-commit 파일을 생성하고 위의 내용을 복사합니다.
-# 스크립트가 변경되면 ./gradlew compileJava를 실행합니다.
+echo "✅ [Hook] Pre-commit hook finished successfully."
