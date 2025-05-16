@@ -47,10 +47,18 @@ fi
 
 # 변경된 파일 다시 스테이징
 echo "[Action] Re-adding modified files to staging..."
+# 루트 디렉토리로 돌아가기
+cd "$PROJECT_ROOT" || exit 1
+echo "[Debug] Back to root directory: $(pwd)"
+
 for file in $stagedFiles; do
+  echo "[Debug] Checking file: $file"
   if test -f "$file"; then
     echo "➕ Adding: $file"
     git add "$file"
+    echo "[Debug] Add result: $?"
+  else
+    echo "[Warning] File not found: $file"
   fi
 done
 
