@@ -14,9 +14,7 @@ public class ChatBusinessException extends BusinessException {
     this.chatErrorCode = errorCode;
   }
 
-  // ChatErrorCode를 ErrorCode로 변환
   private static ErrorCode convertToCommonErrorCode(ChatErrorCode chatErrorCode) {
-    // 코드의 앞 부분에 따라 적절한 ErrorCode로 매핑
     String code = chatErrorCode.getCode();
 
     if (code.startsWith("301")) { // 메시지 관련 오류
