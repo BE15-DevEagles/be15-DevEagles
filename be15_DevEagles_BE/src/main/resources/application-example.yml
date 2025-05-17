@@ -1,0 +1,98 @@
+spring:
+  # 데이터베이스 설정
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: { DB_URL }
+    username: { DB_USERNAME }
+    password: { DB_PASSWORD }
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      ddl-auto: none # 기존 테이블 유지
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+
+  # Jackson 설정
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: com.fasterxml.jackson.databind.util.ISO8601DateFormat
+    time-zone: UTC
+
+  # JMX 비활성화
+  jmx:
+    enabled: false
+
+  # MongoDB 설정
+  data:
+    mongodb:
+      uri: { MONGODB_URI }
+      auto-index-creation: true
+
+    # Redis 설정
+    redis:
+      host: localhost
+      port: 6379
+
+  # Kafka 설정
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: chat-group
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.deveagles.be15_deveagles_be.*
+
+  # Elasticsearch 설정
+  elasticsearch:
+    uris: http://localhost:9200
+
+# MyBatis 설정
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+  mapper-locations: mappers/**/*.xml
+
+# 로깅 설정
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace
+    org.springframework.data.mongodb.core.MongoTemplate: debug
+    org.springframework.data.elasticsearch.client.WIRE: trace
+    org.springframework.kafka: info
+    com.deveagles.be15_deveagles_be: debug
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/application.log
+    max-size: 10MB
+    max-history: 30
+
+# API 문서 설정
+spring-doc:
+  swagger-ui:
+    tags-sorter: alpha
+    operations-sorter: method
+    doc-expansion: none
+
+# AWS 설정 (현재 비활성화)
+# cloud:
+#   aws:
+
+# 웹소켓 설정
+websocket:
+  allowed-origins: "*"
+  endpoint: /ws
+  application-destination-prefix: /app
+  user-destination-prefix: /user
+  broker-prefix: /topic

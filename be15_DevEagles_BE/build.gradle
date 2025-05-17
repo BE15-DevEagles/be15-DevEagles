@@ -57,6 +57,20 @@ dependencies {
     // AWS SDK 버전 업데이트 (취약점 패치)
     implementation 'io.awspring.cloud:spring-cloud-aws-starter:3.3.0'
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.3.0'
+    
+    // WebSocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    
+    // MongoDB
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    
+    // Kafka
+    implementation 'org.springframework.kafka:spring-kafka'
+    
+    // Elasticsearch
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+    implementation 'co.elastic.clients:elasticsearch-java:8.13.4'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
 }
 tasks.named('test') {
     useJUnitPlatform()
