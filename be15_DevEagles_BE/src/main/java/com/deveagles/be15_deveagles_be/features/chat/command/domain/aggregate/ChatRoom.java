@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @Document(collection = "chatroom")
 @Getter
@@ -19,7 +20,9 @@ public class ChatRoom {
 
   private String name;
 
-  @Builder.Default private boolean isDefault = false;
+  @Field("default")
+  @Builder.Default
+  private boolean isDefault = false;
 
   private String userId;
 
@@ -52,6 +55,10 @@ public class ChatRoom {
     private LocalDateTime createdAt;
     private LocalDateTime deletedAt;
 
+    public boolean isActive() {
+      return deletedAt == null;
+    }
+
     public boolean isDeleted() {
       return deletedAt != null;
     }
@@ -74,6 +81,10 @@ public class ChatRoom {
     DIRECT,
     TEAM,
     AI
+  }
+
+  public boolean isActive() {
+    return deletedAt == null;
   }
 
   public boolean isDeleted() {

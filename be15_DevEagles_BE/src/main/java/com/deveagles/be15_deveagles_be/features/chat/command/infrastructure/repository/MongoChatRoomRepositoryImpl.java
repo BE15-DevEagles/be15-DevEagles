@@ -60,7 +60,7 @@ public class MongoChatRoomRepositoryImpl implements ChatRoomRepository {
 
   @Override
   public Optional<ChatRoom> findDefaultChatRoomByTeamId(String teamId) {
-    return repository.findByTeamIdAndIsDefaultAndDeletedAtIsNull(teamId, true);
+    return repository.findByTeamIdAndDefaultAndDeletedAtIsNull(teamId, true);
   }
 
   @Override

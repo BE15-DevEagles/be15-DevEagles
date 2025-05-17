@@ -1,7 +1,11 @@
 package com.deveagles.be15_deveagles_be.features.chat.config.websocket;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -59,8 +63,10 @@ public class WebSocketConnectionEventHandler {
     }
 
     // TODO: 테스트용 임시 코드 (실제 구현 시 제거 필요)
-    Object userId = headerAccessor.getSessionAttributes().get("userId");
-    return userId != null ? userId.toString() : null;
+    return Optional.ofNullable(headerAccessor.getSessionAttributes())
+        .map(attrs -> attrs.get("userId"))
+        .map(Object::toString)
+        .orElse(null);
   }
 
   private void notifyUserStatusChange(String userId, boolean isOnline) {
@@ -70,6 +76,9 @@ public class WebSocketConnectionEventHandler {
     logger.debug("사용자 상태 변경 알림 전송: {}", statusMessage);
   }
 
+  @Getter
+  @AllArgsConstructor
+  @ToString
   private static class UserStatusMessage {
     private final String userId;
     private final boolean online;
@@ -79,31 +88,6 @@ public class WebSocketConnectionEventHandler {
       this.userId = userId;
       this.online = online;
       this.timestamp = System.currentTimeMillis();
-    }
-
-    public String getUserId() {
-      return userId;
-    }
-
-    public boolean isOnline() {
-      return online;
-    }
-
-    public long getTimestamp() {
-      return timestamp;
-    }
-
-    @Override
-    public String toString() {
-      return "UserStatusMessage{"
-          + "userId='"
-          + userId
-          + '\''
-          + ", online="
-          + online
-          + ", timestamp="
-          + timestamp
-          + '}';
     }
   }
 }
