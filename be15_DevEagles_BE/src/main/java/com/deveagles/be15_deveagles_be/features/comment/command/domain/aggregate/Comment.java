@@ -2,11 +2,14 @@ package com.deveagles.be15_deveagles_be.features.comment.command.domain.aggregat
 
 import jakarta.persistence.*;
 import java.sql.Timestamp;
-import lombok.Getter;
+import lombok.*;
 
 @Getter
 @Entity
 @Table(name = "comment")
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Comment {
 
   @Id

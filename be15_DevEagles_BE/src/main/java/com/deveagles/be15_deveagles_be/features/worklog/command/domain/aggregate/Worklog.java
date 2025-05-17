@@ -8,7 +8,7 @@ import lombok.*;
 @Setter
 @Table(name = "worklog")
 @Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class Worklog {
   @Id
