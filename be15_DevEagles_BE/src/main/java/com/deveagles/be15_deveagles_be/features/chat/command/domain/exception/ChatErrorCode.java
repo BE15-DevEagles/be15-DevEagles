@@ -11,6 +11,8 @@ public enum ChatErrorCode {
   // 채팅방 관련 오류
   CHAT_ROOM_NOT_FOUND("30001", "채팅방을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   CHAT_ROOM_ACCESS_DENIED("30002", "채팅방에 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
+  DEFAULT_CHATROOM_ALREADY_EXISTS("30003", "이미 기본 채팅방이 존재합니다.", HttpStatus.BAD_REQUEST),
+  DEFAULT_CHATROOM_CANNOT_BE_DELETED("30004", "기본 채팅방은 삭제할 수 없습니다.", HttpStatus.BAD_REQUEST),
 
   // 메시지 관련 오류
   MESSAGE_NOT_FOUND("30101", "메시지를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
