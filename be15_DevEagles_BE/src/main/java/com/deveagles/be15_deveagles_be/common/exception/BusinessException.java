@@ -18,11 +18,20 @@ public abstract class BusinessException extends RuntimeException {
     this.errorCode = errorCode;
   }
 
+  @Override
+  public String getMessage() {
+    return String.format("[%s] %s", errorCode.getCode(), super.getMessage());
+  }
+
   public String getCode() {
     return errorCode.getCode();
   }
 
   public HttpStatus getHttpStatus() {
     return errorCode.getHttpStatus();
+  }
+
+  public String getOriginalMessage() {
+    return super.getMessage();
   }
 }

@@ -24,8 +24,8 @@ public class GlobalExceptionHandler {
   // 비즈니스 예외 처리
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
-    log.error("[비즈니스 예외] {}: {}", e.getCode(), e.getMessage());
-    ApiResponse<Void> response = ApiResponse.failure(e.getCode(), e.getMessage());
+    log.error("[비즈니스 예외] {}", e.getMessage());
+    ApiResponse<Void> response = ApiResponse.failure(e.getCode(), e.getOriginalMessage());
     return new ResponseEntity<>(response, e.getHttpStatus());
   }
 
@@ -95,7 +95,7 @@ public class GlobalExceptionHandler {
     log.warn("[허용되지 않는 HTTP 메소드] {}", e.getMessage());
 
     String message = String.format("지원하지 않는 HTTP 메소드입니다: %s", e.getMethod());
-    ApiResponse<Void> response = ApiResponse.failure("40003", message);
+    ApiResponse<Void> response = ApiResponse.failure("00003", message);
 
     return new ResponseEntity<>(response, HttpStatus.METHOD_NOT_ALLOWED);
   }
@@ -119,7 +119,7 @@ public class GlobalExceptionHandler {
       AuthenticationException e) {
     log.warn("[인증 실패] {}", e.getMessage());
 
-    ApiResponse<Void> response = ApiResponse.failure("30002", "인증에 실패했습니다: " + e.getMessage());
+    ApiResponse<Void> response = ApiResponse.failure("00004", "인증에 실패했습니다: " + e.getMessage());
     return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
   }
 
@@ -128,7 +128,7 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
     log.warn("[접근 권한 부족] {}", e.getMessage());
 
-    ApiResponse<Void> response = ApiResponse.failure("30003", "접근 권한이 없습니다: " + e.getMessage());
+    ApiResponse<Void> response = ApiResponse.failure("00005", "접근 권한이 없습니다: " + e.getMessage());
     return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
   }
 
