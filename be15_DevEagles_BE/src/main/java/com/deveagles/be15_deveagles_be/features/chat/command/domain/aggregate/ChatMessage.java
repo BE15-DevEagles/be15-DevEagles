@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.features.chat.command.domain.entity;
+package com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate;
 
 import java.time.LocalDateTime;
 import java.util.Map;
