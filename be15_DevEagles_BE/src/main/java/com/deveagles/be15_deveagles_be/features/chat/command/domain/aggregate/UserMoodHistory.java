@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.features.chat.command.domain.entity;
+package com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
