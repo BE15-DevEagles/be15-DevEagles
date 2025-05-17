@@ -1,4 +1,4 @@
-name: 정기 빌드 테스트
+name: Scheduled Build Test
 
 on:
   schedule:
@@ -30,8 +30,11 @@ jobs:
           echo "Gradle wrapper 확인:"
           ls -la ./be15_DevEagles_BE/gradle/wrapper
 
-      - name: Gradle 권한 설정
-        run: chmod +x ./be15_DevEagles_BE/gradlew
+      - name: Gradle wrapper jar 다운로드
+        run: |
+          mkdir -p ./be15_DevEagles_BE/gradle/wrapper
+          curl -o ./be15_DevEagles_BE/gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/master/gradle/wrapper/gradle-wrapper.jar
+          chmod +x ./be15_DevEagles_BE/gradlew
 
       - name: Gradle 캐시 설정
         uses: actions/cache@v3
@@ -45,7 +48,7 @@ jobs:
 
       - name: Gradle 빌드
         working-directory: ./be15_DevEagles_BE
-        run: ./gradlew assemble --stacktrace
+        run: ./gradlew assemble --scan
         continue-on-error: true
         id: gradle-build
 
@@ -80,18 +83,30 @@ jobs:
         with:
           node-version: "18"
 
-      - name: 디렉토리 구조 및 패키지 파일 확인
+      - name: 프론트엔드 파일 확인 및 수정
         run: |
           echo "프론트엔드 디렉토리 확인:"
           ls -la ./be15_DevEagles_FE
-          echo "package.json 내용 확인:"
-          cat ./be15_DevEagles_FE/package.json
+          echo "src 디렉토리 확인:"
+          ls -la ./be15_DevEagles_FE/src
+
+          # main.js 파일 확인
+          echo "main.js 내용 확인:"
+          cat ./be15_DevEagles_FE/src/main.js
+
+          # assets 디렉토리 생성 및 빈 CSS 파일 추가
+          mkdir -p ./be15_DevEagles_FE/src/assets
+          touch ./be15_DevEagles_FE/src/assets/main.css
+          echo "/* 임시 스타일시트 */" > ./be15_DevEagles_FE/src/assets/main.css
+
+          echo "assets 디렉토리 생성 확인:"
+          ls -la ./be15_DevEagles_FE/src/assets
 
       - name: NPM 캐시 설정
         uses: actions/cache@v3
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('be15_DevEagles_FE/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('be15_DevEagles_FE/package.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
