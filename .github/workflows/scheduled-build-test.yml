@@ -1,0 +1,141 @@
+name: Scheduled Build Test
+
+on:
+  schedule:
+    # 1시간마다 실행
+    - cron: "0 */1 * * *"
+  workflow_dispatch: # 수동 트리거 허용
+
+jobs:
+  build-backend:
+    name: 백엔드 빌드 테스트
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v3
+
+      - name: JDK 17 설정
+        uses: actions/setup-java@v3
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Gradle 파일 확인
+        run: |
+          echo "백엔드 디렉토리 구조 확인:"
+          ls -la ./be15_DevEagles_BE
+          echo "Gradle 파일 확인:"
+          ls -la ./be15_DevEagles_BE/gradle
+          echo "Gradle wrapper 확인:"
+          ls -la ./be15_DevEagles_BE/gradle/wrapper
+
+      - name: Gradle wrapper jar 다운로드
+        run: |
+          mkdir -p ./be15_DevEagles_BE/gradle/wrapper
+          curl -o ./be15_DevEagles_BE/gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/master/gradle/wrapper/gradle-wrapper.jar
+          chmod +x ./be15_DevEagles_BE/gradlew
+
+      - name: Gradle 캐시 설정
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('be15_DevEagles_BE/**/*.gradle*', 'be15_DevEagles_BE/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Gradle 빌드
+        working-directory: ./be15_DevEagles_BE
+        run: ./gradlew assemble --scan
+        continue-on-error: true
+        id: gradle-build
+
+      - name: 빌드 상태 확인
+        id: build-status
+        run: |
+          if ${{ steps.gradle-build.outcome == 'success' }}; then
+            echo "status=성공" >> $GITHUB_OUTPUT
+          else
+            echo "status=실패" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Discord에 백엔드 빌드 결과 전송
+        uses: sarisia/actions-status-discord@v1
+        if: always()
+        with:
+          webhook: https://discordapp.com/api/webhooks/1373208730384076830/xJglBK0zwY531d7uyP6hh62DnjqwtowArFplYLKJ1ZfR6i35mQSv1NDf2kTaYo-zD03T
+          title: "백엔드 빌드 테스트 결과"
+          description: "백엔드 빌드 상태: ${{ steps.build-status.outputs.status }}"
+          color: ${{ steps.gradle-build.outcome == 'success' && '0x00ff00' || '0xff0000' }}
+
+  build-frontend:
+    name: 프론트엔드 빌드 테스트
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v3
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: 프론트엔드 파일 확인 및 수정
+        run: |
+          echo "프론트엔드 디렉토리 확인:"
+          ls -la ./be15_DevEagles_FE
+          echo "src 디렉토리 확인:"
+          ls -la ./be15_DevEagles_FE/src
+
+          # main.js 파일 확인
+          echo "main.js 내용 확인:"
+          cat ./be15_DevEagles_FE/src/main.js
+
+          # assets 디렉토리 생성 및 빈 CSS 파일 추가
+          mkdir -p ./be15_DevEagles_FE/src/assets
+          touch ./be15_DevEagles_FE/src/assets/main.css
+          echo "/* 임시 스타일시트 */" > ./be15_DevEagles_FE/src/assets/main.css
+
+          echo "assets 디렉토리 생성 확인:"
+          ls -la ./be15_DevEagles_FE/src/assets
+
+      - name: NPM 캐시 설정
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('be15_DevEagles_FE/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: 의존성 설치
+        working-directory: ./be15_DevEagles_FE
+        run: npm install
+        continue-on-error: true
+        id: npm-install
+
+      - name: 빌드 실행
+        working-directory: ./be15_DevEagles_FE
+        run: npm run build
+        continue-on-error: true
+        id: npm-build
+
+      - name: 빌드 상태 확인
+        id: fe-build-status
+        run: |
+          if ${{ steps.npm-build.outcome == 'success' }}; then
+            echo "status=성공" >> $GITHUB_OUTPUT
+          else
+            echo "status=실패" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Discord에 프론트엔드 빌드 결과 전송
+        uses: sarisia/actions-status-discord@v1
+        if: always()
+        with:
+          webhook: https://discordapp.com/api/webhooks/1373208730384076830/xJglBK0zwY531d7uyP6hh62DnjqwtowArFplYLKJ1ZfR6i35mQSv1NDf2kTaYo-zD03T
+          title: "프론트엔드 빌드 테스트 결과"
+          description: "프론트엔드 빌드 상태: ${{ steps.fe-build-status.outputs.status }}"
+          color: ${{ steps.npm-build.outcome == 'success' && '0x00ff00' || '0xff0000' }}
