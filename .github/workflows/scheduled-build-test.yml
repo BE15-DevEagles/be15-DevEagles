@@ -88,94 +88,29 @@ jobs:
         with:
           node-version: "18"
 
-      - name: 프론트엔드 파일 확인 및 수정
+      - name: 프론트엔드 파일 생성
         run: |
           echo "프론트엔드 디렉토리 확인:"
           ls -la ./be15_DevEagles_FE
-          echo "src 디렉토리 확인:"
-          ls -la ./be15_DevEagles_FE/src
-
-          # App.vue 확인
-          echo "App.vue 내용 확인:"
-          cat ./be15_DevEagles_FE/src/App.vue
 
           # assets 디렉토리 생성 및 필요한 파일 추가
           mkdir -p ./be15_DevEagles_FE/src/assets
-          touch ./be15_DevEagles_FE/src/assets/main.css
           echo "/* 임시 스타일시트 */" > ./be15_DevEagles_FE/src/assets/main.css
 
           # 더미 SVG 로고 파일 생성
           echo '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" /></svg>' > ./be15_DevEagles_FE/src/assets/logo.svg
 
-          # HelloWorld.vue 컴포넌트 생성
+          # 컴포넌트 디렉토리 생성
           mkdir -p ./be15_DevEagles_FE/src/components
-          cat << 'EOF' > ./be15_DevEagles_FE/src/components/HelloWorld.vue
-<script setup>
-defineProps({
-  msg: {
-    type: String,
-    required: true
-  }
-})
-</script>
 
-<template>
-  <div class="greetings">
-    <h1 class="green">{{ msg }}</h1>
-    <h3>
-      빌드 테스트용 더미 컴포넌트입니다.
-    </h3>
-  </div>
-</template>
+          # HelloWorld.vue 컴포넌트 생성 (base64로 인코딩된 문자열에서 디코딩)
+          echo 'PHNjcmlwdCBzZXR1cD4KZGVmaW5lUHJvcHMoewogIG1zZzogewogICAgdHlwZTogU3RyaW5nLAogICAgcmVxdWlyZWQ6IHRydWUKICB9Cn0pCjwvc2NyaXB0PgoKPHRlbXBsYXRlPgogIDxkaXYgY2xhc3M9ImdyZWV0aW5ncyI+CiAgICA8aDEgY2xhc3M9ImdyZWVuIj57eyBtc2cgfX08L2gxPgogICAgPGgzPgogICAgICDruYTrk5wg7YWM7Iqk7Yq4IOuNnOuvuCDsu7Ttj6ztgqTtirjri5jri6QuCiAgICA8L2gzPgogIDwvZGl2Pgo8L3RlbXBsYXRlPgoKPHN0eWxlIHNjb3BlZD4KaDEgewogIGZvbnQtd2VpZ2h0OiA1MDA7CiAgZm9udC1zaXplOiAyLjZyZW07CiAgcG9zaXRpb246IHJlbGF0aXZlOwogIHRvcDogLTEwcHg7Cn0KCmgzIHsKICBmb250LXNpemU6IDEuMnJlbTsKfQoKLmdyZWV0aW5ncyBoMSwKLmdyZWV0aW5ncyBoMyB7CiAgdGV4dC1hbGlnbjogY2VudGVyOwp9CgpAbWVkaWEgKG1pbi13aWR0aDogMTAyNHB4KSB7CiAgLmdyZWV0aW5ncyBoMSwKICAuZ3JlZXRpbmdzIGgzIHsKICAgIHRleHQtYWxpZ246IGxlZnQ7CiAgfQp9Cjwvc3R5bGU+' | base64 -d > ./be15_DevEagles_FE/src/components/HelloWorld.vue
 
-<style scoped>
-h1 {
-  font-weight: 500;
-  font-size: 2.6rem;
-  position: relative;
-  top: -10px;
-}
-
-h3 {
-  font-size: 1.2rem;
-}
-
-.greetings h1,
-.greetings h3 {
-  text-align: center;
-}
-
-@media (min-width: 1024px) {
-  .greetings h1,
-  .greetings h3 {
-    text-align: left;
-  }
-}
-</style>
-EOF
-
-          # TheWelcome.vue 컴포넌트 생성
-          cat << 'EOF' > ./be15_DevEagles_FE/src/components/TheWelcome.vue
-<script setup>
-</script>
-
-<template>
-  <div class="welcome">
-    <h1>빌드 테스트 페이지</h1>
-    <p>이 페이지는 CI/CD 파이프라인 테스트를 위한 더미 페이지입니다.</p>
-  </div>
-</template>
-
-<style scoped>
-.welcome {
-  text-align: center;
-  padding: 20px;
-}
-</style>
-EOF
+          # TheWelcome.vue 컴포넌트 생성 (base64로 인코딩된 문자열에서 디코딩)
+          echo 'PHNjcmlwdCBzZXR1cD4KPC9zY3JpcHQ+Cgo8dGVtcGxhdGU+CiAgPGRpdiBjbGFzcz0id2VsY29tZSI+CiAgICA8aDE+67mE65OcIO2FjOyKpO2KuCDtjpjsnbTsp4A8L2gxPgogICAgPHA+7J20IO2OuOydtOyngOuKlCBDSS9DRCDZHOF7J2nsu6jrnbzsnbQg7YWM7Iqk7Yq4IO2WiO2VnCDrjZzrr7gg7Y6Y7J207KeA7J6F64uI64ukLjwvcD4KICA8L2Rpdj4KPC90ZW1wbGF0ZT4KCjxzdHlsZSBzY29wZWQ+Ci53ZWxjb21lIHsKICB0ZXh0LWFsaWduOiBjZW50ZXI7CiAgcGFkZGluZzogMjBweDsKfQo8L3N0eWxlPg==' | base64 -d > ./be15_DevEagles_FE/src/components/TheWelcome.vue
 
           # 생성된 파일 확인
-          echo "컴포넌트 디렉토리 확인:"
+          echo "컴포넌트 디렉토리 내용 확인:"
           ls -la ./be15_DevEagles_FE/src/components
 
       - name: NPM 캐시 설정
