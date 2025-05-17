@@ -84,15 +84,14 @@ spring-doc:
     tags-sorter: alpha
     operations-sorter: method
     doc-expansion: none
-
 # AWS 설정 (현재 비활성화)
 # cloud:
 #   aws:
 
 # 웹소켓 설정
-websocket:
-  allowed-origins: "*"
-  endpoint: /ws
-  application-destination-prefix: /app
-  user-destination-prefix: /user
-  broker-prefix: /topic
+# websocket:
+#   allowed-origins: "*"
+#   endpoint: /ws
+#   application-destination-prefix: /app
+#   user-destination-prefix: /user
+#   broker-prefix: /topic
