@@ -1,6 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.chat.command.domain.repository;
 
-import com.deveagles.be15_deveagles_be.common.dto.Pagination;
+import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom.ChatRoomType;
 import java.util.List;
@@ -15,11 +15,10 @@ public interface ChatRoomRepository {
 
   List<ChatRoom> findActiveChatRoomsByTeamId(String teamId);
 
-  List<ChatRoom> findActiveChatRoomsByTeamIdWithPagination(
-      String teamId, int page, int size, Pagination pagination);
+  PagedResult<ChatRoom> findActiveChatRoomsByTeamIdWithPagination(
+      String teamId, int page, int size);
 
-  List<ChatRoom> findActiveChatRoomsByType(
-      ChatRoomType type, int page, int size, Pagination pagination);
+  PagedResult<ChatRoom> findActiveChatRoomsByType(ChatRoomType type, int page, int size);
 
   Optional<ChatRoom> findDefaultChatRoomByTeamId(String teamId);
 

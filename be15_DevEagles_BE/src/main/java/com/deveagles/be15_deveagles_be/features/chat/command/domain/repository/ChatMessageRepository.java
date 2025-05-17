@@ -1,6 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.chat.command.domain.repository;
 
-import com.deveagles.be15_deveagles_be.common.dto.Pagination;
+import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatMessage;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,8 +21,8 @@ public interface ChatMessageRepository {
   List<ChatMessage> findMessagesByChatroomIdAfterTimestamp(
       String chatroomId, LocalDateTime timestamp, int limit);
 
-  List<ChatMessage> findMessagesByChatroomIdWithPagination(
-      String chatroomId, int page, int size, Pagination pagination);
+  PagedResult<ChatMessage> findMessagesByChatroomIdWithPagination(
+      String chatroomId, int page, int size);
 
   long countUnreadMessagesByChatroomIdAfterTimestamp(String chatroomId, LocalDateTime timestamp);
 
