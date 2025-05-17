@@ -60,13 +60,13 @@ dependencies {
     
     // WebSocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
-    
+
     // MongoDB
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
-    
+
     // Kafka
     implementation 'org.springframework.kafka:spring-kafka'
-    
+
     // Elasticsearch
     implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
     implementation 'co.elastic.clients:elasticsearch-java:8.13.4'
