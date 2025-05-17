@@ -73,6 +73,7 @@ jobs:
           title: "백엔드 빌드 테스트 결과"
           description: "백엔드 빌드 상태: ${{ steps.build-status.outputs.status }}"
           color: ${{ steps.gradle-build.outcome == 'success' && '0x00ff00' || '0xff0000' }}
+          status: ${{ steps.gradle-build.outcome }}
 
   build-frontend:
     name: 프론트엔드 빌드 테스트
@@ -106,9 +107,76 @@ jobs:
           # 더미 SVG 로고 파일 생성
           echo '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" /></svg>' > ./be15_DevEagles_FE/src/assets/logo.svg
 
+          # HelloWorld.vue 컴포넌트 생성
+          mkdir -p ./be15_DevEagles_FE/src/components
+          cat << 'EOF' > ./be15_DevEagles_FE/src/components/HelloWorld.vue
+<script setup>
+defineProps({
+  msg: {
+    type: String,
+    required: true
+  }
+})
+</script>
+
+<template>
+  <div class="greetings">
+    <h1 class="green">{{ msg }}</h1>
+    <h3>
+      빌드 테스트용 더미 컴포넌트입니다.
+    </h3>
+  </div>
+</template>
+
+<style scoped>
+h1 {
+  font-weight: 500;
+  font-size: 2.6rem;
+  position: relative;
+  top: -10px;
+}
+
+h3 {
+  font-size: 1.2rem;
+}
+
+.greetings h1,
+.greetings h3 {
+  text-align: center;
+}
+
+@media (min-width: 1024px) {
+  .greetings h1,
+  .greetings h3 {
+    text-align: left;
+  }
+}
+</style>
+EOF
+
+          # TheWelcome.vue 컴포넌트 생성
+          cat << 'EOF' > ./be15_DevEagles_FE/src/components/TheWelcome.vue
+<script setup>
+</script>
+
+<template>
+  <div class="welcome">
+    <h1>빌드 테스트 페이지</h1>
+    <p>이 페이지는 CI/CD 파이프라인 테스트를 위한 더미 페이지입니다.</p>
+  </div>
+</template>
+
+<style scoped>
+.welcome {
+  text-align: center;
+  padding: 20px;
+}
+</style>
+EOF
+
           # 생성된 파일 확인
-          echo "assets 디렉토리 생성 확인:"
-          ls -la ./be15_DevEagles_FE/src/assets
+          echo "컴포넌트 디렉토리 확인:"
+          ls -la ./be15_DevEagles_FE/src/components
 
       - name: NPM 캐시 설정
         uses: actions/cache@v3
@@ -147,3 +215,4 @@ jobs:
           title: "프론트엔드 빌드 테스트 결과"
           description: "프론트엔드 빌드 상태: ${{ steps.fe-build-status.outputs.status }}"
           color: ${{ steps.npm-build.outcome == 'success' && '0x00ff00' || '0xff0000' }}
+          status: ${{ steps.npm-build.outcome }}
