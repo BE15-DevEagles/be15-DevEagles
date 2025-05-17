@@ -35,13 +35,28 @@ gradletasknamecache
 *.lock  # gradle.lockfile 등
 
 # Spring Boot 설정 파일 (보안 및 환경 분리)
-src/main/resources/application.yml
-src/main/resources/application.yaml
-!src/main/resources/application-example.yml
-src/test/resources/application-*.ymln/resources/application-*.yml
-src/test/resources/application.yml
-src/test/resources/application.yaml
+application.yml
+application.yaml
+!application-example.yml
+!application-example.yaml
 
+# ======================
+# 🧠 데이터베이스 및 캐시
+# ======================
+
+# MongoDB
+*.mongodb
+data/db/
+
+# Redis
+*.rdb
+dump.rdb
+appendonly.aof
+redis-data/
+
+# Elasticsearch
+elasticsearch-data/
+.elasticsearch/
 
 # ======================
 # 🖥 IDE 설정
