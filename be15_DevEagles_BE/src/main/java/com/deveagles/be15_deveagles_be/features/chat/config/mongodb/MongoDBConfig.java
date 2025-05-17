@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.common.config;
+package com.deveagles.be15_deveagles_be.features.chat.config.mongodb;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
