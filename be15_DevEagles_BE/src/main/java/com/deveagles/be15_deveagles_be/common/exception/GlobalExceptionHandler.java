@@ -1,12 +1,15 @@
 package com.deveagles.be15_deveagles_be.common.exception;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.features.chat.command.domain.exception.ChatBusinessException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -15,6 +18,14 @@ public class GlobalExceptionHandler {
     ErrorCode errorCode = e.getErrorCode();
     ApiResponse<Void> response = ApiResponse.failure(errorCode.getCode(), errorCode.getMessage());
     return new ResponseEntity<>(response, errorCode.getHttpStatus());
+  }
+
+  @ExceptionHandler(ChatBusinessException.class)
+  public ResponseEntity<ApiResponse<Void>> handleChatBusinessException(ChatBusinessException e) {
+    log.error("ChatBusinessException: {}", e.getMessage(), e);
+    ApiResponse<Void> response =
+        ApiResponse.failure(e.getErrorCode().getCode(), e.getErrorCode().getMessage());
+    return new ResponseEntity<>(response, e.getErrorCode().getHttpStatus());
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -32,7 +43,8 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(Exception.class)
-  public ResponseEntity<ApiResponse<Void>> handleException() {
+  public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
+    log.error("Unhandled Exception: {}", e.getMessage(), e);
     ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
     ApiResponse<Void> response = ApiResponse.failure(errorCode.getCode(), errorCode.getMessage());
     return new ResponseEntity<>(response, errorCode.getHttpStatus());
