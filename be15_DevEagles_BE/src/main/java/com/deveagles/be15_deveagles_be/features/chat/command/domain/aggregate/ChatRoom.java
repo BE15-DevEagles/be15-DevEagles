@@ -19,6 +19,8 @@ public class ChatRoom {
 
   @Builder.Default private boolean isDefault = false;
 
+  private String userId;
+
   private ChatRoomType type;
 
   private LastMessageInfo lastMessage;
@@ -40,7 +42,8 @@ public class ChatRoom {
   public enum ChatRoomType {
     GROUP,
     DIRECT,
-    TEAM
+    TEAM,
+    AI
   }
 
   public boolean isDeleted() {
@@ -53,5 +56,9 @@ public class ChatRoom {
 
   public void updateLastMessage(LastMessageInfo lastMessage) {
     this.lastMessage = lastMessage;
+  }
+
+  public boolean isAiChatRoom() {
+    return type == ChatRoomType.AI && userId != null;
   }
 }

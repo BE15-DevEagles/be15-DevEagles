@@ -24,6 +24,9 @@ public interface ChatRoomRepository {
 
   List<ChatRoom> findActiveChatRoomsByTeamIdAndType(String teamId, ChatRoomType type);
 
+  Optional<ChatRoom> findByTeamIdAndUserIdAndTypeAndDeletedAtIsNull(
+      String teamId, String userId, ChatRoomType type);
+
   void delete(ChatRoom chatRoom);
 
   void deleteById(String id);
