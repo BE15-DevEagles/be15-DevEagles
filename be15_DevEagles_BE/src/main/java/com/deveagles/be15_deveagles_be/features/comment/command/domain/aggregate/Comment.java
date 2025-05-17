@@ -16,12 +16,16 @@ public class Comment {
   @Column(name = "worklog_id")
   private Long worklogId;
 
+  @Column(name = "comment_content")
   private String commentContent;
 
+  @Column(name = "created_at")
   private Timestamp createdAt;
 
+  @Column(name = "updated_at")
   private Timestamp updatedAt;
 
+  @Column(name = "deleted_at")
   private Timestamp deletedAt;
 
   @Column(name = "user_id")

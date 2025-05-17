@@ -15,6 +15,7 @@ public class Worklog {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long worklogId;
 
+  @Column(name = "summary")
   private String summary;
 
   @Column(name = "work_content", columnDefinition = "TEXT")
@@ -26,6 +27,7 @@ public class Worklog {
   @Column(name = "plan_content", columnDefinition = "TEXT")
   private String planContent;
 
+  @Column(name = "created_at")
   private Timestamp createdAt;
 
   @Column(name = "team_id")
