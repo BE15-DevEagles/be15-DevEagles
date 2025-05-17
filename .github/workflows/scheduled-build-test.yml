@@ -27,13 +27,26 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew build --no-daemon
+        continue-on-error: true
+        id: gradle-build
 
-      - name: 테스트 결과 저장
+      - name: 빌드 상태 확인
+        id: build-status
+        run: |
+          if ${{ steps.gradle-build.outcome == 'success' }}; then
+            echo "status=성공" >> $GITHUB_OUTPUT
+          else
+            echo "status=실패" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Discord에 백엔드 빌드 결과 전송
+        uses: sarisia/actions-status-discord@v1
         if: always()
-        uses: actions/upload-artifact@v3
         with:
-          name: backend-test-results
-          path: be15_DevEagles_BE/build/reports/tests/
+          webhook: https://discordapp.com/api/webhooks/1373208730384076830/xJglBK0zwY531d7uyP6hh62DnjqwtowArFplYLKJ1ZfR6i35mQSv1NDf2kTaYo-zD03T
+          title: "백엔드 빌드 테스트 결과"
+          description: "백엔드 빌드 상태: ${{ steps.build-status.outputs.status }}"
+          color: ${{ steps.gradle-build.outcome == 'success' && '0x00ff00' || '0xff0000' }}
 
   build-frontend:
     name: 프론트엔드 빌드 테스트
@@ -48,12 +61,34 @@ jobs:
         with:
           node-version: "18"
           cache: "npm"
-          cache-dependency-path: be15_DevEagles_FE/package-lock.json
+          cache-dependency-path: ./be15_DevEagles_FE/package-lock.json
 
       - name: 의존성 설치
         working-directory: ./be15_DevEagles_FE
         run: npm ci
+        continue-on-error: true
+        id: npm-install
 
       - name: 빌드 실행
         working-directory: ./be15_DevEagles_FE
         run: npm run build
+        continue-on-error: true
+        id: npm-build
+
+      - name: 빌드 상태 확인
+        id: fe-build-status
+        run: |
+          if ${{ steps.npm-build.outcome == 'success' }}; then
+            echo "status=성공" >> $GITHUB_OUTPUT
+          else
+            echo "status=실패" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Discord에 프론트엔드 빌드 결과 전송
+        uses: sarisia/actions-status-discord@v1
+        if: always()
+        with:
+          webhook: https://discordapp.com/api/webhooks/1373208730384076830/xJglBK0zwY531d7uyP6hh62DnjqwtowArFplYLKJ1ZfR6i35mQSv1NDf2kTaYo-zD03T
+          title: "프론트엔드 빌드 테스트 결과"
+          description: "프론트엔드 빌드 상태: ${{ steps.fe-build-status.outputs.status }}"
+          color: ${{ steps.npm-build.outcome == 'success' && '0x00ff00' || '0xff0000' }}
