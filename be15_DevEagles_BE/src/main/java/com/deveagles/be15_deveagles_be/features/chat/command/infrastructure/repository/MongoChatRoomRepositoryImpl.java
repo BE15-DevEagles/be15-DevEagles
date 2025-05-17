@@ -60,12 +60,18 @@ public class MongoChatRoomRepositoryImpl implements ChatRoomRepository {
 
   @Override
   public Optional<ChatRoom> findDefaultChatRoomByTeamId(String teamId) {
-    return repository.findByTeamIdAndIsDefaultAndDeletedAtIsNull(teamId, true);
+    return repository.findByTeamIdAndDefaultAndDeletedAtIsNull(teamId, true);
   }
 
   @Override
   public List<ChatRoom> findActiveChatRoomsByTeamIdAndType(String teamId, ChatRoomType type) {
     return repository.findByTeamIdAndTypeAndDeletedAtIsNull(teamId, type);
+  }
+
+  @Override
+  public Optional<ChatRoom> findByTeamIdAndUserIdAndTypeAndDeletedAtIsNull(
+      String teamId, String userId, ChatRoomType type) {
+    return repository.findByTeamIdAndUserIdAndTypeAndDeletedAtIsNull(teamId, userId, type);
   }
 
   @Override
