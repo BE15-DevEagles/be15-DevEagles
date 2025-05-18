@@ -63,6 +63,100 @@ public class AiChatServiceImpl implements AiChatService {
     this.geminiApiAdapter = geminiApiAdapter;
   }
 
+  // 유틸리티 메서드들을 먼저 정의합니다
+  private String getContextKey(String userId, String chatroomId) {
+    return userId + ":" + chatroomId;
+  }
+
+  private void updateSessionActivity(String userId, String chatroomId) {
+    String contextKey = getContextKey(userId, chatroomId);
+    Map<String, Object> context = userChatContexts.get(contextKey);
+    if (context != null) {
+      context.put("lastActivity", LocalDateTime.now());
+      Integer messageCount = (Integer) context.getOrDefault("messageCount", 0);
+      context.put("messageCount", messageCount + 1);
+    }
+  }
+
+  private void cleanupExpiredSessions() {
+    LocalDateTime now = LocalDateTime.now();
+    List<String> keysToRemove = new ArrayList<>();
+
+    userChatContexts.forEach(
+        (key, context) -> {
+          LocalDateTime lastActivity =
+              (LocalDateTime) context.getOrDefault("lastActivity", context.get("initialized"));
+          if (lastActivity != null && lastActivity.plusHours(SESSION_TIMEOUT_HOURS).isBefore(now)) {
+            keysToRemove.add(key);
+          }
+        });
+
+    for (String key : keysToRemove) {
+      userChatContexts.remove(key);
+      log.info("만료된 AI 채팅 세션 정리: {}", key);
+    }
+  }
+
+  private Optional<ChatMessage> findLastAiMessageInChatroom(String chatroomId) {
+    List<ChatMessage> recentMessages =
+        chatMessageRepository.findRecentMessagesByChatroomId(chatroomId, 5);
+
+    return recentMessages.stream().filter(msg -> AI_USER_ID.equals(msg.getSenderId())).findFirst();
+  }
+
+  private String generateAiResponse(String userMessage) {
+    GeminiTextResponse response =
+        geminiApiAdapter.generateText(PromptTemplate.getAiResponsePrompt(userMessage));
+    if (!response.isEmpty()) {
+      return response.getText();
+    }
+    return PromptTemplate.getRandomDefaultResponse();
+  }
+
+  private String generateMoodFeedbackContent(UserMoodHistory moodHistory) {
+    String moodType =
+        moodHistory.getMoodType() != null ? moodHistory.getMoodType().toString() : "NEUTRAL";
+    return PromptTemplate.getMoodFeedback(moodType);
+  }
+
+  private ChatMessageResponse generateMoodFeedbackResponse(
+      ChatMessageRequest userMessage, UserMoodHistory moodHistory) {
+    String feedbackContent = generateMoodFeedbackContent(moodHistory);
+
+    ChatMessageRequest feedbackRequest =
+        ChatMessageRequest.builder()
+            .chatroomId(userMessage.getChatroomId())
+            .senderId(AI_USER_ID)
+            .senderName(AI_NAME)
+            .messageType(MessageType.TEXT)
+            .content(feedbackContent)
+            .build();
+
+    return chatMessageService.sendMessage(feedbackRequest);
+  }
+
+  // 인터페이스 구현 메서드들
+  @Override
+  public void initializeAiChatSession(String userId, String chatroomId) {
+    cleanupExpiredSessions(); // 만료된 세션 정리
+
+    String contextKey = getContextKey(userId, chatroomId);
+    Map<String, Object> context = new HashMap<>();
+    context.put("initialized", LocalDateTime.now());
+    context.put("messageCount", 0);
+    context.put("lastActivity", LocalDateTime.now());
+    userChatContexts.put(contextKey, context);
+
+    log.info("AI 채팅 세션 초기화 - 사용자: {}, 채팅방: {}", userId, chatroomId);
+  }
+
+  @Override
+  public void terminateAiChatSession(String userId, String chatroomId) {
+    String contextKey = getContextKey(userId, chatroomId);
+    userChatContexts.remove(contextKey);
+    log.info("AI 채팅 세션 종료 - 사용자: {}, 채팅방: {}", userId, chatroomId);
+  }
+
   @Override
   public ChatMessageResponse processUserMessage(ChatMessageRequest userMessage) {
     log.info("AI 채팅 처리 - 사용자: {}, 메시지: {}", userMessage.getSenderId(), userMessage.getContent());
@@ -115,97 +209,5 @@ public class AiChatServiceImpl implements AiChatService {
             .build();
 
     return chatMessageService.sendMessage(aiMessageRequest);
-  }
-
-  @Override
-  public void initializeAiChatSession(String userId, String chatroomId) {
-    cleanupExpiredSessions(); // 만료된 세션 정리
-
-    String contextKey = getContextKey(userId, chatroomId);
-    Map<String, Object> context = new HashMap<>();
-    context.put("initialized", LocalDateTime.now());
-    context.put("messageCount", 0);
-    context.put("lastActivity", LocalDateTime.now());
-    userChatContexts.put(contextKey, context);
-
-    log.info("AI 채팅 세션 초기화 - 사용자: {}, 채팅방: {}", userId, chatroomId);
-  }
-
-  @Override
-  public void terminateAiChatSession(String userId, String chatroomId) {
-    String contextKey = getContextKey(userId, chatroomId);
-    userChatContexts.remove(contextKey);
-    log.info("AI 채팅 세션 종료 - 사용자: {}, 채팅방: {}", userId, chatroomId);
-  }
-
-  private ChatMessageResponse generateMoodFeedbackResponse(
-      ChatMessageRequest userMessage, UserMoodHistory moodHistory) {
-    String feedbackContent = generateMoodFeedbackContent(moodHistory);
-
-    ChatMessageRequest feedbackRequest =
-        ChatMessageRequest.builder()
-            .chatroomId(userMessage.getChatroomId())
-            .senderId(AI_USER_ID)
-            .senderName(AI_NAME)
-            .messageType(MessageType.TEXT)
-            .content(feedbackContent)
-            .build();
-
-    return chatMessageService.sendMessage(feedbackRequest);
-  }
-
-  private String generateMoodFeedbackContent(UserMoodHistory moodHistory) {
-    String moodType =
-        moodHistory.getMoodType() != null ? moodHistory.getMoodType().toString() : "NEUTRAL";
-    return PromptTemplate.getMoodFeedback(moodType);
-  }
-
-  private String generateAiResponse(String userMessage) {
-    GeminiTextResponse response =
-        geminiApiAdapter.generateText(PromptTemplate.getAiResponsePrompt(userMessage));
-    if (!response.isEmpty()) {
-      return response.getText();
-    }
-    return PromptTemplate.getRandomDefaultResponse();
-  }
-
-  private String getContextKey(String userId, String chatroomId) {
-    return userId + ":" + chatroomId;
-  }
-
-  private Optional<ChatMessage> findLastAiMessageInChatroom(String chatroomId) {
-    List<ChatMessage> recentMessages =
-        chatMessageRepository.findRecentMessagesByChatroomId(chatroomId, 5);
-
-    return recentMessages.stream().filter(msg -> AI_USER_ID.equals(msg.getSenderId())).findFirst();
-  }
-
-  private void cleanupExpiredSessions() {
-    LocalDateTime now = LocalDateTime.now();
-    List<String> keysToRemove = new ArrayList<>();
-
-    userChatContexts.forEach(
-        (key, context) -> {
-          LocalDateTime lastActivity =
-              (LocalDateTime) context.getOrDefault("lastActivity", context.get("initialized"));
-          if (lastActivity != null && lastActivity.plusHours(SESSION_TIMEOUT_HOURS).isBefore(now)) {
-            keysToRemove.add(key);
-          }
-        });
-
-    for (String key : keysToRemove) {
-      userChatContexts.remove(key);
-      log.info("만료된 AI 채팅 세션 정리: {}", key);
-    }
-  }
-
-  private void updateSessionActivity(String userId, String chatroomId) {
-    String contextKey = getContextKey(userId, chatroomId);
-    Map<String, Object> context = userChatContexts.get(contextKey);
-    if (context != null) {
-      context.put("lastActivity", LocalDateTime.now());
-      Integer messageCount = (Integer) context.getOrDefault("messageCount", 0);
-      context.put("messageCount", messageCount + 1);
-    }
   }
 }
