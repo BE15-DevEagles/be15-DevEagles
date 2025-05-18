@@ -13,4 +13,10 @@ public interface ChatMessageService {
   List<ChatMessageResponse> getMessagesByChatroom(String chatroomId, int page, int size);
 
   Optional<ChatMessageResponse> deleteMessage(String messageId);
+
+  List<ChatMessageResponse> getMessagesByChatroomBefore(
+      String chatroomId, String messageId, int limit);
+
+  List<ChatMessageResponse> getMessagesByChatroomAfter(
+      String chatroomId, String messageId, int limit);
 }

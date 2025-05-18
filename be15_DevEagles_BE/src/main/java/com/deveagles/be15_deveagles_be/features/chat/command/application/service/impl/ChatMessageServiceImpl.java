@@ -50,6 +50,18 @@ public class ChatMessageServiceImpl implements ChatMessageService {
       throw new ChatBusinessException(ChatErrorCode.CHAT_ROOM_ACCESS_DENIED);
     }
 
+    // TODO: 메시지 유형별 처리 로직 추가 - 파일 업로드 기능 구현 후 활성화
+    // switch (request.getMessageType()) {
+    //    case IMAGE:
+    //        validateImageMetadata(request.getMetadata());
+    //        break;
+    //    case FILE:
+    //        validateFileMetadata(request.getMetadata());
+    //        break;
+    //    default:
+    //        break;
+    // }
+
     ChatMessage message =
         ChatMessage.builder()
             .chatroomId(request.getChatroomId())
@@ -100,6 +112,13 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     }
 
     ChatMessage message = messageOpt.get();
+
+    // TODO: 삭제 권한 검증 추가 - 시큐리티 구현 후 활성화
+    // 메시지 작성자 또는 관리자만 삭제 가능하도록 처리
+    // if (!message.getSenderId().equals(currentUser.getId()) && !currentUser.hasRole("ADMIN")) {
+    //     throw new ChatBusinessException(ChatErrorCode.MESSAGE_DELETE_ACCESS_DENIED);
+    // }
+
     message.delete();
     ChatMessage updatedMessage = chatMessageRepository.save(message);
 
@@ -108,6 +127,44 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         "/topic/chatroom." + message.getChatroomId() + ".delete", response);
 
     return Optional.of(response);
+  }
+
+  @Override
+  public List<ChatMessageResponse> getMessagesByChatroomBefore(
+      String chatroomId, String messageId, int limit) {
+    chatRoomRepository
+        .findById(chatroomId)
+        .orElseThrow(() -> new ChatBusinessException(ChatErrorCode.CHAT_ROOM_NOT_FOUND));
+
+    ChatMessage referenceMessage =
+        chatMessageRepository
+            .findById(messageId)
+            .orElseThrow(() -> new ChatBusinessException(ChatErrorCode.MESSAGE_NOT_FOUND));
+
+    List<ChatMessage> messages =
+        chatMessageRepository.findMessagesByChatroomIdBeforeTimestamp(
+            chatroomId, referenceMessage.getCreatedAt(), limit);
+
+    return messages.stream().map(ChatMessageResponse::from).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<ChatMessageResponse> getMessagesByChatroomAfter(
+      String chatroomId, String messageId, int limit) {
+    chatRoomRepository
+        .findById(chatroomId)
+        .orElseThrow(() -> new ChatBusinessException(ChatErrorCode.CHAT_ROOM_NOT_FOUND));
+
+    ChatMessage referenceMessage =
+        chatMessageRepository
+            .findById(messageId)
+            .orElseThrow(() -> new ChatBusinessException(ChatErrorCode.MESSAGE_NOT_FOUND));
+
+    List<ChatMessage> messages =
+        chatMessageRepository.findMessagesByChatroomIdAfterTimestamp(
+            chatroomId, referenceMessage.getCreatedAt(), limit);
+
+    return messages.stream().map(ChatMessageResponse::from).collect(Collectors.toList());
   }
 
   private void updateChatRoomLastMessage(ChatRoom chatRoom, ChatMessage message) {
