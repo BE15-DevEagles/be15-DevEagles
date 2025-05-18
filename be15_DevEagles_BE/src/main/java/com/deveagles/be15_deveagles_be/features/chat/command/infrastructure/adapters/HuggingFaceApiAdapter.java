@@ -28,7 +28,6 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class HuggingFaceApiAdapter {
   private static final Logger log = LoggerFactory.getLogger(HuggingFaceApiAdapter.class);
-  private static final int DEFAULT_TIMEOUT_MS = 5000;
 
   private final RestTemplate restTemplate;
   private final ObjectMapper objectMapper;

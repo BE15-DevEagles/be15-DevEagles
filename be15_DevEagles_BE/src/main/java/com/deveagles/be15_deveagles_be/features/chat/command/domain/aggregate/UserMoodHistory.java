@@ -87,7 +87,6 @@ public class UserMoodHistory {
     analyzeStrongestEmotion();
   }
 
-  @SuppressWarnings("unchecked")
   private void analyzeStrongestEmotion() {
     if (emotionAnalysis == null || emotionAnalysis.isBlank()) {
       return;
