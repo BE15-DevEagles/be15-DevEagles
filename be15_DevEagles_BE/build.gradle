@@ -54,9 +54,9 @@ dependencies {
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     
-    // AWS SDK 버전 업데이트 (취약점 패치)
-    implementation 'io.awspring.cloud:spring-cloud-aws-starter:3.3.0'
-    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.3.0'
+    // // AWS SDK 환경 설정 없어서 통합 테스트시 오류, 향후 주석 풀어주세요
+    // implementation 'io.awspring.cloud:spring-cloud-aws-starter:3.3.0'
+    // implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.3.0'
     
     // WebSocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
