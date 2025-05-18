@@ -82,4 +82,10 @@ public class MongoChatMessageRepositoryImpl implements ChatMessageRepository {
   public void deleteById(String id) {
     repository.deleteById(id);
   }
+
+  @Override
+  public List<ChatMessage> findRecentMessagesByChatroomId(String chatroomId, int limit) {
+    Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
+    return repository.findByChatroomIdAndDeletedAtIsNullOrderByCreatedAtDesc(chatroomId, pageable);
+  }
 }

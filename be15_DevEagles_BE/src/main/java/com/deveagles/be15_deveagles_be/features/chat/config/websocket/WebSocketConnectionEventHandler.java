@@ -1,5 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.chat.config.websocket;
 
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.impl.MoodInquiryServiceImpl;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,9 +24,12 @@ public class WebSocketConnectionEventHandler {
 
   private final SimpMessageSendingOperations messagingTemplate;
   private final Map<String, String> connectedUsers = new ConcurrentHashMap<>();
+  private final MoodInquiryServiceImpl moodInquiryService;
 
-  public WebSocketConnectionEventHandler(SimpMessageSendingOperations messagingTemplate) {
+  public WebSocketConnectionEventHandler(
+      SimpMessageSendingOperations messagingTemplate, MoodInquiryServiceImpl moodInquiryService) {
     this.messagingTemplate = messagingTemplate;
+    this.moodInquiryService = moodInquiryService;
   }
 
   @EventListener
@@ -37,8 +41,17 @@ public class WebSocketConnectionEventHandler {
     String userId = extractUserId(headerAccessor);
     if (userId != null) {
       logger.info("사용자 연결됨: 사용자ID={}, 세션ID={}", userId, sessionId);
-      connectedUsers.put(sessionId, userId);
 
+      if (!connectedUsers.containsValue(userId)) {
+        try {
+          logger.info("첫 로그인 감지: 사용자ID={}, 기분 질문 시도", userId);
+          moodInquiryService.sendMoodInquiryOnUserLogin(userId);
+        } catch (Exception e) {
+          logger.error("기분 질문 전송 중 오류 발생: 사용자ID={}, 오류={}", userId, e.getMessage());
+        }
+      }
+
+      connectedUsers.put(sessionId, userId);
       notifyUserStatusChange(userId, true);
     }
   }
@@ -52,7 +65,11 @@ public class WebSocketConnectionEventHandler {
     if (userId != null) {
       logger.info("사용자 연결 종료: 사용자ID={}, 세션ID={}", userId, sessionId);
 
-      notifyUserStatusChange(userId, false);
+      boolean userStillConnected = connectedUsers.values().contains(userId);
+
+      if (!userStillConnected) {
+        notifyUserStatusChange(userId, false);
+      }
     }
   }
 
