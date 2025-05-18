@@ -2,15 +2,13 @@ package com.deveagles.be15_deveagles_be.features.user.command.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Getter
 @Entity
 @Table(name = "user")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class User {
 
   @Id
@@ -18,30 +16,33 @@ public class User {
   @Column(name = "user_Id")
   private Long userId;
 
-  @Column(name = "email")
+  @Column(name = "email", nullable = false)
   private String email;
 
-  @Column(name = "password")
+  @Column(name = "password", nullable = false)
   private String password;
 
-  @Column(name = "user_name")
+  @Column(name = "user_name", nullable = false)
   private String userName;
 
-  @Column(name = "phone_number")
+  @Column(name = "phone_number", nullable = false)
   private String phoneNumber;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "user_status")
+  @Column(name = "user_status", nullable = false)
   private UserStatus userStatus = UserStatus.PENDING;
 
-  @Column(name = "created_at")
+  @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
-  @Column(name = "modified_at")
+  @Column(name = "modified_at", nullable = false)
   private LocalDateTime modifiedAt;
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
+
+  @Column(name = "user_thumbnail_url")
+  private String userThumbnailUrl;
 
   @Builder
   public User(
@@ -63,7 +64,7 @@ public class User {
     this.deletedAt = deletedAt;
   }
 
-  public void setUserInfo(String userName, String phoneNumber) {
+  public void modifyUserInfo(String userName, String phoneNumber) {
     this.userName = userName;
     this.phoneNumber = phoneNumber;
   }
