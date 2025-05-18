@@ -24,4 +24,7 @@ public interface SpringDataMongoChatMessageRepository extends MongoRepository<Ch
 
   long countByChatroomIdAndCreatedAtAfterAndDeletedAtIsNull(
       String chatroomId, LocalDateTime timestamp);
+
+  List<ChatMessage> findByChatroomIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+      String chatroomId, Pageable pageable);
 }

@@ -3,9 +3,15 @@ package com.deveagles.be15_deveagles_be.features.chat.command.application.contro
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.request.ChatMessageRequest;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.ChatMessageResponse;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.ChatRoomResponse;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.AiChatService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatMessageService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatRoomService;
+import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom.ChatRoomType;
+import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.ChatRoomRepository;
 import java.security.Principal;
+import java.util.concurrent.CompletableFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -15,16 +21,24 @@ import org.springframework.stereotype.Controller;
 @Controller
 public class ChatWebSocketController {
 
+  private static final Logger log = LoggerFactory.getLogger(ChatWebSocketController.class);
+
   private final ChatMessageService chatMessageService;
   private final ChatRoomService chatRoomService;
+  private final AiChatService aiChatService;
+  private final ChatRoomRepository chatRoomRepository;
   private final SimpMessagingTemplate messagingTemplate;
 
   public ChatWebSocketController(
       ChatMessageService chatMessageService,
       ChatRoomService chatRoomService,
+      AiChatService aiChatService,
+      ChatRoomRepository chatRoomRepository,
       SimpMessagingTemplate messagingTemplate) {
     this.chatMessageService = chatMessageService;
     this.chatRoomService = chatRoomService;
+    this.aiChatService = aiChatService;
+    this.chatRoomRepository = chatRoomRepository;
     this.messagingTemplate = messagingTemplate;
   }
 
@@ -33,8 +47,9 @@ public class ChatWebSocketController {
       @Payload ChatMessageRequest request,
       SimpMessageHeaderAccessor headerAccessor,
       Principal principal) {
+    ChatMessageRequest finalRequest;
     if (principal != null && !principal.getName().equals(request.getSenderId())) {
-      request =
+      finalRequest =
           ChatMessageRequest.builder()
               .chatroomId(request.getChatroomId())
               .senderId(principal.getName())
@@ -43,9 +58,32 @@ public class ChatWebSocketController {
               .content(request.getContent())
               .metadata(request.getMetadata())
               .build();
+    } else {
+      finalRequest = request;
     }
 
-    return chatMessageService.sendMessage(request);
+    ChatMessageResponse userMessageResponse = chatMessageService.sendMessage(finalRequest);
+
+    final ChatMessageRequest aiRequest = finalRequest; // 람다에서 사용할 final 변수
+    chatRoomRepository
+        .findById(finalRequest.getChatroomId())
+        .ifPresent(
+            chatRoom -> {
+              if (chatRoom.getType() == ChatRoomType.AI) {
+                log.info("AI 채팅방에 메시지 수신: {}", aiRequest.getContent());
+
+                CompletableFuture.runAsync(
+                    () -> {
+                      try {
+                        aiChatService.processUserMessage(aiRequest);
+                      } catch (Exception e) {
+                        log.error("AI 응답 생성 중 오류 발생", e);
+                      }
+                    });
+              }
+            });
+
+    return userMessageResponse;
   }
 
   @MessageMapping("/chat.read")
@@ -62,6 +100,18 @@ public class ChatWebSocketController {
         "/topic/chatroom." + request.getChatroomId() + ".read",
         new ReadStatusResponse(
             request.getChatroomId(), principal.getName(), request.getMessageId()));
+  }
+
+  @MessageMapping("/chat.ai.init")
+  public void initializeAiChat(@Payload AiChatInitRequest request, Principal principal) {
+    if (principal == null) {
+      return;
+    }
+
+    String userId = principal.getName();
+    aiChatService.initializeAiChatSession(userId, request.getChatroomId());
+
+    log.info("AI 채팅 세션 초기화 요청: 사용자={}, 채팅방={}", userId, request.getChatroomId());
   }
 
   public static class ReadMessageRequest {
@@ -98,6 +148,14 @@ public class ChatWebSocketController {
 
     public String getLastReadMessageId() {
       return lastReadMessageId;
+    }
+  }
+
+  public static class AiChatInitRequest {
+    private String chatroomId;
+
+    public String getChatroomId() {
+      return chatroomId;
     }
   }
 }

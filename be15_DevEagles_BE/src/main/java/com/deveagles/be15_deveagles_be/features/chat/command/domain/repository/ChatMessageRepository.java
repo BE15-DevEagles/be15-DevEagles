@@ -29,4 +29,6 @@ public interface ChatMessageRepository {
   void delete(ChatMessage message);
 
   void deleteById(String id);
+
+  List<ChatMessage> findRecentMessagesByChatroomId(String chatroomId, int limit);
 }
