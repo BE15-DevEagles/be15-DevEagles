@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 @Getter
-@Setter
 @Table(name = "worklog")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
