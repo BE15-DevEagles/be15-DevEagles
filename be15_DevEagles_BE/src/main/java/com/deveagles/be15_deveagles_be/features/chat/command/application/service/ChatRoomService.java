@@ -19,4 +19,6 @@ public interface ChatRoomService {
   ChatRoomResponse removeParticipantFromChatRoom(String chatroomId, String userId);
 
   ChatRoomResponse toggleParticipantNotification(String chatroomId, String userId);
+
+  ChatRoomResponse updateLastReadMessage(String chatroomId, String userId, String messageId);
 }
