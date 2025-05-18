@@ -156,6 +156,27 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
   }
 
+  @Override
+  @Transactional
+  public ChatRoomResponse updateLastReadMessage(
+      String chatroomId, String userId, String messageId) {
+    ChatRoom chatRoom = getChatRoomById(chatroomId);
+
+    ChatRoom.Participant participant = chatRoom.getParticipant(userId);
+    if (participant == null) {
+      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND);
+    }
+
+    try {
+      participant.updateLastReadMessage(messageId);
+      ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+      return ChatRoomResponse.from(savedChatRoom);
+    } catch (Exception e) {
+      throw new ChatBusinessException(
+          ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED, e.getMessage());
+    }
+  }
+
   private ChatRoom getChatRoomById(String chatroomId) {
     Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findById(chatroomId);
 
