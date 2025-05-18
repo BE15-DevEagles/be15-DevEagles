@@ -12,6 +12,7 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -44,7 +45,8 @@ public class HuggingFaceApiAdapter {
   private int apiTimeoutMs;
 
   @Autowired
-  public HuggingFaceApiAdapter(RestTemplate restTemplate, ObjectMapper objectMapper) {
+  public HuggingFaceApiAdapter(
+      RestTemplate restTemplate, @Qualifier("restTemplateObjectMapper") ObjectMapper objectMapper) {
     this.restTemplate = configureRestTemplate(restTemplate, objectMapper);
     this.objectMapper = objectMapper;
     this.requestBuilder = new HuggingFaceRequestBuilder();
