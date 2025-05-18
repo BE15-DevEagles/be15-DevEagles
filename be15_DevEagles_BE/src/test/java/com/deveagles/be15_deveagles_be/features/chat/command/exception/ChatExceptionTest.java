@@ -1,7 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.chat.command.exception;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.exception.ChatBusinessException;
