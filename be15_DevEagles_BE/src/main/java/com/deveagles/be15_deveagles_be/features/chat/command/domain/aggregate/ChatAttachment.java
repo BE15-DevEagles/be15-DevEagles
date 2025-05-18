@@ -21,7 +21,6 @@ public class ChatAttachment {
   private String fileName;
 
   private String originalFileName;
-
   private String contentType;
 
   private String fileUrl;

@@ -13,4 +13,10 @@ public interface ChatRoomService {
   ChatRoomResponse createOrGetPersonalAiChatRoom(String teamId, String userId, String name);
 
   Optional<ChatRoomResponse> deleteChatRoom(String chatroomId);
+
+  ChatRoomResponse addParticipantToChatRoom(String chatroomId, String userId);
+
+  ChatRoomResponse removeParticipantFromChatRoom(String chatroomId, String userId);
+
+  ChatRoomResponse toggleParticipantNotification(String chatroomId, String userId);
 }
