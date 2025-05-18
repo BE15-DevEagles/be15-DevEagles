@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public enum ErrorCode {
+public enum ErrorCode implements ErrorCodeType {
   // 상품 관련 오류
   PRODUCT_NOT_FOUND("10001", "해당 상품을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 

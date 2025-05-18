@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -56,5 +57,26 @@ public class ChatRoomController {
     return deletedChatRoom
         .map(response -> ResponseEntity.ok(ApiResponse.success(response)))
         .orElseThrow(() -> new ChatBusinessException(ChatErrorCode.CHAT_ROOM_NOT_FOUND));
+  }
+
+  @PostMapping("/{chatroomId}/participants")
+  public ResponseEntity<ApiResponse<ChatRoomResponse>> addParticipant(
+      @PathVariable String chatroomId, @RequestParam String userId) {
+    ChatRoomResponse chatRoom = chatRoomService.addParticipantToChatRoom(chatroomId, userId);
+    return ResponseEntity.ok(ApiResponse.success(chatRoom));
+  }
+
+  @DeleteMapping("/{chatroomId}/participants/{userId}")
+  public ResponseEntity<ApiResponse<ChatRoomResponse>> removeParticipant(
+      @PathVariable String chatroomId, @PathVariable String userId) {
+    ChatRoomResponse chatRoom = chatRoomService.removeParticipantFromChatRoom(chatroomId, userId);
+    return ResponseEntity.ok(ApiResponse.success(chatRoom));
+  }
+
+  @PutMapping("/{chatroomId}/participants/{userId}/notification")
+  public ResponseEntity<ApiResponse<ChatRoomResponse>> toggleParticipantNotification(
+      @PathVariable String chatroomId, @PathVariable String userId) {
+    ChatRoomResponse chatRoom = chatRoomService.toggleParticipantNotification(chatroomId, userId);
+    return ResponseEntity.ok(ApiResponse.success(chatRoom));
   }
 }

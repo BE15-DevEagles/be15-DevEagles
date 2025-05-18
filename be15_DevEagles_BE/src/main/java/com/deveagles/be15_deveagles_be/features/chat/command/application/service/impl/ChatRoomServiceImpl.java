@@ -99,4 +99,70 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
     return Optional.empty();
   }
+
+  @Override
+  @Transactional
+  public ChatRoomResponse addParticipantToChatRoom(String chatroomId, String userId) {
+    ChatRoom chatRoom = getChatRoomById(chatroomId);
+
+    if (chatRoom.getParticipant(userId) != null) {
+      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_ALREADY_EXISTS);
+    }
+
+    try {
+      chatRoom.addParticipant(userId);
+      ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+      return ChatRoomResponse.from(savedChatRoom);
+    } catch (Exception e) {
+      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_ADD_FAILED, e.getMessage());
+    }
+  }
+
+  @Override
+  @Transactional
+  public ChatRoomResponse removeParticipantFromChatRoom(String chatroomId, String userId) {
+    ChatRoom chatRoom = getChatRoomById(chatroomId);
+
+    if (chatRoom.getParticipant(userId) == null) {
+      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND);
+    }
+
+    try {
+      chatRoom.removeParticipant(userId);
+      ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+      return ChatRoomResponse.from(savedChatRoom);
+    } catch (Exception e) {
+      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_REMOVE_FAILED, e.getMessage());
+    }
+  }
+
+  @Override
+  @Transactional
+  public ChatRoomResponse toggleParticipantNotification(String chatroomId, String userId) {
+    ChatRoom chatRoom = getChatRoomById(chatroomId);
+
+    ChatRoom.Participant participant = chatRoom.getParticipant(userId);
+    if (participant == null) {
+      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND);
+    }
+
+    try {
+      participant.toggleNotification();
+      ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+      return ChatRoomResponse.from(savedChatRoom);
+    } catch (Exception e) {
+      throw new ChatBusinessException(
+          ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED, e.getMessage());
+    }
+  }
+
+  private ChatRoom getChatRoomById(String chatroomId) {
+    Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findById(chatroomId);
+
+    if (chatRoomOptional.isEmpty() || chatRoomOptional.get().isDeleted()) {
+      throw new ChatBusinessException(ChatErrorCode.CHAT_ROOM_NOT_FOUND);
+    }
+
+    return chatRoomOptional.get();
+  }
 }

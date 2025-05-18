@@ -1,5 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.chat.command.domain.exception;
 
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCodeType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,12 +8,20 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public enum ChatErrorCode {
+public enum ChatErrorCode implements ErrorCodeType {
   // 채팅방 관련 오류
   CHAT_ROOM_NOT_FOUND("30001", "채팅방을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   CHAT_ROOM_ACCESS_DENIED("30002", "채팅방에 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
   DEFAULT_CHATROOM_ALREADY_EXISTS("30003", "이미 기본 채팅방이 존재합니다.", HttpStatus.BAD_REQUEST),
   DEFAULT_CHATROOM_CANNOT_BE_DELETED("30004", "기본 채팅방은 삭제할 수 없습니다.", HttpStatus.BAD_REQUEST),
+
+  // 채팅방 참가자 관련 오류
+  PARTICIPANT_ALREADY_EXISTS("30005", "이미 채팅방에 참가중인 사용자입니다.", HttpStatus.BAD_REQUEST),
+  PARTICIPANT_NOT_FOUND("30006", "채팅방에 참가하지 않은 사용자입니다.", HttpStatus.NOT_FOUND),
+  PARTICIPANT_ADD_FAILED("30007", "참가자 추가에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+  PARTICIPANT_REMOVE_FAILED("30008", "참가자 제거에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+  PARTICIPANT_NOTIFICATION_TOGGLE_FAILED(
+      "30009", "알림 설정 변경에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
   // 메시지 관련 오류
   MESSAGE_NOT_FOUND("30101", "메시지를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
