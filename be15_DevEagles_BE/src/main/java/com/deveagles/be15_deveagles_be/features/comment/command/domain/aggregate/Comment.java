@@ -1,13 +1,12 @@
 package com.deveagles.be15_deveagles_be.features.comment.command.domain.aggregate;
 
 import jakarta.persistence.*;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import lombok.*;
 
 @Getter
 @Entity
 @Table(name = "comment")
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Comment {
@@ -23,14 +22,30 @@ public class Comment {
   private String commentContent;
 
   @Column(name = "created_at")
-  private Timestamp createdAt;
+  private LocalDateTime createdAt;
 
   @Column(name = "updated_at")
-  private Timestamp updatedAt;
+  private LocalDateTime updatedAt;
 
   @Column(name = "deleted_at")
-  private Timestamp deletedAt;
+  private LocalDateTime deletedAt;
 
   @Column(name = "user_id")
   private Long userId;
+
+  @Builder
+  public Comment(
+      Long worklogId,
+      String commentContent,
+      LocalDateTime createdAt,
+      LocalDateTime updatedAt,
+      LocalDateTime deletedAt,
+      Long userId) {
+    this.worklogId = worklogId;
+    this.commentContent = commentContent;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+    this.deletedAt = deletedAt;
+    this.userId = userId;
+  }
 }
