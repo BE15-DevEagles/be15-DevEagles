@@ -37,20 +37,9 @@ if [ -n "$FE_FILES" ]; then
     exit 1
   fi
   
-  echo "[Action] 수동으로 ESLint 및 Prettier 실행..."
-  # Windows에서 실행할 수 있도록 수정
-  for file in $FE_FILES; do
-    RELATIVE_PATH=${file#"$PROJECT_ROOT/be15_DevEagles_FE/"}
-    echo "📝 Processing file: $RELATIVE_PATH"
-    
-    # ESLint 실행
-    echo "Running ESLint on $RELATIVE_PATH"
-    ./node_modules/.bin/eslint --fix "$RELATIVE_PATH" || true
-    
-    # Prettier 실행
-    echo "Running Prettier on $RELATIVE_PATH"
-    ./node_modules/.bin/prettier --write "$RELATIVE_PATH" || true
-  done
+  echo "[Action] lint-staged 실행 중..."
+  # lint-staged를 통해 프론트엔드 파일 린팅 실행
+  npx lint-staged || { echo "❌ [Error] lint-staged failed"; exit 1; }
   
   # 변경된 프론트엔드 파일 다시 스테이징
   echo "[Action] Re-adding modified frontend files to staging..."
