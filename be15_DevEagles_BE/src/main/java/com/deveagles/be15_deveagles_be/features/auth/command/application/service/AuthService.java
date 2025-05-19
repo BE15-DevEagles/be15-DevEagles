@@ -5,4 +5,6 @@ import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.res
 
 public interface AuthService {
   TokenResponse login(LoginRequest request);
+
+  void logout(String refreshToken);
 }
