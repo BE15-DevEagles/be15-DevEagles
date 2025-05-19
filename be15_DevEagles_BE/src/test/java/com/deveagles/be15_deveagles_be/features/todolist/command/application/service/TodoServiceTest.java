@@ -9,6 +9,7 @@ import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.aggregate.Todo;
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.repository.TodoRepository;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.InvalidTodoDateException;
+import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -134,5 +135,45 @@ class TodoServiceTest {
     assertThat(responses.get(1).getTodoId()).isNotNull();
     assertThat(responses.get(0).getMessage()).isEqualTo("할 일이 등록되었습니다.");
     assertThat(responses.get(1).getMessage()).isEqualTo("할 일이 등록되었습니다.");
+  }
+
+  @Test
+  @DisplayName("할 일 완료 성공")
+  void completeTodo_success() {
+    // given
+    Todo todo =
+        Todo.builder()
+            .todoId(1L)
+            .userId(1L)
+            .teamId(1L)
+            .content("완료할 일")
+            .startDate(LocalDateTime.of(2025, 5, 20, 10, 0))
+            .dueDate(LocalDateTime.of(2025, 5, 21, 18, 0))
+            .createdAt(LocalDateTime.now())
+            .modifiedAt(LocalDateTime.now())
+            .build();
+
+    when(todoRepository.findById(1L)).thenReturn(java.util.Optional.of(todo));
+
+    // when
+    TodoResponse response = todoService.completeTodo(1L);
+
+    // then
+    assertThat(response).isNotNull();
+    assertThat(response.getTodoId()).isEqualTo(1L);
+    assertThat(response.getMessage()).isEqualTo("할 일이 완료 처리되었습니다.");
+    assertThat(todo.getCompletedAt()).isNotNull(); // 실제로 완료 시간 찍혔는지 확인
+  }
+
+  @Test
+  @DisplayName("존재하지 않는 할 일 완료 시 예외 발생")
+  void completeTodo_notFound_throwsException() {
+    // given
+    when(todoRepository.findById(99L)).thenReturn(java.util.Optional.empty());
+
+    // when & then
+    assertThatThrownBy(() -> todoService.completeTodo(99L))
+        .isInstanceOf(TodoNotFoundException.class)
+        .hasMessageContaining("할 일을 찾을 수 없습니다.");
   }
 }
