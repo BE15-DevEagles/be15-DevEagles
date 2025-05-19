@@ -1,13 +1,9 @@
 <script setup>
+  import WorkLog from '@/features/worklog/components/WorkLog.vue';
+</script>
 
-import WorkLog from "@/features/worklog/components/WorkLog.vue";
+<template>
+  <WorkLog />
+</template>
 
-     </script>
-
-      <template>
-     <WorkLog/>
-      </template>
-
-    <style scoped>
-
-</style>
+<style scoped></style>
