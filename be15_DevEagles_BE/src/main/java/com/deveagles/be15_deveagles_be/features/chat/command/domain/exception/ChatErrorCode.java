@@ -9,11 +9,14 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public enum ChatErrorCode implements ErrorCodeType {
+
+
   // 채팅방 관련 오류
   CHAT_ROOM_NOT_FOUND("30001", "채팅방을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   CHAT_ROOM_ACCESS_DENIED("30002", "채팅방에 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
   DEFAULT_CHATROOM_ALREADY_EXISTS("30003", "이미 기본 채팅방이 존재합니다.", HttpStatus.BAD_REQUEST),
   DEFAULT_CHATROOM_CANNOT_BE_DELETED("30004", "기본 채팅방은 삭제할 수 없습니다.", HttpStatus.BAD_REQUEST),
+
 
   // 채팅방 참가자 관련 오류
   PARTICIPANT_ALREADY_EXISTS("30005", "이미 채팅방에 참가중인 사용자입니다.", HttpStatus.BAD_REQUEST),
