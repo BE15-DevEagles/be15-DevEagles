@@ -9,8 +9,9 @@ import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.aggregate.Todo;
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.repository.TodoRepository;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.InvalidTodoDateException;
-import java.lang.reflect.Field;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,33 +51,88 @@ class TodoServiceTest {
 
   @Test
   @DisplayName("할 일 생성 성공")
-  void createTodo_success() {
-    when(todoRepository.save(any()))
+  void createTodos_success() {
+    when(todoRepository.saveAll(any()))
         .thenAnswer(
             invocation -> {
-              Todo saved = invocation.getArgument(0);
-              Field idField = saved.getClass().getDeclaredField("todoId");
-              idField.setAccessible(true);
-              idField.set(saved, 123L);
-
-              return saved;
+              List<Todo> inputTodos = invocation.getArgument(0);
+              return inputTodos.stream()
+                  .map(
+                      todo ->
+                          Todo.builder()
+                              .todoId(123L)
+                              .userId(todo.getUserId())
+                              .teamId(todo.getTeamId())
+                              .content(todo.getContent())
+                              .startDate(todo.getStartDate())
+                              .dueDate(todo.getDueDate())
+                              .createdAt(LocalDateTime.now())
+                              .modifiedAt(LocalDateTime.now())
+                              .build())
+                  .toList();
             });
 
-    // when
-    TodoResponse response = todoService.createTodo(validRequest);
+    List<TodoResponse> responses = todoService.createTodos(List.of(validRequest));
 
-    // then
-    assertThat(response).isNotNull();
-    assertThat(response.getTodoId()).isEqualTo(123L);
-    assertThat(response.getMessage()).isEqualTo("할 일이 등록되었습니다.");
+    assertThat(responses).isNotEmpty();
+    assertThat(responses.get(0).getTodoId()).isEqualTo(123L);
+    assertThat(responses.get(0).getMessage()).isEqualTo("할 일이 등록되었습니다.");
   }
 
   @Test
   @DisplayName("시작일이 마감일보다 늦으면 예외 발생")
-  void createTodo_invalidDate_throwsException() {
-    // when & then
-    assertThatThrownBy(() -> todoService.createTodo(invalidDateRequest))
+  void createTodos_invalidDate_throwsException() {
+    assertThatThrownBy(() -> todoService.createTodos(List.of(invalidDateRequest)))
         .isInstanceOf(InvalidTodoDateException.class)
         .hasMessageContaining("시작일은 마감일보다 빠를 수 없습니다.");
+  }
+
+  @Test
+  @DisplayName("여러 개 할 일 생성 성공")
+  void createTodos_multiple_success() {
+    CreateTodoRequest request1 =
+        CreateTodoRequest.builder()
+            .teamId(1L)
+            .content("할 일 1")
+            .startDate(LocalDateTime.of(2025, 6, 1, 9, 0))
+            .dueDate(LocalDateTime.of(2025, 6, 2, 18, 0))
+            .build();
+
+    CreateTodoRequest request2 =
+        CreateTodoRequest.builder()
+            .teamId(2L)
+            .content("할 일 2")
+            .startDate(LocalDateTime.of(2025, 6, 3, 9, 0))
+            .dueDate(LocalDateTime.of(2025, 6, 4, 18, 0))
+            .build();
+
+    AtomicLong idGenerator = new AtomicLong(100L);
+    when(todoRepository.saveAll(any()))
+        .thenAnswer(
+            invocation -> {
+              List<Todo> inputTodos = invocation.getArgument(0);
+              return inputTodos.stream()
+                  .map(
+                      todo ->
+                          Todo.builder()
+                              .todoId(idGenerator.getAndIncrement())
+                              .userId(todo.getUserId())
+                              .teamId(todo.getTeamId())
+                              .content(todo.getContent())
+                              .startDate(todo.getStartDate())
+                              .dueDate(todo.getDueDate())
+                              .createdAt(LocalDateTime.now())
+                              .modifiedAt(LocalDateTime.now())
+                              .build())
+                  .toList();
+            });
+
+    List<TodoResponse> responses = todoService.createTodos(List.of(request1, request2));
+
+    assertThat(responses).hasSize(2);
+    assertThat(responses.get(0).getTodoId()).isNotNull();
+    assertThat(responses.get(1).getTodoId()).isNotNull();
+    assertThat(responses.get(0).getMessage()).isEqualTo("할 일이 등록되었습니다.");
+    assertThat(responses.get(1).getMessage()).isEqualTo("할 일이 등록되었습니다.");
   }
 }
