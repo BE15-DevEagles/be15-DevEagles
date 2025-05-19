@@ -6,6 +6,7 @@ import com.deveagles.be15_deveagles_be.features.todolist.command.domain.aggregat
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.repository.TodoRepository;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.InvalidTodoDateException;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoErrorCode;
+import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoNotFoundException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -46,5 +47,17 @@ public class TodoService {
             saved ->
                 TodoResponse.builder().todoId(saved.getTodoId()).message("할 일이 등록되었습니다.").build())
         .toList();
+  }
+
+  @Transactional
+  public TodoResponse completeTodo(Long todoId) {
+    Todo todo =
+        todoRepository
+            .findById(todoId)
+            .orElseThrow(() -> new TodoNotFoundException(TodoErrorCode.TODO_NOT_FOUND));
+
+    todo.complete(); // completedAt = now()
+
+    return TodoResponse.builder().todoId(todo.getTodoId()).message("할 일이 완료 처리되었습니다.").build();
   }
 }
