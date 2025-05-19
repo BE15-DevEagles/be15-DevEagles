@@ -6,6 +6,7 @@ import com.deveagles.be15_deveagles_be.features.todolist.command.domain.aggregat
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.repository.TodoRepository;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.InvalidTodoDateException;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoErrorCode;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,24 +18,33 @@ public class TodoService {
   private final TodoRepository todoRepository;
 
   @Transactional
-  public TodoResponse createTodo(CreateTodoRequest request) {
+  public List<TodoResponse> createTodos(List<CreateTodoRequest> requests) {
     Long userId = 1L; // 하드코딩
 
-    if (request.getStartDate().isAfter(request.getDueDate())) {
-      throw new InvalidTodoDateException(TodoErrorCode.INVALID_TODO_DATE);
-    }
+    List<Todo> todos =
+        requests.stream()
+            .map(
+                request -> {
+                  if (request.getStartDate().isAfter(request.getDueDate())) {
+                    throw new InvalidTodoDateException(TodoErrorCode.INVALID_TODO_DATE);
+                  }
 
-    Todo todo =
-        Todo.builder()
-            .userId(userId)
-            .teamId(request.getTeamId())
-            .content(request.getContent())
-            .startDate(request.getStartDate())
-            .dueDate(request.getDueDate())
-            .build();
+                  return Todo.builder()
+                      .userId(userId)
+                      .teamId(request.getTeamId())
+                      .content(request.getContent())
+                      .startDate(request.getStartDate())
+                      .dueDate(request.getDueDate())
+                      .build();
+                })
+            .toList();
 
-    Todo saved = todoRepository.save(todo);
+    List<Todo> savedTodos = todoRepository.saveAll(todos);
 
-    return TodoResponse.builder().todoId(saved.getTodoId()).message("할 일이 등록되었습니다.").build();
+    return savedTodos.stream()
+        .map(
+            saved ->
+                TodoResponse.builder().todoId(saved.getTodoId()).message("할 일이 등록되었습니다.").build())
+        .toList();
   }
 }
