@@ -4,9 +4,9 @@ import WorkLog from "@/features/worklog/components/WorkLog.vue";
 
      </script>
 
-<template>
+      <template>
      <WorkLog/>
-</template>
+      </template>
 
     <style scoped>
 
