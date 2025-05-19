@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public enum ChatErrorCode implements ErrorCodeType {
+
   // 채팅방 관련 오류
   CHAT_ROOM_NOT_FOUND("30001", "채팅방을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   CHAT_ROOM_ACCESS_DENIED("30002", "채팅방에 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
