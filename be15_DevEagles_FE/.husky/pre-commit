@@ -2,32 +2,49 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 echo "[Hook] Git pre-commit hook started..."
+echo "📂 [Info] Project root: $(pwd)"
 
-# 프론트엔드 디렉토리로 이동
-cd be15_DevEagles_FE
+# 디버깅: 스테이징된 모든 파일 표시
+echo "[Debug] Staged files:"
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
+echo "$STAGED_FILES"
 
-# 변경된 파일 가져오기
+# 프론트엔드 파일 검사
+echo "[Debug] Checking for JS/Vue files..."
 JS_VUE_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|vue)$')
+echo "[Debug] JS/Vue files found: $JS_VUE_FILES"
 
 if [ -n "$JS_VUE_FILES" ]; then
   echo "[INFO] 변경된 JS/Vue 파일 감지됨"
-  echo "[Action] Running lint-staged for frontend..."
   
+  # 프로젝트 루트 저장
+  PROJECT_ROOT=$(pwd)
+  
+  # 프론트엔드 디렉토리로 이동
+  echo "[Debug] Moving to frontend directory"
+  cd be15_DevEagles_FE || exit 1
+  
+  echo "[Action] Running lint-staged for frontend..."
   # lint-staged를 통한 ESLint 및 Prettier 실행
   npx lint-staged
   
-  if [ $? -ne 0 ]; then
+  LINT_RESULT=$?
+  if [ $LINT_RESULT -ne 0 ]; then
     echo "❌ [Error] Frontend linting failed!"
     exit 1
   fi
   
   echo "✅ [Success] Frontend linting completed."
+  
+  # 프로젝트 루트로 돌아감
+  cd "$PROJECT_ROOT" || exit 1
 else
   echo "[INFO] 변경된 JS/Vue 파일 없음, 프론트엔드 검사 건너뜀"
 fi
 
 # 백엔드 디렉토리로 이동하여 필요한 체크 수행
-cd ../be15_DevEagles_BE
+echo "[Debug] Moving to backend directory"
+cd be15_DevEagles_BE || exit 1
 
 # 변경된 Java 파일 확인
 JAVA_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.java$')
@@ -63,6 +80,13 @@ if [ -n "$JAVA_FILES" ]; then
   fi
 else
   echo "[INFO] 변경된 Java 파일 없음, 백엔드 검사 건너뜀"
+fi
+
+# 프론트엔드 파일 다시 스테이징 (포맷팅 후 변경되었을 경우)
+if [ -n "$JS_VUE_FILES" ]; then
+  echo "[Action] Re-adding modified JS/Vue files to staging..."
+  cd "$(pwd)"
+  git add $JS_VUE_FILES
 fi
 
 # 성공 메시지
