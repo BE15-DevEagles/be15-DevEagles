@@ -111,3 +111,9 @@ huggingface:
   api:
     key: ${HUGGINGFACE_API_KEY}
     url: ${HUGGINGFACE_API_URL}
+
+# jwt 토큰 설정
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 1800000
+  refresh-expiration: 604800000

@@ -78,27 +78,3 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
-
-tasks.register('updateGitHooks', Copy) {
-    from '../scripts/pre-commit'          // 커밋 훅 원본 위치 (루트 기준 상대경로)
-    into '../.git/hooks'                  // Git 훅 설치 위치 (루트 기준 상대경로)
-}
-
-tasks.register('makeGitHooksExecutable') {
-    dependsOn updateGitHooks
-
-    doLast {
-        def os = System.getProperty("os.name").toLowerCase()
-        if (!os.contains("windows")) {
-            println 'Unix OS: chmod executed'
-            // exec 대신 로깅만 하도록 변경
-            println 'chmod +x .git/hooks/pre-commit would be executed'
-        } else {
-            println 'Windows OS: chmod skipped'
-        }
-    }
-}
-
-tasks.named('compileJava') {
-    dependsOn makeGitHooksExecutable
-}
