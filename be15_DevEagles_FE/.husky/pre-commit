@@ -38,8 +38,10 @@ if [ -n "$FE_FILES" ]; then
   fi
   
   echo "[Action] lint-staged 실행 중..."
+  # lint-staged를 통해 프론트엔드 파일 린팅 실행 (빈 커밋 허용)
   npx lint-staged --allow-empty || { echo "❌ [Error] lint-staged failed"; exit 1; }
   
+  # 변경된 프론트엔드 파일 다시 스테이징
   echo "[Action] Re-adding modified frontend files to staging..."
   cd "$PROJECT_ROOT" || exit 1
   for file in $FE_FILES; do
@@ -56,10 +58,12 @@ fi
 if [ -n "$JAVA_FILES" ]; then
   echo "[INFO] 변경된 자바 파일 감지됨"
   
+  # 백엔드 디렉토리로 이동
   echo "[Debug] Moving to backend directory"
   cd "$PROJECT_ROOT/be15_DevEagles_BE" || { echo "❌ [Error] Failed to change to backend directory"; exit 1; }
   echo "[Debug] Current directory: $(pwd)"
   
+  # gradlew 실행
   echo "[Action] Running spotlessApply for Java files..."
   if [ -f "gradlew.bat" ] && [ "$(uname)" = "Windows_NT" ]; then
     echo "[Debug] Using gradlew.bat"
@@ -79,6 +83,7 @@ if [ -n "$JAVA_FILES" ]; then
     exit 1
   fi
   
+  # 변경된 자바 파일 다시 스테이징
   echo "[Action] Re-adding modified Java files to staging..."
   cd "$PROJECT_ROOT" || exit 1
   for file in $JAVA_FILES; do
