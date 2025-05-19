@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+cd be15_DevEagles_FE && npx --no -- commitlint --edit $1 

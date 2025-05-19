@@ -38,8 +38,8 @@ if [ -n "$FE_FILES" ]; then
   fi
   
   echo "[Action] lint-staged 실행 중..."
-  # lint-staged를 통해 프론트엔드 파일 린팅 실행
-  npx lint-staged || { echo "❌ [Error] lint-staged failed"; exit 1; }
+  # lint-staged를 통해 프론트엔드 파일 린팅 실행 (빈 커밋 허용)
+  npx lint-staged --allow-empty || { echo "❌ [Error] lint-staged failed"; exit 1; }
   
   # 변경된 프론트엔드 파일 다시 스테이징
   echo "[Action] Re-adding modified frontend files to staging..."
