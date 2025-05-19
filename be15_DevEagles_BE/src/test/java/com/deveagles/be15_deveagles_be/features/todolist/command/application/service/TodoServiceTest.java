@@ -50,13 +50,11 @@ class TodoServiceTest {
 
   @Test
   @DisplayName("할 일 생성 성공")
-  void createTodo_success() throws Exception {
-    // given
+  void createTodo_success() {
     when(todoRepository.save(any()))
         .thenAnswer(
             invocation -> {
               Todo saved = invocation.getArgument(0);
-              // 리플렉션으로 ID 직접 설정
               Field idField = saved.getClass().getDeclaredField("todoId");
               idField.setAccessible(true);
               idField.set(saved, 123L);
