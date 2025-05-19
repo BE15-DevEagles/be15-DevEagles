@@ -28,6 +28,20 @@ public class AuthController {
     return buildTokenResponse(response);
   }
 
+  @PostMapping("/logout")
+  public ResponseEntity<ApiResponse<Void>> logout(
+      @CookieValue(name = "refreshToken", required = false) String refreshToken) {
+
+    if (refreshToken != null) {
+      authService.logout(refreshToken);
+    }
+    ResponseCookie deleteCookie = createDeleteRefreshTokenCookie();
+
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
+        .body(ApiResponse.success(null));
+  }
+
   private ResponseEntity<ApiResponse<TokenResponse>> buildTokenResponse(TokenResponse response) {
 
     ResponseCookie cookie = createRefreshTokenCookie(response.getRefreshToken());
@@ -43,6 +57,16 @@ public class AuthController {
         .httpOnly(true)
         .path("/")
         .maxAge(Duration.ofDays(7))
+        .sameSite("Strict")
+        .build();
+  }
+
+  private ResponseCookie createDeleteRefreshTokenCookie() {
+
+    return ResponseCookie.from("refreshToken", "")
+        .httpOnly(true)
+        .path("/")
+        .maxAge(0)
         .sameSite("Strict")
         .build();
   }

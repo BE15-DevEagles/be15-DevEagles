@@ -41,4 +41,12 @@ public class AuthServiceImpl implements AuthService {
 
     return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
   }
+
+  @Override
+  public void logout(String refreshToken) {
+
+    jwtTokenProvider.validateToken(refreshToken);
+    String username = jwtTokenProvider.getUsernameFromJWT(refreshToken);
+    refreshTokenService.deleteRefreshToken(username);
+  }
 }
