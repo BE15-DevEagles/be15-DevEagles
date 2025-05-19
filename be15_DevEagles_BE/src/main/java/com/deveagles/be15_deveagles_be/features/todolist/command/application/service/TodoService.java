@@ -6,6 +6,7 @@ import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.aggregate.Todo;
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.repository.TodoRepository;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.InvalidTodoDateException;
+import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoAlreadyCompletedException;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoErrorCode;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoNotFoundException;
 import java.util.List;
@@ -58,6 +59,10 @@ public class TodoService {
         todoRepository
             .findById(todoId)
             .orElseThrow(() -> new TodoNotFoundException(TodoErrorCode.TODO_NOT_FOUND));
+
+    if (todo.getCompletedAt() != null) {
+      throw new TodoAlreadyCompletedException(TodoErrorCode.TODO_ALREADY_COMPLETED);
+    }
 
     todo.complete();
 
