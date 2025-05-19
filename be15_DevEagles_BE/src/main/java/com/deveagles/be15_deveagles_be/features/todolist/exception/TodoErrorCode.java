@@ -10,7 +10,8 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public enum TodoErrorCode implements ErrorCodeType {
   INVALID_TODO_DATE("50001", "시작일은 마감일보다 빠를 수 없습니다.", HttpStatus.BAD_REQUEST),
-  TODO_NOT_FOUND("50002", "할 일을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+  TODO_NOT_FOUND("50002", "할 일을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  TODO_ALREADY_COMPLETED("50003", "이미 완료된 할 일입니다.", HttpStatus.BAD_REQUEST);
 
   private final String code;
   private final String message;
