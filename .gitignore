@@ -35,8 +35,8 @@ gradletasknamecache
 *.lock  # gradle.lockfile 등
 
 # Spring Boot 설정 파일 (보안 및 환경 분리)
-application.yml
-application.yaml
+!application.yml
+!application.yaml
 !application-example.yml
 !application-example.yaml
 

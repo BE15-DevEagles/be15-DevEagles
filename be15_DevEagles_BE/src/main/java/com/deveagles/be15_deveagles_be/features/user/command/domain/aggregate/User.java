@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.features.user.command.entity;
+package com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
