@@ -1,13 +1,11 @@
 package com.deveagles.be15_deveagles_be.features.worklog.command.domain.aggregate;
 
 import jakarta.persistence.*;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import lombok.*;
 
 @Getter
-@Setter
 @Table(name = "worklog")
-@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class Worklog {
@@ -28,11 +26,29 @@ public class Worklog {
   private String planContent;
 
   @Column(name = "created_at")
-  private Timestamp createdAt;
+  private LocalDateTime createdAt;
 
   @Column(name = "team_id")
   private Long teamId;
 
   @Column(name = "user_id")
   private Long userId;
+
+  @Builder
+  public Worklog(
+      String summary,
+      String workContent,
+      String note,
+      String planContent,
+      LocalDateTime createdAt,
+      Long teamId,
+      Long userId) {
+    this.summary = summary;
+    this.workContent = workContent;
+    this.note = note;
+    this.planContent = planContent;
+    this.createdAt = createdAt;
+    this.teamId = teamId;
+    this.userId = userId;
+  }
 }
