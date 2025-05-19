@@ -10,6 +10,7 @@ import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.aggregate.Todo;
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.repository.TodoRepository;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.InvalidTodoDateException;
+import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoAlreadyCompletedException;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -270,5 +271,32 @@ class TodoServiceTest {
     assertThatThrownBy(() -> todoService.deleteTodo(todoId))
         .isInstanceOf(TodoNotFoundException.class)
         .hasMessageContaining("할 일을 찾을 수 없습니다.");
+  }
+
+  @Test
+  @DisplayName("이미 완료된 할 일을 다시 완료 처리하면 예외 발생")
+  void completeTodo_alreadyCompleted_throwsException() {
+    // given
+    Long todoId = 2L;
+
+    Todo completedTodo =
+        Todo.builder()
+            .todoId(todoId)
+            .userId(1L)
+            .teamId(1L)
+            .content("이미 완료된 할 일")
+            .startDate(LocalDateTime.of(2025, 5, 20, 9, 0))
+            .dueDate(LocalDateTime.of(2025, 5, 21, 18, 0))
+            .createdAt(LocalDateTime.now())
+            .modifiedAt(LocalDateTime.now())
+            .completedAt(LocalDateTime.now()) // ✅ 이미 완료됨
+            .build();
+
+    when(todoRepository.findById(todoId)).thenReturn(java.util.Optional.of(completedTodo));
+
+    // when & then
+    assertThatThrownBy(() -> todoService.completeTodo(todoId))
+        .isInstanceOf(TodoAlreadyCompletedException.class)
+        .hasMessageContaining("이미 완료된 할 일입니다.");
   }
 }
