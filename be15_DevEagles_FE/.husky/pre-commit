@@ -7,6 +7,25 @@ echo "📂 [Info] Project root: $(pwd)"
 # 프로젝트 루트 경로 저장
 PROJECT_ROOT=$(pwd)
 
+# 커밋 메시지 검사 (사용자 입력 받기)
+echo "[Action] 커밋 메시지 검사 중..."
+echo "💬 커밋 메시지를 입력해주세요 (예: feat: 기능추가): "
+read -r COMMIT_MSG
+
+# commitlint 실행
+cd "$PROJECT_ROOT/be15_DevEagles_FE" || { echo "❌ [Error] Failed to change to frontend directory"; exit 1; }
+echo "$COMMIT_MSG" | npx --no -- commitlint
+
+if [ $? -ne 0 ]; then
+  echo "❌ [Error] 커밋 메시지 형식이 올바르지 않습니다. 커밋이 중단됩니다."
+  echo "💡 올바른 형식: <type>: <description> (예: feat: 로그인 기능 추가)"
+  echo "사용 가능한 타입: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert"
+  exit 1
+fi
+
+cd "$PROJECT_ROOT" || exit 1
+echo "✅ [Success] 커밋 메시지 검사 완료"
+
 # 스테이징된 모든 파일 가져오기
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
 echo "[Info] Staged files detected:"
@@ -97,3 +116,10 @@ if [ -n "$JAVA_FILES" ]; then
 fi
 
 echo "✅ [Hook] Pre-commit hook finished successfully."
+
+# 검증된 커밋 메시지 사용
+# COMMIT_MSG_FILE 환경변수나 .git/COMMIT_EDITMSG 파일에 메시지 설정
+GIT_DIR=$(git rev-parse --git-dir)
+echo "$COMMIT_MSG" > "$GIT_DIR/COMMIT_EDITMSG"
+echo "💾 [Info] 검증된 커밋 메시지가 저장되었습니다. git commit 명령어를 실행하세요."
+echo "사용할 메시지: $COMMIT_MSG"
