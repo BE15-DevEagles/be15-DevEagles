@@ -6,37 +6,64 @@ echo "[Hook] Git pre-commit hook started..."
 # 프론트엔드 디렉토리로 이동
 cd be15_DevEagles_FE
 
-# lint-staged 실행
-echo "[Action] Running lint-staged for frontend..."
-npx lint-staged
+# 변경된 파일 가져오기
+JS_VUE_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|vue)$')
+
+if [ -n "$JS_VUE_FILES" ]; then
+  echo "[INFO] 변경된 JS/Vue 파일 감지됨"
+  echo "[Action] Running lint-staged for frontend..."
+  
+  # lint-staged를 통한 ESLint 및 Prettier 실행
+  npx lint-staged
+  
+  if [ $? -ne 0 ]; then
+    echo "❌ [Error] Frontend linting failed!"
+    exit 1
+  fi
+  
+  echo "✅ [Success] Frontend linting completed."
+else
+  echo "[INFO] 변경된 JS/Vue 파일 없음, 프론트엔드 검사 건너뜀"
+fi
 
 # 백엔드 디렉토리로 이동하여 필요한 체크 수행
 cd ../be15_DevEagles_BE
 
-# Spotless를 실행하여 Java 코드 자동 포맷팅
-echo "[Action] Running spotlessApply for backend..."
-if [ -f "./gradlew" ]; then
-  ./gradlew spotlessApply --daemon
-  if [ $? -ne 0 ]; then
-    echo "❌ [Error] spotlessApply failed!"
-    exit 1
-  fi
-fi
+# 변경된 Java 파일 확인
+JAVA_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.java$')
 
-# Checkstyle 검사 실행
-echo "[Action] Running checkstyle for backend..."
-if [ -f "./gradlew" ]; then
-  ./gradlew checkstyleMain checkstyleTest --daemon
-  if [ $? -ne 0 ]; then
-    echo "❌ [Error] Checkstyle failed!"
-    exit 1
+if [ -n "$JAVA_FILES" ]; then
+  echo "[INFO] 변경된 Java 파일 감지됨"
+  
+  # Spotless를 실행하여 Java 코드 자동 포맷팅
+  echo "[Action] Running spotlessApply for backend..."
+  if [ -f "./gradlew" ]; then
+    ./gradlew spotlessApply --daemon
+    if [ $? -ne 0 ]; then
+      echo "❌ [Error] spotlessApply failed!"
+      exit 1
+    fi
+    
+    # Checkstyle 검사 실행
+    echo "[Action] Running checkstyle for backend..."
+    ./gradlew checkstyleMain checkstyleTest --daemon
+    if [ $? -ne 0 ]; then
+      echo "❌ [Error] Checkstyle failed!"
+      exit 1
+    fi
+    
+    # 변경된 Java 파일 다시 스테이징
+    echo "[Action] Re-adding modified Java files to staging..."
+    cd ..
+    git add $JAVA_FILES
+    
+    echo "✅ [Success] Backend code formatting completed."
+  else
+    echo "⚠️ [Warning] gradlew not found, skipping backend checks."
   fi
+else
+  echo "[INFO] 변경된 Java 파일 없음, 백엔드 검사 건너뜀"
 fi
-
-# 변경된 Java 파일 다시 스테이징
-echo "[Action] Re-adding modified Java files to staging..."
-cd ..
-git add be15_DevEagles_BE/src/**/*.java
 
 # 성공 메시지
 echo "✅ [Hook] 모든 검사가 완료되었습니다."
