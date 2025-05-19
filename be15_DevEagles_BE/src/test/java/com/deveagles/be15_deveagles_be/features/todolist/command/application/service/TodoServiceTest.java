@@ -231,4 +231,44 @@ class TodoServiceTest {
         .isInstanceOf(TodoNotFoundException.class)
         .hasMessageContaining("할 일을 찾을 수 없습니다.");
   }
+
+  @Test
+  @DisplayName("할 일 삭제 성공")
+  void deleteTodo_success() {
+    Long todoId = 1L;
+
+    Todo todo =
+        Todo.builder()
+            .todoId(todoId)
+            .userId(1L)
+            .teamId(10L)
+            .content("삭제할 일")
+            .startDate(LocalDateTime.of(2025, 5, 20, 9, 0))
+            .dueDate(LocalDateTime.of(2025, 5, 21, 18, 0))
+            .createdAt(LocalDateTime.now())
+            .modifiedAt(LocalDateTime.now())
+            .build();
+
+    when(todoRepository.findById(todoId)).thenReturn(java.util.Optional.of(todo));
+    doNothing().when(todoRepository).delete(todo);
+
+    TodoResponse response = todoService.deleteTodo(todoId);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getTodoId()).isEqualTo(todoId);
+    assertThat(response.getMessage()).isEqualTo("할 일이 삭제되었습니다.");
+    verify(todoRepository, times(1)).delete(todo);
+  }
+
+  @Test
+  @DisplayName("존재하지 않는 할 일 삭제 시 예외 발생")
+  void deleteTodo_notFound_throwsException() {
+
+    Long todoId = 99L;
+    when(todoRepository.findById(todoId)).thenReturn(java.util.Optional.empty());
+
+    assertThatThrownBy(() -> todoService.deleteTodo(todoId))
+        .isInstanceOf(TodoNotFoundException.class)
+        .hasMessageContaining("할 일을 찾을 수 없습니다.");
+  }
 }
