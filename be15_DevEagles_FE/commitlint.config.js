@@ -19,8 +19,8 @@ export default {
         'revert', // 이전 커밋으로 되돌리기
       ],
     ],
-    'type-case': [2, 'always', 'lower'],
-    'subject-case': [2, 'always', 'sentence-case'],
+    'type-case': [2, 'always', 'lowercase'],
+    'subject-case': [0, 'never'],
     'subject-empty': [2, 'never'],
     'subject-full-stop': [2, 'never', '.'],
     'body-leading-blank': [2, 'always'],

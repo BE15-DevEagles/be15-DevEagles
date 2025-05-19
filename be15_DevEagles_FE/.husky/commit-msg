@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-cd be15_DevEagles_FE && npx --no -- commitlint --edit $1 
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+cd "$PROJECT_ROOT/be15_DevEagles_FE" && npx --no -- commitlint --edit "$1" 
