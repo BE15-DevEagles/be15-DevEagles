@@ -15,7 +15,7 @@ public class Todo {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "todo_id")
-  private Long id;
+  private Long todoId;
 
   @Column(name = "user_id", nullable = false)
   private Long userId;
