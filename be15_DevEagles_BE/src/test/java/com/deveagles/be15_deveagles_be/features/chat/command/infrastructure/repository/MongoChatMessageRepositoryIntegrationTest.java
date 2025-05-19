@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 
 /** MongoDB 실제 연결 통합 테스트 @Disabled("실제 DB 연결이 필요한 테스트") */
-// @Disabled
+@Disabled
 @SpringBootTest
 public class MongoChatMessageRepositoryIntegrationTest {
 

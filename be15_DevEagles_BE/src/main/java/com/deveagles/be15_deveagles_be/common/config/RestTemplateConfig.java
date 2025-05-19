@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -44,7 +45,7 @@ public class RestTemplateConfig {
     }
 
     MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-    converter.setObjectMapper(objectMapper());
+    converter.setObjectMapper(restTemplateObjectMapper());
     converter.setSupportedMediaTypes(
         Arrays.asList(
             MediaType.APPLICATION_JSON,
@@ -56,7 +57,7 @@ public class RestTemplateConfig {
   }
 
   @Bean
-  public ObjectMapper objectMapper() {
+  @Qualifier("restTemplateObjectMapper") public ObjectMapper restTemplateObjectMapper() {
     return new ObjectMapper();
   }
 }
