@@ -4,7 +4,7 @@ spring:
     driver-class-name: org.mariadb.jdbc.Driver
     url: { DB_URL }
     username: { DB_USERNAME }
-    password: { DB_PASSWORD }
+    password: { DB_PASSWORD}
 
   # JPA 설정
   jpa:
@@ -84,14 +84,27 @@ spring-doc:
     tags-sorter: alpha
     operations-sorter: method
     doc-expansion: none
+
 # AWS 설정 (현재 비활성화)
 # cloud:
 #   aws:
 
 # 웹소켓 설정
-# websocket:
-#   allowed-origins: "*"
-#   endpoint: /ws
-#   application-destination-prefix: /app
-#   user-destination-prefix: /user
-#   broker-prefix: /topic
+websocket:
+  allowed-origins: "*"
+  endpoint: /ws
+  application-destination-prefix: /app
+  user-destination-prefix: /user
+  broker-prefix: /topic
+
+# Gemini AI API 설정
+gemini:
+  api:
+    key: { API_KEY }
+    url: { API_URL}
+
+# HuggingFace API 설정
+huggingface:
+  api:
+    key: { APK_KEY }
+    url: { API_URL}
