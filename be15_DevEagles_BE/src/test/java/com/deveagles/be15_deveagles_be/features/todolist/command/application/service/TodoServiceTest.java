@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.request.CreateTodoRequest;
+import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.request.UpdateTodoRequest;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.response.TodoResponse;
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.aggregate.Todo;
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.repository.TodoRepository;
@@ -155,24 +156,78 @@ class TodoServiceTest {
 
     when(todoRepository.findById(1L)).thenReturn(java.util.Optional.of(todo));
 
-    // when
     TodoResponse response = todoService.completeTodo(1L);
 
-    // then
     assertThat(response).isNotNull();
     assertThat(response.getTodoId()).isEqualTo(1L);
     assertThat(response.getMessage()).isEqualTo("할 일이 완료 처리되었습니다.");
-    assertThat(todo.getCompletedAt()).isNotNull(); // 실제로 완료 시간 찍혔는지 확인
+    assertThat(todo.getCompletedAt()).isNotNull();
   }
 
   @Test
   @DisplayName("존재하지 않는 할 일 완료 시 예외 발생")
   void completeTodo_notFound_throwsException() {
-    // given
+
     when(todoRepository.findById(99L)).thenReturn(java.util.Optional.empty());
 
-    // when & then
     assertThatThrownBy(() -> todoService.completeTodo(99L))
+        .isInstanceOf(TodoNotFoundException.class)
+        .hasMessageContaining("할 일을 찾을 수 없습니다.");
+  }
+
+  @Test
+  @DisplayName("할 일 수정 성공")
+  void updateTodo_success() {
+
+    Long todoId = 1L;
+
+    Todo todo =
+        Todo.builder()
+            .todoId(todoId)
+            .userId(1L)
+            .teamId(10L)
+            .content("기존 내용")
+            .startDate(LocalDateTime.of(2025, 5, 20, 9, 0))
+            .dueDate(LocalDateTime.of(2025, 5, 21, 18, 0))
+            .createdAt(LocalDateTime.now())
+            .modifiedAt(LocalDateTime.now())
+            .build();
+
+    UpdateTodoRequest request =
+        UpdateTodoRequest.builder()
+            .content("수정된 내용")
+            .startDate(LocalDateTime.of(2025, 5, 22, 9, 0))
+            .dueDate(LocalDateTime.of(2025, 5, 23, 18, 0))
+            .build();
+
+    when(todoRepository.findById(todoId)).thenReturn(java.util.Optional.of(todo));
+
+    TodoResponse response = todoService.updateTodo(todoId, request);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getTodoId()).isEqualTo(todoId);
+    assertThat(response.getMessage()).isEqualTo("할 일이 수정되었습니다.");
+
+    assertThat(todo.getContent()).isEqualTo("수정된 내용");
+    assertThat(todo.getStartDate()).isEqualTo(request.getStartDate());
+    assertThat(todo.getDueDate()).isEqualTo(request.getDueDate());
+  }
+
+  @Test
+  @DisplayName("존재하지 않는 할 일 수정 시 예외 발생")
+  void updateTodo_notFound_throwsException() {
+
+    Long todoId = 99L;
+    UpdateTodoRequest request =
+        UpdateTodoRequest.builder()
+            .content("내용")
+            .startDate(LocalDateTime.of(2025, 6, 1, 9, 0))
+            .dueDate(LocalDateTime.of(2025, 6, 2, 18, 0))
+            .build();
+
+    when(todoRepository.findById(todoId)).thenReturn(java.util.Optional.empty());
+
+    assertThatThrownBy(() -> todoService.updateTodo(todoId, request))
         .isInstanceOf(TodoNotFoundException.class)
         .hasMessageContaining("할 일을 찾을 수 없습니다.");
   }
