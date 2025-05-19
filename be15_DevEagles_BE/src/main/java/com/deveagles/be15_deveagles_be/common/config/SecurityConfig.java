@@ -29,6 +29,8 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(HttpMethod.POST, "/api/v1/users", "/api/v1/auth/login")
+                    .permitAll()
+                    .requestMatchers("/api/v1/todos/**")
                     .permitAll());
 
     return http.build();
