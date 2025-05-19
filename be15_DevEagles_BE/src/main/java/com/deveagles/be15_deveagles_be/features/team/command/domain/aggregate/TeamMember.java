@@ -1,6 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.team.command.domain.aggregate;
 
-import com.deveagles.be15_deveagles_be.features.user.command.entity.User;
+import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;

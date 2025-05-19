@@ -1,10 +1,13 @@
 spring:
+  profiles:
+    active: local
+
   # 데이터베이스 설정
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: { DB_URL }
-    username: { DB_USERNAME }
-    password: { DB_PASSWORD }
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   # JPA 설정
   jpa:
@@ -29,7 +32,7 @@ spring:
   # MongoDB 설정
   data:
     mongodb:
-      uri: { MONGODB_URI }
+      uri: ${MONGODB_URI}
       auto-index-creation: true
 
     # Redis 설정
@@ -84,14 +87,27 @@ spring-doc:
     tags-sorter: alpha
     operations-sorter: method
     doc-expansion: none
+
 # AWS 설정 (현재 비활성화)
 # cloud:
 #   aws:
 
 # 웹소켓 설정
-# websocket:
-#   allowed-origins: "*"
-#   endpoint: /ws
-#   application-destination-prefix: /app
-#   user-destination-prefix: /user
-#   broker-prefix: /topic
+websocket:
+  allowed-origins: "*"
+  endpoint: /ws
+  application-destination-prefix: /app
+  user-destination-prefix: /user
+  broker-prefix: /topic
+
+# Gemini AI API 설정
+gemini:
+  api:
+    key: ${GEMINI_API_KEY}
+    url: ${GEMINI_API_URL}
+
+# HuggingFace API 설정
+huggingface:
+  api:
+    key: ${HUGGINGFACE_API_KEY}
+    url: ${HUGGINGFACE_API_URL}
