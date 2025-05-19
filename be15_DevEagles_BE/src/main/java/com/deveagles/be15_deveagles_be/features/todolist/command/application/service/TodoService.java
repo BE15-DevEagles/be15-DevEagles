@@ -19,6 +19,7 @@ public class TodoService {
 
   private final TodoRepository todoRepository;
 
+  // 작성
   @Transactional
   public List<TodoResponse> createTodos(List<CreateTodoRequest> requests) {
     Long userId = 1L; // 하드코딩
@@ -50,6 +51,7 @@ public class TodoService {
         .toList();
   }
 
+  // 완료
   @Transactional
   public TodoResponse completeTodo(Long todoId) {
     Todo todo =
@@ -62,6 +64,7 @@ public class TodoService {
     return TodoResponse.builder().todoId(todo.getTodoId()).message("할 일이 완료 처리되었습니다.").build();
   }
 
+  // 수정
   @Transactional
   public TodoResponse updateTodo(Long todoId, UpdateTodoRequest request) {
     Todo todo =
@@ -76,5 +79,18 @@ public class TodoService {
     todo.updateContent(request.getContent(), request.getStartDate(), request.getDueDate());
 
     return TodoResponse.builder().todoId(todo.getTodoId()).message("할 일이 수정되었습니다.").build();
+  }
+
+  // 삭제
+  @Transactional
+  public TodoResponse deleteTodo(Long todoId) {
+    Todo todo =
+        todoRepository
+            .findById(todoId)
+            .orElseThrow(() -> new TodoNotFoundException(TodoErrorCode.TODO_NOT_FOUND));
+
+    todoRepository.delete(todo);
+
+    return TodoResponse.builder().todoId(todo.getTodoId()).message("할 일이 삭제되었습니다.").build();
   }
 }
