@@ -5,4 +5,6 @@ import com.deveagles.be15_deveagles_be.features.team.command.application.dto.res
 
 public interface TeamCommandService {
   CreateTeamResponse createTeam(Long userId, CreateTeamRequest request);
+
+  void inviteTeamMember(Long inviterId, Long teamId, String email);
 }
