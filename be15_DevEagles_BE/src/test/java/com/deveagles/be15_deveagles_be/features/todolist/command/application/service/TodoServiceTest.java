@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.request.CreateTodoRequest;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.request.UpdateTodoRequest;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.response.TodoResponse;
@@ -12,22 +13,22 @@ import com.deveagles.be15_deveagles_be.features.todolist.command.domain.reposito
 import com.deveagles.be15_deveagles_be.features.todolist.exception.InvalidTodoDateException;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoAlreadyCompletedException;
 import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoNotFoundException;
+import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoUnauthorizedAccessException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 class TodoServiceTest {
 
   @InjectMocks private TodoService todoService;
-
   @Mock private TodoRepository todoRepository;
 
   private CreateTodoRequest validRequest;
@@ -35,6 +36,19 @@ class TodoServiceTest {
 
   @BeforeEach
   void setUp() {
+    CustomUser mockUser =
+        CustomUser.builder()
+            .userId(1L)
+            .username("test@example.com")
+            .password("password")
+            .authorities(null)
+            .build();
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(mockUser, null, null);
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    // 기존 요청 세팅
     validRequest =
         CreateTodoRequest.builder()
             .teamId(10L)
@@ -47,9 +61,14 @@ class TodoServiceTest {
         CreateTodoRequest.builder()
             .teamId(1L)
             .content("잘못된 날짜")
-            .startDate(LocalDateTime.of(2025, 5, 22, 10, 0)) // 시작일이 마감일보다 늦음
+            .startDate(LocalDateTime.of(2025, 5, 22, 10, 0))
             .dueDate(LocalDateTime.of(2025, 5, 21, 10, 0))
             .build();
+  }
+
+  @AfterEach
+  void tearDown() {
+    SecurityContextHolder.clearContext();
   }
 
   @Test
@@ -289,7 +308,7 @@ class TodoServiceTest {
             .dueDate(LocalDateTime.of(2025, 5, 21, 18, 0))
             .createdAt(LocalDateTime.now())
             .modifiedAt(LocalDateTime.now())
-            .completedAt(LocalDateTime.now()) // ✅ 이미 완료됨
+            .completedAt(LocalDateTime.now())
             .build();
 
     when(todoRepository.findById(todoId)).thenReturn(java.util.Optional.of(completedTodo));
@@ -298,5 +317,69 @@ class TodoServiceTest {
     assertThatThrownBy(() -> todoService.completeTodo(todoId))
         .isInstanceOf(TodoAlreadyCompletedException.class)
         .hasMessageContaining("이미 완료된 할 일입니다.");
+  }
+
+  @Test
+  @DisplayName("할 일 완료 - 로그인 유저가 다르면 예외 발생")
+  void completeTodo_userMismatch_throwsException() {
+    Todo todo =
+        Todo.builder()
+            .todoId(1L)
+            .userId(999L)
+            .content("다른 사람의 할 일")
+            .startDate(LocalDateTime.now())
+            .dueDate(LocalDateTime.now().plusDays(1))
+            .build();
+
+    when(todoRepository.findById(1L)).thenReturn(java.util.Optional.of(todo));
+
+    assertThatThrownBy(() -> todoService.completeTodo(1L))
+        .isInstanceOf(TodoUnauthorizedAccessException.class)
+        .hasMessageContaining("해당 할 일에 대한 권한이 없습니다.");
+  }
+
+  @Test
+  @DisplayName("할 일 수정 - 로그인 유저가 다르면 예외 발생")
+  void updateTodo_userMismatch_throwsException() {
+    Todo todo =
+        Todo.builder()
+            .todoId(1L)
+            .userId(999L)
+            .content("다른 사람의 할 일")
+            .startDate(LocalDateTime.now())
+            .dueDate(LocalDateTime.now().plusDays(1))
+            .build();
+
+    UpdateTodoRequest request =
+        UpdateTodoRequest.builder()
+            .content("수정 요청")
+            .startDate(LocalDateTime.now())
+            .dueDate(LocalDateTime.now().plusDays(2))
+            .build();
+
+    when(todoRepository.findById(1L)).thenReturn(java.util.Optional.of(todo));
+
+    assertThatThrownBy(() -> todoService.updateTodo(1L, request))
+        .isInstanceOf(TodoUnauthorizedAccessException.class)
+        .hasMessageContaining("해당 할 일에 대한 권한이 없습니다.");
+  }
+
+  @Test
+  @DisplayName("할 일 삭제 - 로그인 유저가 다르면 예외 발생")
+  void deleteTodo_userMismatch_throwsException() {
+    Todo todo =
+        Todo.builder()
+            .todoId(1L)
+            .userId(999L)
+            .content("다른 사람의 할 일")
+            .startDate(LocalDateTime.now())
+            .dueDate(LocalDateTime.now().plusDays(1))
+            .build();
+
+    when(todoRepository.findById(1L)).thenReturn(java.util.Optional.of(todo));
+
+    assertThatThrownBy(() -> todoService.deleteTodo(1L))
+        .isInstanceOf(TodoUnauthorizedAccessException.class)
+        .hasMessageContaining("해당 할 일에 대한 권한이 없습니다.");
   }
 }

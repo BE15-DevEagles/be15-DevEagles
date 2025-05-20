@@ -1,16 +1,16 @@
 package com.deveagles.be15_deveagles_be.features.todolist.command.application.service;
 
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.request.CreateTodoRequest;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.request.UpdateTodoRequest;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.response.TodoResponse;
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.aggregate.Todo;
 import com.deveagles.be15_deveagles_be.features.todolist.command.domain.repository.TodoRepository;
-import com.deveagles.be15_deveagles_be.features.todolist.exception.InvalidTodoDateException;
-import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoAlreadyCompletedException;
-import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoErrorCode;
-import com.deveagles.be15_deveagles_be.features.todolist.exception.TodoNotFoundException;
+import com.deveagles.be15_deveagles_be.features.todolist.exception.*;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +20,18 @@ public class TodoService {
 
   private final TodoRepository todoRepository;
 
+  private Long getCurrentUserId() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication != null && authentication.getPrincipal() instanceof CustomUser customUser) {
+      return customUser.getUserId();
+    }
+    throw new IllegalStateException("로그인된 사용자 정보를 찾을 수 없습니다.");
+  }
+
   // 작성
   @Transactional
   public List<TodoResponse> createTodos(List<CreateTodoRequest> requests) {
-    Long userId = 1L; // 하드코딩
+    Long userId = getCurrentUserId();
 
     List<Todo> todos =
         requests.stream()
@@ -60,6 +68,10 @@ public class TodoService {
             .findById(todoId)
             .orElseThrow(() -> new TodoNotFoundException(TodoErrorCode.TODO_NOT_FOUND));
 
+    if (!todo.getUserId().equals(getCurrentUserId())) {
+      throw new TodoUnauthorizedAccessException(TodoErrorCode.UNAUTHORIZED_TODO_ACCESS);
+    }
+
     if (todo.getCompletedAt() != null) {
       throw new TodoAlreadyCompletedException(TodoErrorCode.TODO_ALREADY_COMPLETED);
     }
@@ -77,6 +89,10 @@ public class TodoService {
             .findById(todoId)
             .orElseThrow(() -> new TodoNotFoundException(TodoErrorCode.TODO_NOT_FOUND));
 
+    if (!todo.getUserId().equals(getCurrentUserId())) {
+      throw new TodoUnauthorizedAccessException(TodoErrorCode.UNAUTHORIZED_TODO_ACCESS);
+    }
+
     if (request.getStartDate().isAfter(request.getDueDate())) {
       throw new InvalidTodoDateException(TodoErrorCode.INVALID_TODO_DATE);
     }
@@ -93,6 +109,10 @@ public class TodoService {
         todoRepository
             .findById(todoId)
             .orElseThrow(() -> new TodoNotFoundException(TodoErrorCode.TODO_NOT_FOUND));
+
+    if (!todo.getUserId().equals(getCurrentUserId())) {
+      throw new TodoUnauthorizedAccessException(TodoErrorCode.UNAUTHORIZED_TODO_ACCESS);
+    }
 
     todoRepository.delete(todo);
 
