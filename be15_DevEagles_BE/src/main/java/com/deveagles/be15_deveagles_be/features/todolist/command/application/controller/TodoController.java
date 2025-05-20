@@ -1,6 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.todolist.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.request.CreateTodoRequest;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.request.UpdateTodoRequest;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.response.TodoResponse;
@@ -8,6 +9,7 @@ import com.deveagles.be15_deveagles_be.features.todolist.command.application.ser
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,33 +19,33 @@ public class TodoController {
 
   private final TodoService todoService;
 
-  // ✅ 작성 (다건)
   @PostMapping
   public ResponseEntity<ApiResponse<List<TodoResponse>>> createTodos(
-      @RequestBody List<CreateTodoRequest> requests) {
-    List<TodoResponse> response = todoService.createTodos(requests);
+      @AuthenticationPrincipal CustomUser user, @RequestBody List<CreateTodoRequest> requests) {
+    List<TodoResponse> response = todoService.createTodos(user.getUserId(), requests);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
-  // ✅ 완료
   @PutMapping("/{todoId}/complete")
-  public ResponseEntity<ApiResponse<TodoResponse>> completeTodo(@PathVariable Long todoId) {
-    TodoResponse response = todoService.completeTodo(todoId);
+  public ResponseEntity<ApiResponse<TodoResponse>> completeTodo(
+      @AuthenticationPrincipal CustomUser user, @PathVariable Long todoId) {
+    TodoResponse response = todoService.completeTodo(user.getUserId(), todoId);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
-  // ✅ 수정
   @PutMapping("/{todoId}")
   public ResponseEntity<ApiResponse<TodoResponse>> updateTodo(
-      @PathVariable Long todoId, @RequestBody UpdateTodoRequest request) {
-    TodoResponse response = todoService.updateTodo(todoId, request);
+      @AuthenticationPrincipal CustomUser user,
+      @PathVariable Long todoId,
+      @RequestBody UpdateTodoRequest request) {
+    TodoResponse response = todoService.updateTodo(user.getUserId(), todoId, request);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
-  // ✅ 삭제
   @DeleteMapping("/{todoId}")
-  public ResponseEntity<ApiResponse<TodoResponse>> deleteTodo(@PathVariable Long todoId) {
-    TodoResponse response = todoService.deleteTodo(todoId);
+  public ResponseEntity<ApiResponse<TodoResponse>> deleteTodo(
+      @AuthenticationPrincipal CustomUser user, @PathVariable Long todoId) {
+    TodoResponse response = todoService.deleteTodo(user.getUserId(), todoId);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 }

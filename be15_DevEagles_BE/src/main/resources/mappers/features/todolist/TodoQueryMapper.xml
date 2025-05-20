@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deveagles.be15_deveagles_be.features.todolist.query.domain.repository.TodoQueryRepository">
+
+    <select id="selectTodoDetail"
+            resultType="com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.TodoDetailResponse">
+        SELECT
+        t.todo_id AS todoId,
+        t.user_id AS userId,
+        t.team_id AS teamId,
+        tm.team_name AS teamName,
+        t.content,
+        t.start_date AS startDate,
+        t.due_date AS dueDate,
+        t.completed_at IS NOT NULL AS isCompleted
+        FROM todos t
+        JOIN team tm ON t.team_id = tm.team_id
+        WHERE t.todo_id = #{todoId}
+        AND t.user_id = #{userId}
+    </select>
+
+</mapper>
