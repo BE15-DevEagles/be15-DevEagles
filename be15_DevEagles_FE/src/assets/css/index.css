@@ -1,0 +1,22 @@
+/* 스타일가이드 CSS 가져오기 */
+@import url('/public/assets/css/styleguide.css');
+
+/* Noto Sans KR 폰트 가져오기 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap');
+
+/* Tailwind CSS 설정 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 전역 스타일 */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  height: 100%;
+}
