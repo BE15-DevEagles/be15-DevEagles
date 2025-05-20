@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-import com.deveagles.be15_deveagles_be.features.team.command.application.service.impl.TeamCommandServiceImpl;
+import com.deveagles.be15_deveagles_be.features.team.command.application.service.impl.TeamMemberCommandServiceImpl;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.aggregate.Team;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.aggregate.TeamMember;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.aggregate.TeamMemberId;
@@ -26,7 +26,7 @@ class FireTeamMemberTest {
   private TeamRepository teamRepository;
   private UserRepository userRepository;
   private TeamMemberRepository teamMemberRepository;
-  private TeamCommandServiceImpl teamCommandService;
+  private TeamMemberCommandServiceImpl teamCommandService;
 
   @BeforeEach
   void setUp() {
@@ -34,7 +34,7 @@ class FireTeamMemberTest {
     userRepository = mock(UserRepository.class);
     teamMemberRepository = mock(TeamMemberRepository.class);
     teamCommandService =
-        new TeamCommandServiceImpl(teamRepository, userRepository, teamMemberRepository);
+        new TeamMemberCommandServiceImpl(teamRepository, userRepository, teamMemberRepository);
   }
 
   @Test
