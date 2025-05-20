@@ -7,4 +7,6 @@ public interface TeamCommandService {
   CreateTeamResponse createTeam(Long userId, CreateTeamRequest request);
 
   void inviteTeamMember(Long inviterId, Long teamId, String email);
+
+  void fireTeamMember(Long userId, Long teamId, String email);
 }
