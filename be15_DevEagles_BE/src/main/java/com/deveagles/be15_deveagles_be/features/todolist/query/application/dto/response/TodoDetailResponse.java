@@ -10,6 +10,7 @@ public class TodoDetailResponse {
   private Long todoId;
   private Long userId;
   private Long teamId;
+  private String teamName;
   private String content;
   private LocalDateTime startDate;
   private LocalDateTime dueDate;
