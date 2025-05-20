@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deveagles.be15_deveagles_be.features.todolist.query.application.mapper.TodoCalendarQueryMapper">
+
+    <select id="selectMyCalendarTodos" parameterType="long"
+            resultType="com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.MyCalendarTodoResponse">
+        SELECT
+            content,
+            start_date AS startDate,
+            due_date AS dueDate,
+            team_id AS teamId
+        FROM todo
+        WHERE writer_id = #{userId}
+          AND deleted_at IS NULL
+    </select>
+
+</mapper>
