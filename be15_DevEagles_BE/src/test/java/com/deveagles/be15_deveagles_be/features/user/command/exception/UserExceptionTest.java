@@ -1,93 +1,110 @@
 package com.deveagles.be15_deveagles_be.features.user.command.exception;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
 
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserCreateRequest;
-import com.deveagles.be15_deveagles_be.features.user.command.application.service.UserCommandService;
+import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserUpdateRequest;
+import com.deveagles.be15_deveagles_be.features.user.command.application.service.UserCommandServiceImpl;
+import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserBusinessException;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserErrorCode;
 import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
+import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.multipart.MultipartFile;
 
-@Slf4j
-@Transactional
-@SpringBootTest
-@ActiveProfiles("test")
-public class UserExceptionTest {
+class UserCommandServiceImplTest {
 
-  @Autowired UserCommandService userCommandService;
-  @Autowired UserRepository userRepository;
+  private UserRepository userRepository;
+  private ModelMapper modelMapper;
+  private PasswordEncoder passwordEncoder;
+  private MultipartFile profile;
+  private UserCommandServiceImpl userCommandService;
 
   private Long invalidUserId;
+  private String validPassword;
+  private UserCreateRequest createUser;
+  private UserUpdateRequest updateUser;
 
   @BeforeEach
   void setUp() {
-    invalidUserId = 9999L;
-  }
+    userRepository = mock(UserRepository.class);
+    modelMapper = mock(ModelMapper.class);
+    passwordEncoder = mock(PasswordEncoder.class);
+    profile = mock(MultipartFile.class);
+    userCommandService = new UserCommandServiceImpl(userRepository, modelMapper, passwordEncoder);
 
-  @DisplayName("중복된 이메일로 회원가입 시 예외 발생 테스트")
-  @Test
-  void testUserRegisterDuplicatedEmailException() {
+    invalidUserId = -1L;
+    validPassword = "eagles1234!";
 
-    String email = "nare20027@gmail.com";
-    String password = "eagles1234";
-    String userName = "김이글";
-    String phoneNumber = "01012345678";
+    updateUser = UserUpdateRequest.builder().userName("김이글").phoneNumber("01088889999").build();
 
-    UserErrorCode errorCode = UserErrorCode.DUPLICATE_USER_EMAIL_EXCEPTION;
-
-    UserCreateRequest request =
+    createUser =
         UserCreateRequest.builder()
-            .email(email)
-            .password(password)
-            .userName(userName)
-            .phoneNumber(phoneNumber)
+            .email("eagles@email.com")
+            .password(validPassword)
+            .userName("김이글")
+            .phoneNumber("01012345678")
             .build();
-
-    assertThatThrownBy(() -> userCommandService.userRegister(request))
-        .isInstanceOf(UserBusinessException.class)
-        .hasMessage(errorCode.getMessage());
   }
 
-  @DisplayName("중복된 전화번호로 회원가입 시 예외 발생 테스트")
   @Test
-  void testUserRegisterDuplicatedPhoneNumberException() {
+  @DisplayName("회원가입 예외 - 중복 이메일")
+  void testUserRegister_DuplicateEmail() {
+    // given
+    when(userRepository.findUserByEmail(createUser.email()))
+        .thenReturn(Optional.of(mock(User.class)));
 
-    String email = "eagles@email.com";
-    String password = "eagles1234";
-    String userName = "김이글";
-    String phoneNumber = "01012348888";
-
-    UserErrorCode errorCode = UserErrorCode.DUPLICATE_USER_PHONE_EXCEPTION;
-
-    UserCreateRequest request =
-        UserCreateRequest.builder()
-            .email(email)
-            .password(password)
-            .userName(userName)
-            .phoneNumber(phoneNumber)
-            .build();
-
-    assertThatThrownBy(() -> userCommandService.userRegister(request))
+    // when & then
+    assertThatThrownBy(() -> userCommandService.userRegister(createUser))
         .isInstanceOf(UserBusinessException.class)
-        .hasMessage(errorCode.getMessage());
+        .hasMessageContaining(UserErrorCode.DUPLICATE_USER_EMAIL_EXCEPTION.getMessage());
   }
 
-  @DisplayName("존재하지 않는 사용자가 회원정보 조회 시 예외 발생")
   @Test
-  void testGetUserDetailsNotFoundUserException() {
+  @DisplayName("회원가입 예외 - 중복 전화번호")
+  void testUserRegister_DuplicatePhone() {
+    // given
+    when(userRepository.findUserByEmail(createUser.email())).thenReturn(Optional.empty());
+    when(userRepository.findUserByPhoneNumber(createUser.phoneNumber()))
+        .thenReturn(Optional.of(mock(User.class)));
 
-    UserErrorCode errorCode = UserErrorCode.NOT_FOUND_USER_EXCEPTION;
-
-    assertThatThrownBy(() -> userRepository.findUserByUserId(invalidUserId))
+    // when & then
+    assertThatThrownBy(() -> userCommandService.userRegister(createUser))
         .isInstanceOf(UserBusinessException.class)
-        .hasMessage(errorCode.getMessage());
+        .hasMessageContaining(UserErrorCode.DUPLICATE_USER_PHONE_EXCEPTION.getMessage());
+  }
+
+  @Test
+  @DisplayName("회원 조회 관련 예외 - 존재하지 않는 사용자")
+  void testUserNotFound() {
+    // given
+    when(userRepository.findUserByUserId(invalidUserId)).thenReturn(Optional.empty());
+
+    // then - getUserDetails
+    assertThatThrownBy(() -> userCommandService.getUserDetails(invalidUserId))
+        .isInstanceOf(UserBusinessException.class)
+        .hasMessageContaining(UserErrorCode.NOT_FOUND_USER_EXCEPTION.getMessage());
+
+    // then - updateUserPassword
+    assertThatThrownBy(() -> userCommandService.updateUserPassword(invalidUserId, validPassword))
+        .isInstanceOf(UserBusinessException.class)
+        .hasMessageContaining(UserErrorCode.NOT_FOUND_USER_EXCEPTION.getMessage());
+
+    // then - updateUserDetails
+    assertThatThrownBy(
+            () -> userCommandService.updateUserDetails(invalidUserId, updateUser, profile))
+        .isInstanceOf(UserBusinessException.class)
+        .hasMessageContaining(UserErrorCode.NOT_FOUND_USER_EXCEPTION.getMessage());
+
+    // then - validUserPassword
+    assertThatThrownBy(() -> userCommandService.validUserPassword(invalidUserId, validPassword))
+        .isInstanceOf(UserBusinessException.class)
+        .hasMessageContaining(UserErrorCode.NOT_FOUND_USER_EXCEPTION.getMessage());
   }
 }

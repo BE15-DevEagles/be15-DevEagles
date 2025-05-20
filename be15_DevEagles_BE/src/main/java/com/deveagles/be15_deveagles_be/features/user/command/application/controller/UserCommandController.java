@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.user.command.application.contro
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserCreateRequest;
+import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserPasswordRequest;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserUpdateRequest;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.response.UserDetailResponse;
 import com.deveagles.be15_deveagles_be.features.user.command.application.service.UserCommandService;
@@ -41,20 +42,33 @@ public class UserCommandController {
 
   @PostMapping("/users/valid")
   public ResponseEntity<ApiResponse<Boolean>> validUserPassword(
-      @AuthenticationPrincipal CustomUser customUser, @RequestBody String password) {
+      @AuthenticationPrincipal CustomUser customUser,
+      @RequestBody @Valid UserPasswordRequest request) {
 
-    Boolean is_Valid = userCommandService.validUserPassword(customUser.getUserId(), password);
+    Boolean is_Valid =
+        userCommandService.validUserPassword(customUser.getUserId(), request.password());
 
     return ResponseEntity.ok().body(ApiResponse.success(is_Valid));
   }
 
-  @PutMapping("/users/mod")
+  @PatchMapping("/users/mod")
   public ResponseEntity<ApiResponse<UserDetailResponse>> updateUserDetails(
       @AuthenticationPrincipal CustomUser customUser,
       @RequestPart @Valid UserUpdateRequest request,
       @RequestPart(required = false) MultipartFile profile) {
     UserDetailResponse response =
         userCommandService.updateUserDetails(customUser.getUserId(), request, profile);
+
+    return ResponseEntity.ok().body(ApiResponse.success(response));
+  }
+
+  @PatchMapping("/users/mod/pwd")
+  public ResponseEntity<ApiResponse<UserDetailResponse>> updateUserPassword(
+      @AuthenticationPrincipal CustomUser customUser,
+      @RequestBody @Valid UserPasswordRequest request) {
+
+    UserDetailResponse response =
+        userCommandService.updateUserPassword(customUser.getUserId(), request.password());
 
     return ResponseEntity.ok().body(ApiResponse.success(response));
   }
