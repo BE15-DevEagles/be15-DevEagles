@@ -6,11 +6,14 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import java.util.Date;
 import javax.crypto.SecretKey;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
 
   @Value("${jwt.secret}")
@@ -23,6 +26,8 @@ public class JwtTokenProvider {
   private long jwtRefreshExpiration;
 
   private SecretKey secretKey;
+
+  private final RedisTemplate<String, String> redisTemplate;
 
   @PostConstruct
   public void init() {
@@ -39,6 +44,7 @@ public class JwtTokenProvider {
     return Jwts.builder()
         .subject(username)
         .issuedAt(now)
+        .claim("type", "access")
         .expiration(expiration)
         .signWith(secretKey)
         .compact();
@@ -52,6 +58,7 @@ public class JwtTokenProvider {
     return Jwts.builder()
         .subject(username)
         .issuedAt(now)
+        .claim("type", "refresh")
         .expiration(expiration)
         .signWith(secretKey)
         .compact();
@@ -76,5 +83,27 @@ public class JwtTokenProvider {
     Claims claims =
         Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
     return claims.getSubject();
+  }
+
+  public long getRemainingExpiration(String token) {
+    Claims claims = parseClaims(token);
+    return claims.getExpiration().getTime() - System.currentTimeMillis();
+  }
+
+  public Claims parseClaims(String token) {
+    try {
+      return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
+    } catch (ExpiredJwtException e) {
+      return e.getClaims(); // 만료된 토큰도 claims는 꺼낼 수 있음
+    }
+  }
+
+  public boolean isRefreshToken(String token) {
+    Claims claims = parseClaims(token);
+    return "refresh".equals(claims.get("type", String.class));
+  }
+
+  public boolean isAccessTokenBlacklisted(String token) {
+    return Boolean.TRUE.equals(redisTemplate.hasKey("BL:" + token));
   }
 }
