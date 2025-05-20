@@ -30,4 +30,14 @@ public class TeamController {
 
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
   }
+
+  @DeleteMapping("/{teamId}")
+  public ResponseEntity<ApiResponse<String>> deleteTeam(
+      @AuthenticationPrincipal CustomUser customUser, @PathVariable Long teamId) {
+
+    Long userId = customUser.getUserId(); // 현재 로그인한 유저 ID
+    teamCommandService.deleteTeam(userId, teamId);
+
+    return ResponseEntity.ok(ApiResponse.success("팀이 삭제되었습니다."));
+  }
 }

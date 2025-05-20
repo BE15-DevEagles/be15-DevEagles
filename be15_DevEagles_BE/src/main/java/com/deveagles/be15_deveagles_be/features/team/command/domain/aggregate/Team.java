@@ -52,4 +52,8 @@ public class Team {
   public void updateLeader(Long userId) {
     this.userId = userId;
   }
+
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }

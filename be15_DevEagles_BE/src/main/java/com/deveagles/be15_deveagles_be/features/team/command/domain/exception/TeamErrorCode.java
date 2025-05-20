@@ -18,6 +18,7 @@ public enum TeamErrorCode implements ErrorCodeType {
   CANNOT_FIRE_SELF("40007", "팀장은 본인을 추방할 수 없습니다.", HttpStatus.CONFLICT),
   TEAM_LEADER_CANNOT_LEAVE("40008", "팀장은 팀을 탈퇴할 수 없습니다.", HttpStatus.CONFLICT),
   CANNOT_TRANSFER_TO_SELF("40009", "자신에게 권한을 양도할 수 없습니다.", HttpStatus.CONFLICT),
+  TEAM_HAS_MEMBERS("40010", "아직 남아있는 팀원이 존재합니다.", HttpStatus.CONFLICT),
   USER_NOT_FOUND("40030", "유저를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
 
   private final String code;

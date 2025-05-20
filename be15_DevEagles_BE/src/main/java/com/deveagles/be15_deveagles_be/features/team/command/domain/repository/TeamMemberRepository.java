@@ -1,6 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.team.command.domain.repository;
 
 import com.deveagles.be15_deveagles_be.features.team.command.domain.aggregate.TeamMember;
+import java.util.List;
 import java.util.Optional;
 
 public interface TeamMemberRepository {
@@ -15,4 +16,7 @@ public interface TeamMemberRepository {
 
   // 팀원 확인 메서드
   Optional<TeamMember> findByIdUserIdAndIdTeamIdAndDeletedAtIsNull(Long userId, Long teamId);
+
+  // 삭제 되지 않은 팀원 목록 조회
+  List<TeamMember> findByTeamTeamIdAndDeletedAtIsNull(Long teamId);
 }
