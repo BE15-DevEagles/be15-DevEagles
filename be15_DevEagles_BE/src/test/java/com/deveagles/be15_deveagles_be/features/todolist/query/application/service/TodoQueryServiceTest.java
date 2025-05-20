@@ -23,7 +23,7 @@ class TodoQueryServiceTest {
   @Mock private TodoQueryRepository todoQueryRepository;
 
   @Test
-  @DisplayName("내 todo 상세 조회 성공")
+  @DisplayName("todo 상세 조회 성공")
   void getMyTodoDetail_success() {
     Long userId = 1L;
     Long todoId = 10L;
@@ -32,6 +32,7 @@ class TodoQueryServiceTest {
             .todoId(todoId)
             .userId(userId)
             .teamId(100L)
+            .teamName("데브이글즈")
             .content("테스트 할 일")
             .startDate(LocalDateTime.of(2025, 5, 20, 10, 0))
             .dueDate(LocalDateTime.of(2025, 5, 21, 18, 0))
@@ -45,6 +46,7 @@ class TodoQueryServiceTest {
     assertThat(result).isNotNull();
     assertThat(result.getTodoId()).isEqualTo(todoId);
     assertThat(result.getUserId()).isEqualTo(userId);
+    assertThat(result.getTeamName()).isEqualTo("데브이글즈");
     assertThat(result.getContent()).isEqualTo("테스트 할 일");
   }
 

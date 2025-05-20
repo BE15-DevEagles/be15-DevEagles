@@ -8,6 +8,7 @@ import lombok.*;
 @Table(name = "worklog")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Entity
 public class Worklog {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

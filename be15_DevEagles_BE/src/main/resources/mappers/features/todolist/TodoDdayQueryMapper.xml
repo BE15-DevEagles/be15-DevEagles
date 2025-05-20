@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deveagles.be15_deveagles_be.features.todolist.query.application.mapper.TodoDdayQueryMapper">
+
+    <select id="selectMyIncompleteTodosWithDday" resultType="com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.MyDdayTodoResponse">
+        SELECT
+            todo_id AS todoId,
+            content,
+            due_date AS dueDate,
+            team_id AS teamId,
+            DATEDIFF(due_date, CURRENT_DATE()) AS dday
+        FROM todo
+        WHERE writer_id = #{userId}
+          AND is_completed = false
+          AND deleted_at IS NULL
+        ORDER BY due_date ASC
+            LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countMyIncompleteTodos" resultType="int">
+        SELECT COUNT(*)
+        FROM todo
+        WHERE writer_id = #{userId}
+          AND is_completed = false
+          AND deleted_at IS NULL
+    </select>
+
+</mapper>
