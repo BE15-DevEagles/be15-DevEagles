@@ -9,6 +9,7 @@ import com.deveagles.be15_deveagles_be.features.user.command.application.dto.res
 import com.deveagles.be15_deveagles_be.features.user.command.application.service.UserCommandServiceImpl;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
 import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -163,5 +164,18 @@ public class UserCommandServiceTest {
     // then
     verify(mockUser).modifyUserInfo(updateUser.userName(), updateUser.phoneNumber());
     assertThat(response.getUserId()).isEqualTo(validUserId);
+  }
+
+  @Test
+  @DisplayName("회원 탈퇴 성공")
+  void testWithdrawUserSuccess() {
+    User mockUser = mock(User.class);
+
+    when(userRepository.findUserByUserId(validUserId)).thenReturn(Optional.of(mockUser));
+
+    userCommandService.withDrawUser(validUserId);
+
+    verify(mockUser).deleteUser(any(LocalDateTime.class));
+    verify(userRepository).save(mockUser);
   }
 }

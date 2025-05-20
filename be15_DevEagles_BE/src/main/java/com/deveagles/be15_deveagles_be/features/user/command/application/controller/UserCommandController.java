@@ -72,4 +72,13 @@ public class UserCommandController {
 
     return ResponseEntity.ok().body(ApiResponse.success(response));
   }
+
+  @DeleteMapping("/users")
+  public ResponseEntity<ApiResponse<Void>> withDrawUser(
+      @AuthenticationPrincipal CustomUser customUser) {
+
+    userCommandService.withDrawUser(customUser.getUserId());
+
+    return ResponseEntity.ok().body(ApiResponse.success(null));
+  }
 }
