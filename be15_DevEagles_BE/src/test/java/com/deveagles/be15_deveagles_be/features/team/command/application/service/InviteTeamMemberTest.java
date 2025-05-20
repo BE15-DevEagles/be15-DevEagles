@@ -3,7 +3,7 @@ package com.deveagles.be15_deveagles_be.features.team.command.application.servic
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-import com.deveagles.be15_deveagles_be.features.team.command.application.service.impl.TeamCommandServiceImpl;
+import com.deveagles.be15_deveagles_be.features.team.command.application.service.impl.TeamMemberCommandServiceImpl;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.aggregate.Team;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.aggregate.TeamMember;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.exception.TeamBusinessException;
@@ -19,20 +19,20 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class TeamCommandServiceImplTest {
+class TeamMemberCommandServiceImplTest {
 
   private TeamRepository teamRepository;
   private UserRepository userRepository;
   private TeamMemberRepository teamMemberRepository;
-  private TeamCommandServiceImpl teamCommandService;
+  private TeamMemberCommandServiceImpl TeamMemberCommandServiceImpl;
 
   @BeforeEach
   void setUp() {
     teamRepository = mock(TeamRepository.class);
     userRepository = mock(UserRepository.class);
     teamMemberRepository = mock(TeamMemberRepository.class);
-    teamCommandService =
-        new TeamCommandServiceImpl(teamRepository, userRepository, teamMemberRepository);
+    TeamMemberCommandServiceImpl =
+        new TeamMemberCommandServiceImpl(teamRepository, userRepository, teamMemberRepository);
   }
 
   @Test
@@ -62,7 +62,7 @@ class TeamCommandServiceImplTest {
     when(teamMemberRepository.existsByTeamTeamIdAndUserUserId(teamId, 20L)).thenReturn(false);
 
     // when
-    teamCommandService.inviteTeamMember(inviterId, teamId, email);
+    TeamMemberCommandServiceImpl.inviteTeamMember(inviterId, teamId, email);
 
     // then
     verify(teamMemberRepository, times(1)).save(any(TeamMember.class));
@@ -73,7 +73,8 @@ class TeamCommandServiceImplTest {
     Long teamId = 1L;
     when(teamRepository.findById(teamId)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> teamCommandService.inviteTeamMember(1L, teamId, "email@example.com"))
+    assertThatThrownBy(
+            () -> TeamMemberCommandServiceImpl.inviteTeamMember(1L, teamId, "email@example.com"))
         .isInstanceOf(TeamBusinessException.class)
         .hasMessageContaining(TeamErrorCode.TEAM_NOT_FOUND.getMessage());
   }
@@ -87,7 +88,9 @@ class TeamCommandServiceImplTest {
     when(teamRepository.findById(teamId)).thenReturn(Optional.of(team));
 
     assertThatThrownBy(
-            () -> teamCommandService.inviteTeamMember(inviterId, teamId, "email@example.com"))
+            () ->
+                TeamMemberCommandServiceImpl.inviteTeamMember(
+                    inviterId, teamId, "email@example.com"))
         .isInstanceOf(TeamBusinessException.class)
         .hasMessageContaining(TeamErrorCode.NOT_TEAM_LEADER.getMessage());
   }
@@ -102,7 +105,8 @@ class TeamCommandServiceImplTest {
     when(teamRepository.findById(teamId)).thenReturn(Optional.of(team));
     when(userRepository.findUserByEmail(email)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> teamCommandService.inviteTeamMember(inviterId, teamId, email))
+    assertThatThrownBy(
+            () -> TeamMemberCommandServiceImpl.inviteTeamMember(inviterId, teamId, email))
         .isInstanceOf(TeamBusinessException.class)
         .hasMessageContaining(TeamErrorCode.USER_NOT_FOUND.getMessage());
   }
@@ -131,7 +135,8 @@ class TeamCommandServiceImplTest {
     when(userRepository.findUserByEmail(email)).thenReturn(Optional.of(invitee));
     when(teamMemberRepository.existsByTeamTeamIdAndUserUserId(teamId, 2L)).thenReturn(true);
 
-    assertThatThrownBy(() -> teamCommandService.inviteTeamMember(inviterId, teamId, email))
+    assertThatThrownBy(
+            () -> TeamMemberCommandServiceImpl.inviteTeamMember(inviterId, teamId, email))
         .isInstanceOf(TeamBusinessException.class)
         .hasMessageContaining(TeamErrorCode.ALREADY_TEAM_MEMBER.getMessage());
   }

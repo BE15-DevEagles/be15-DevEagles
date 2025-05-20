@@ -12,4 +12,7 @@ public interface TeamMemberRepository {
 
   // 팀원 엔티티 조회
   Optional<TeamMember> findByTeamTeamIdAndUserUserId(Long teamId, Long userId);
+
+  //
+  Optional<TeamMember> findByIdUserIdAndIdTeamIdAndDeletedAtIsNull(Long userId, Long teamId);
 }
