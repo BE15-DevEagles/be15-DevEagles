@@ -104,7 +104,10 @@ websocket:
 gemini:
   api:
     key: ${GEMINI_API_KEY}
+    summary: ${SUMMARY_API_KEY}
     url: ${GEMINI_API_URL}
+
+
 
 # HuggingFace API 설정
 huggingface:
