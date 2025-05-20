@@ -103,4 +103,44 @@ public class TeamCommandServiceImpl implements TeamCommandService {
 
     teamMemberRepository.save(newMember);
   }
+
+  @Override
+  @Transactional
+  public void fireTeamMember(Long userId, Long teamId, String email) {
+    // 1. 팀 조회
+    Team team =
+        teamRepository
+            .findById(teamId)
+            .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.TEAM_NOT_FOUND));
+
+    // 2. 팀장 권한 확인
+    if (!team.getUserId().equals(userId)) {
+      throw new TeamBusinessException(TeamErrorCode.NOT_TEAM_LEADER);
+    }
+
+    // 3. 추방 대상 유저 조회
+    User target =
+        userRepository
+            .findUserByEmail(email)
+            .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.USER_NOT_FOUND));
+
+    // 3-1. 팀장이 본인을 추방하려는 경우 예외
+    if (target.getUserId().equals(userId)) {
+      throw new TeamBusinessException(TeamErrorCode.CANNOT_FIRE_SELF);
+    }
+
+    // 4. 팀원 엔티티 조회
+    TeamMember teamMember =
+        teamMemberRepository
+            .findByTeamTeamIdAndUserUserId(teamId, target.getUserId())
+            .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.NOT_TEAM_MEMBER));
+
+    // 5. 이미 삭제된 경우 체크
+    if (teamMember.isDeleted()) {
+      throw new TeamBusinessException(TeamErrorCode.ALREADY_DELETED_MEMBER);
+    }
+
+    // 6. soft delete 처리
+    teamMember.softDelete();
+  }
 }

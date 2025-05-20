@@ -34,4 +34,14 @@ public class TeamMember {
   protected void onCreate() {
     this.createdAt = LocalDateTime.now();
   }
+
+  // soft delete 여부 확인 메서드
+  public boolean isDeleted() {
+    return deletedAt != null;
+  }
+
+  // soft delete 수행 메서드
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }

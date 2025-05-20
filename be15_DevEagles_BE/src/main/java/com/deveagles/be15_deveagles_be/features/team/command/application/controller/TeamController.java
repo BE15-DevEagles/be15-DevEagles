@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.team.command.application.contro
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.request.CreateTeamRequest;
+import com.deveagles.be15_deveagles_be.features.team.command.application.dto.request.FireTeamMemberRequest;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.request.InviteTeamMemberRequest;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.CreateTeamResponse;
 import com.deveagles.be15_deveagles_be.features.team.command.application.service.impl.TeamCommandServiceImpl;
@@ -44,5 +45,19 @@ public class TeamController {
     teamCommandServiceimpl.inviteTeamMember(inviterId, teamId, request.getEmail());
 
     return ResponseEntity.ok(ApiResponse.success("팀원 초대가 완료되었습니다."));
+  }
+
+  // 팀원 추방 API
+  @PostMapping("/{teamId}/members/fire")
+  public ResponseEntity<ApiResponse<String>> fireTeamMember(
+      @AuthenticationPrincipal CustomUser customUser,
+      @PathVariable Long teamId,
+      @Valid @RequestBody FireTeamMemberRequest request) {
+
+    Long leaderId = customUser.getUserId();
+
+    teamCommandServiceimpl.fireTeamMember(leaderId, teamId, request.getEmail());
+
+    return ResponseEntity.ok(ApiResponse.success("팀원 추방이 완료되었습니다."));
   }
 }
