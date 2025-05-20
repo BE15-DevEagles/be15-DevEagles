@@ -7,6 +7,7 @@ import com.deveagles.be15_deveagles_be.features.user.command.application.service
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserBusinessException;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserErrorCode;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserExceptionTest {
 
   @Autowired UserCommandService userCommandService;
+
+  private Long invalidUserId;
+
+  @BeforeEach
+  void setUp() {
+    invalidUserId = 9999L;
+  }
 
   @DisplayName("중복된 이메일로 회원가입 시 예외 발생 테스트")
   @Test
@@ -66,6 +74,17 @@ public class UserExceptionTest {
             .build();
 
     assertThatThrownBy(() -> userCommandService.userRegister(request))
+        .isInstanceOf(UserBusinessException.class)
+        .hasMessage(errorCode.getMessage());
+  }
+
+  @DisplayName("존재하지 않는 사용자가 회원정보 조회 시 예외 발생")
+  @Test
+  void testGetUserDetailsNotFoundUserException() {
+
+    UserErrorCode errorCode = UserErrorCode.NOT_FOUND_USER_EXCEPTION;
+
+    assertThatThrownBy(() -> userCommandService.getUserDetails(invalidUserId))
         .isInstanceOf(UserBusinessException.class)
         .hasMessage(errorCode.getMessage());
   }
