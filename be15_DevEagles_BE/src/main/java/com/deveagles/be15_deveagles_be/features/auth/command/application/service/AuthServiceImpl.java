@@ -2,8 +2,12 @@ package com.deveagles.be15_deveagles_be.features.auth.command.application.servic
 
 import com.deveagles.be15_deveagles_be.common.jwt.JwtTokenProvider;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.LoginRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.UserFindIdRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.UserFindIdResponse;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
+import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserBusinessException;
+import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserErrorCode;
 import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -54,5 +58,17 @@ public class AuthServiceImpl implements AuthService {
 
     long remainTime = jwtTokenProvider.getRemainingExpiration(accessToken);
     redisTemplate.opsForValue().set("BL:" + accessToken, "logout", Duration.ofMillis(remainTime));
+  }
+
+  @Override
+  public UserFindIdResponse findId(UserFindIdRequest request) {
+
+    User validUser =
+        userRepository
+            .findValidUserForGetEmail(
+                request.userName(), request.phoneNumber(), LocalDateTime.now().minusMonths(1))
+            .orElseThrow(() -> new UserBusinessException(UserErrorCode.NOT_FOUND_USER_EXCEPTION));
+
+    return UserFindIdResponse.builder().email(validUser.getEmail()).build();
   }
 }

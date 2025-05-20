@@ -2,8 +2,11 @@ package com.deveagles.be15_deveagles_be.features.auth.command.application.contro
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.LoginRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.UserFindIdRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.UserFindIdResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.service.AuthService;
+import jakarta.validation.Valid;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +24,8 @@ public class AuthController {
   private final AuthService authService;
 
   @PostMapping("/login")
-  public ResponseEntity<ApiResponse<TokenResponse>> login(@RequestBody LoginRequest request) {
+  public ResponseEntity<ApiResponse<TokenResponse>> login(
+      @RequestBody @Valid LoginRequest request) {
 
     TokenResponse response = authService.login(request);
 
@@ -43,6 +47,15 @@ public class AuthController {
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
         .body(ApiResponse.success(null));
+  }
+
+  @PostMapping("/findId")
+  public ResponseEntity<ApiResponse<UserFindIdResponse>> findId(
+      @RequestBody @Valid UserFindIdRequest request) {
+
+    UserFindIdResponse response = authService.findId(request);
+
+    return ResponseEntity.ok().body(ApiResponse.success(response));
   }
 
   private ResponseEntity<ApiResponse<TokenResponse>> buildTokenResponse(TokenResponse response) {

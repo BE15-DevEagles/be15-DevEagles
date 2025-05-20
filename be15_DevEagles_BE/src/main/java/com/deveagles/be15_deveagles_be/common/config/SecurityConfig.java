@@ -49,7 +49,11 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(
-                        HttpMethod.POST, "/api/v1/users", "/api/v1/auth/login", "/api/v1/summary")
+                        HttpMethod.POST,
+                        "/api/v1/users",
+                        "/api/v1/auth/login",
+                        "/api/v1/auth/findId",
+                        "/api/v1/summary")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
