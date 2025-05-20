@@ -16,4 +16,6 @@ public interface UserCommandService {
       Long userId, @Valid UserUpdateRequest request, MultipartFile profile);
 
   Boolean validUserPassword(Long userId, String password);
+
+  UserDetailResponse updateUserPassword(Long userId, String newPassword);
 }
