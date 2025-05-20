@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.team.query.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import com.deveagles.be15_deveagles_be.features.team.command.domain.repository.TeamMemberRepository;
 import com.deveagles.be15_deveagles_be.features.team.query.dto.response.MyTeamListResponse;
 import com.deveagles.be15_deveagles_be.features.team.query.mapper.TeamMapper;
 import com.deveagles.be15_deveagles_be.features.team.query.service.impl.TeamQueryServiceImpl;
@@ -15,12 +16,13 @@ import org.junit.jupiter.api.Test;
 class GetMyTeamListTest {
 
   private TeamMapper teamMapper;
+  private TeamMemberRepository teamMemberRepository;
   private TeamQueryServiceImpl teamQueryService;
 
   @BeforeEach
   void setUp() {
     teamMapper = mock(TeamMapper.class);
-    teamQueryService = new TeamQueryServiceImpl(teamMapper);
+    teamQueryService = new TeamQueryServiceImpl(teamMapper, teamMemberRepository);
   }
 
   @Test
