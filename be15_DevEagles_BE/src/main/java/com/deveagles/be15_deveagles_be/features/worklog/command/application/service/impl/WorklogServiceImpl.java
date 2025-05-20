@@ -51,7 +51,8 @@ public class WorklogServiceImpl implements WorklogService {
     HttpEntity<Map<String, Object>> requestApi = new HttpEntity<>(body, headers);
 
     ResponseEntity<Map> response =
-        restTemplate.exchange(apiUrl + summaryKey, HttpMethod.POST, requestApi, Map.class);
+        restTemplate.exchange(
+            apiUrl + "?key=" + summaryKey, HttpMethod.POST, requestApi, Map.class);
 
     Map<?, ?> responseBody = response.getBody();
 
