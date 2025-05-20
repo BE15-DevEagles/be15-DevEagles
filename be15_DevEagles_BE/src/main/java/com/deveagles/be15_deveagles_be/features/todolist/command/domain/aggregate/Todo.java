@@ -7,7 +7,7 @@ import lombok.*;
 @Entity
 @Table(name = "todo")
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class Todo {
