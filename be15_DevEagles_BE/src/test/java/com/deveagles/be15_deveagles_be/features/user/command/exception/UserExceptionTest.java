@@ -6,6 +6,7 @@ import com.deveagles.be15_deveagles_be.features.user.command.application.dto.req
 import com.deveagles.be15_deveagles_be.features.user.command.application.service.UserCommandService;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserBusinessException;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserErrorCode;
+import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserExceptionTest {
 
   @Autowired UserCommandService userCommandService;
+  @Autowired UserRepository userRepository;
 
   private Long invalidUserId;
 
@@ -84,7 +86,7 @@ public class UserExceptionTest {
 
     UserErrorCode errorCode = UserErrorCode.NOT_FOUND_USER_EXCEPTION;
 
-    assertThatThrownBy(() -> userCommandService.getUserDetails(invalidUserId))
+    assertThatThrownBy(() -> userRepository.findUserByUserId(invalidUserId))
         .isInstanceOf(UserBusinessException.class)
         .hasMessage(errorCode.getMessage());
   }

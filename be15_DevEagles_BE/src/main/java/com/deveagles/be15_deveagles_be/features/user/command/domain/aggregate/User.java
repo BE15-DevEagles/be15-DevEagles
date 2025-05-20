@@ -69,6 +69,10 @@ public class User {
     this.phoneNumber = phoneNumber;
   }
 
+  public void modifyProfile(String userThumbnailUrl) {
+    this.userThumbnailUrl = userThumbnailUrl;
+  }
+
   public void setEncodedPassword(String encodedPassword) {
     this.password = encodedPassword;
   }
