@@ -4,7 +4,7 @@ import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.request.CreateTeamRequest;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.CreateTeamResponse;
-import com.deveagles.be15_deveagles_be.features.team.command.application.service.impl.TeamCommandServiceImpl;
+import com.deveagles.be15_deveagles_be.features.team.command.application.service.TeamCommandService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/teams")
 public class TeamController {
 
-  private final TeamCommandServiceImpl teamCommandServiceimpl;
+  private final TeamCommandService teamCommandService;
 
   // 팀 생성 API
   @PostMapping
@@ -26,7 +26,7 @@ public class TeamController {
       @Valid @RequestBody CreateTeamRequest request) {
 
     Long userId = customUser.getUserId();
-    CreateTeamResponse response = teamCommandServiceimpl.createTeam(userId, request);
+    CreateTeamResponse response = teamCommandService.createTeam(userId, request);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
   }

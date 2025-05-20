@@ -1,5 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.team.command.application.service.impl;
 
+import com.deveagles.be15_deveagles_be.features.team.command.application.dto.request.TransferLeaderRequest;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.request.WithdrawTeamRequest;
 import com.deveagles.be15_deveagles_be.features.team.command.application.service.TeamMemberCommandService;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.aggregate.Team;
@@ -24,7 +25,7 @@ public class TeamMemberCommandServiceImpl implements TeamMemberCommandService {
   private final TeamMemberRepository teamMemberRepository;
 
   @Override
-  @org.springframework.transaction.annotation.Transactional
+  @Transactional
   public void inviteTeamMember(Long inviterId, Long teamId, String email) {
     // 1. 팀 존재 여부 확인
     Team team =
@@ -122,5 +123,40 @@ public class TeamMemberCommandServiceImpl implements TeamMemberCommandService {
             .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.NOT_TEAM_MEMBER));
 
     teamMember.softDelete();
+  }
+
+  @Override
+  @Transactional
+  public void transferLeadership(Long currentLeaderId, Long teamId, TransferLeaderRequest request) {
+    // 1. 팀 조회
+    Team team =
+        teamRepository
+            .findById(teamId)
+            .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.TEAM_NOT_FOUND));
+
+    // 2. 현재 유저가 팀장인지 확인
+    if (!team.getUserId().equals(currentLeaderId)) {
+      throw new TeamBusinessException(TeamErrorCode.NOT_TEAM_LEADER);
+    }
+
+    // 3. 이메일로 양도 대상 유저 조회
+    User targetUser =
+        userRepository
+            .findUserByEmail(request.getEmail())
+            .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.USER_NOT_FOUND));
+
+    // 4. 양도 대상 유저가 해당 팀의 팀원인지 확인
+    TeamMember teamMember =
+        teamMemberRepository
+            .findByIdUserIdAndIdTeamIdAndDeletedAtIsNull(targetUser.getUserId(), teamId)
+            .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.NOT_TEAM_MEMBER));
+
+    // 5. 자기 자신에게 양도하려는 경우 방지
+    if (currentLeaderId.equals(targetUser.getUserId())) {
+      throw new TeamBusinessException(TeamErrorCode.CANNOT_TRANSFER_TO_SELF);
+    }
+
+    // 6. 리더십 양도 (team 테이블 user_id 변경)
+    team.updateLeader(targetUser.getUserId());
   }
 }
