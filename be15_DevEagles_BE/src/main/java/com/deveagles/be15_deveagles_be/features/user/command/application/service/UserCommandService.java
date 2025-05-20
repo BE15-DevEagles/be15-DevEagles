@@ -18,4 +18,6 @@ public interface UserCommandService {
   Boolean validUserPassword(Long userId, String password);
 
   UserDetailResponse updateUserPassword(Long userId, String newPassword);
+
+  void withDrawUser(Long userId);
 }

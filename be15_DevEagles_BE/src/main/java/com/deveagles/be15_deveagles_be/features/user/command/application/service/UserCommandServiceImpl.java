@@ -7,6 +7,7 @@ import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.Us
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserBusinessException;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserErrorCode;
 import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -94,6 +95,17 @@ public class UserCommandServiceImpl implements UserCommandService {
     user.setEncodedPassword(passwordEncoder.encode(newPassword));
 
     return buildUserDetailResponse(userRepository.save(user));
+  }
+
+  @Override
+  @Transactional
+  public void withDrawUser(Long userId) {
+
+    User user = findUserByUserId(userId);
+
+    user.deleteUser(LocalDateTime.now());
+
+    userRepository.save(user);
   }
 
   private User findUserByUserId(Long userId) {
