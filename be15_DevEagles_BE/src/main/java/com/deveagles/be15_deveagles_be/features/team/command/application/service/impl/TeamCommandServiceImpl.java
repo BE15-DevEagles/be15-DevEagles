@@ -12,6 +12,7 @@ import com.deveagles.be15_deveagles_be.features.team.command.domain.repository.T
 import com.deveagles.be15_deveagles_be.features.team.command.domain.repository.TeamRepository;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
 import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,5 +67,34 @@ public class TeamCommandServiceImpl implements TeamCommandService {
         .teamName(saved.getTeamName())
         .introduction(saved.getIntroduction())
         .build();
+  }
+
+  @Override
+  @Transactional
+  public void deleteTeam(Long userId, Long teamId) {
+    // 1. 팀 조회
+    Team team =
+        teamRepository
+            .findById(teamId)
+            .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.TEAM_NOT_FOUND));
+
+    // 2. 팀장인지 확인
+    if (!team.getUserId().equals(userId)) {
+      throw new TeamBusinessException(TeamErrorCode.NOT_TEAM_LEADER);
+    }
+
+    // 3. 팀원 목록 조회 (삭제되지 않은)
+    List<TeamMember> members = teamMemberRepository.findByTeamTeamIdAndDeletedAtIsNull(teamId);
+
+    // 4. 팀장 외의 팀원이 존재하면 삭제 불가
+    boolean hasOtherMembers =
+        members.stream().anyMatch(member -> !member.getUser().getUserId().equals(userId));
+
+    if (hasOtherMembers) {
+      throw new TeamBusinessException(TeamErrorCode.TEAM_HAS_MEMBERS);
+    }
+
+    // 5. soft delete 처리
+    team.softDelete();
   }
 }
