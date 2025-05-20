@@ -74,7 +74,7 @@ jobs:
           description: "백엔드 빌드 상태: ${{ steps.build-status.outputs.status }}"
           color: ${{ steps.gradle-build.outcome == 'success' && '0x00ff00' || '0xff0000' }}
           status: ${{ steps.gradle-build.outcome }}
-          content: ${{ steps.gradle-build.outcome != 'success' && '@everyone 백엔드 빌드가 실패했습니다!' || '' }}
+          content: ${{ steps.gradle-build.outcome != 'success' && ' 백엔드 빌드가 실패했습니다!' || '' }}
 
   build-frontend:
     name: 프론트엔드 빌드 테스트
@@ -140,4 +140,4 @@ jobs:
           description: "프론트엔드 빌드 상태: ${{ steps.fe-build-status.outputs.status }}"
           color: ${{ steps.npm-build.outcome == 'success' && '0x00ff00' || '0xff0000' }}
           status: ${{ steps.npm-build.outcome }}
-          content: ${{ steps.npm-build.outcome != 'success' && '@everyone 프론트엔드 빌드가 실패했습니다!' || '' }}
+          content: ${{ steps.npm-build.outcome != 'success' && ' 프론트엔드 빌드가 실패했습니다!' || '' }}
