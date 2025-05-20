@@ -2,15 +2,15 @@ package com.deveagles.be15_deveagles_be.features.team.command.application.dto.re
 
 import jakarta.validation.constraints.*;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Getter
-@RequiredArgsConstructor
+@NoArgsConstructor
 public class CreateTeamRequest {
 
   @NotBlank(message = "팀 이름은 필수입니다.")
-  private final String teamName;
+  private String teamName;
 
   @NotBlank(message = "팀 소개는 필수입니다.")
-  private final String introduction;
+  private String introduction;
 }
