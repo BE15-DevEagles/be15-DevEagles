@@ -5,9 +5,11 @@ import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.req
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
 import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class AuthServiceImpl implements AuthService {
   private final PasswordEncoder passwordEncoder;
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
+  private final RedisTemplate<String, String> redisTemplate;
 
   @Override
   public TokenResponse login(LoginRequest request) {
@@ -43,10 +46,13 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public void logout(String refreshToken) {
+  public void logout(String refreshToken, String accessToken) {
 
     jwtTokenProvider.validateToken(refreshToken);
     String username = jwtTokenProvider.getUsernameFromJWT(refreshToken);
     refreshTokenService.deleteRefreshToken(username);
+
+    long remainTime = jwtTokenProvider.getRemainingExpiration(accessToken);
+    redisTemplate.opsForValue().set("BL:" + accessToken, "logout", Duration.ofMillis(remainTime));
   }
 }
