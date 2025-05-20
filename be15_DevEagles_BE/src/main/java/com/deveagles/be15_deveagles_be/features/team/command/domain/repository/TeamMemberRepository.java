@@ -10,9 +10,9 @@ public interface TeamMemberRepository {
   // 팀원 등록 메서드
   TeamMember save(TeamMember teamMember);
 
-  // 팀원 엔티티 조회
+  // 팀원 엔티티 조회 메서드
   Optional<TeamMember> findByTeamTeamIdAndUserUserId(Long teamId, Long userId);
 
-  //
+  // 팀원 확인 메서드
   Optional<TeamMember> findByIdUserIdAndIdTeamIdAndDeletedAtIsNull(Long userId, Long teamId);
 }
