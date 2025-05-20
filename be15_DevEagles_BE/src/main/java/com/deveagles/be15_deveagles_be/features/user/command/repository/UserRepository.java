@@ -17,4 +17,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
       "SELECT u FROM User u WHERE u.email = :email AND (u.deletedAt IS NULL OR u.deletedAt > :threshold)")
   Optional<User> findValidUserForLogin(
       @Param("email") String email, @Param("threshold") LocalDateTime threshold);
+
+  Optional<User> findUserByUserId(Long userId);
 }
