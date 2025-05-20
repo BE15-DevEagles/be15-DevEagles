@@ -18,4 +18,16 @@
         ORDER BY tm.created_at ASC
     </select>
 
+    <select id="selectTeamMembers" resultType="com.deveagles.be15_deveagles_be.features.team.query.dto.response.TeamMemberResponse">
+        SELECT
+            u.user_id,
+            u.user_name AS nickname,
+            u.email,
+            u.user_thumbnail_url AS profileImageUrl
+        FROM team_member tm
+                 JOIN user u ON tm.user_id = u.user_id
+        WHERE tm.team_id = #{teamId}
+          AND tm.deleted_at IS NULL
+    </select>
+
 </mapper>
