@@ -28,4 +28,30 @@
           AND deleted_at IS NULL
     </select>
 
+    <select id="selectMyTeamIncompleteTodosWithDday"
+            resultType="com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.MyTeamDdayTodoResponse">
+        SELECT
+            todo_id AS todoId,
+            content,
+            due_date AS dueDate,
+            team_id AS teamId,
+            DATEDIFF(due_date, CURRENT_DATE()) AS dday
+        FROM todo
+        WHERE writer_id = #{userId}
+          AND team_id = #{teamId}
+          AND is_completed = false
+          AND deleted_at IS NULL
+        ORDER BY due_date ASC
+            LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countMyTeamIncompleteTodos" resultType="int">
+        SELECT COUNT(*)
+        FROM todo
+        WHERE writer_id = #{userId}
+          AND team_id = #{teamId}
+          AND is_completed = false
+          AND deleted_at IS NULL
+    </select>
+
 </mapper>
