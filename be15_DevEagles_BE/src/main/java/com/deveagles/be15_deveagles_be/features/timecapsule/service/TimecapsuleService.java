@@ -12,7 +12,7 @@ public class TimecapsuleService {
 
   private final TimecapsuleRepository timecapsuleRepository;
 
-  public Timecapsule createTimecapsule(TimecapsuleCreateRequest request) {
+  public void createTimecapsule(TimecapsuleCreateRequest request) {
     Timecapsule timecapsule =
         Timecapsule.builder()
             .timecapsuleContent(request.getTimecapsuleContent())
@@ -21,6 +21,7 @@ public class TimecapsuleService {
             .teamId(request.getTeamId())
             .timecapsuleStatus(Timecapsule.TimecapsuleStatus.ACTIVE)
             .build();
-    return timecapsuleRepository.save(timecapsule);
+
+    timecapsuleRepository.save(timecapsule);
   }
 }
