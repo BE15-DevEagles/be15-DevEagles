@@ -5,6 +5,10 @@ import com.deveagles.be15_deveagles_be.features.auth.command.application.model.C
 import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.MessageListResponse;
 import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.MessageReadStatusResponse;
 import com.deveagles.be15_deveagles_be.features.chat.query.application.service.MessageQueryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,11 +23,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/chatrooms/{chatroomId}/messages")
+@Tag(name = "메시지 조회", description = "채팅 메시지 조회 API")
 public class MessageQueryController {
 
   private final MessageQueryService messageQueryService;
 
   @GetMapping
+  @Operation(summary = "메시지 조회", description = "채팅방의 메시지 목록을 조회합니다")
+  @ApiResponses(
+      value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "조회 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404",
+            description = "채팅방을 찾을 수 없음",
+            content = @Content)
+      })
   public ResponseEntity<ApiResponse<MessageListResponse>> getMessages(
       @AuthenticationPrincipal CustomUser customUser,
       @PathVariable String chatroomId,
@@ -40,6 +56,17 @@ public class MessageQueryController {
   }
 
   @GetMapping("/{messageId}/read-status")
+  @Operation(summary = "메시지 읽음 상태 조회", description = "메시지의 읽음 상태를 조회합니다")
+  @ApiResponses(
+      value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "조회 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404",
+            description = "메시지를 찾을 수 없음",
+            content = @Content)
+      })
   public ResponseEntity<ApiResponse<MessageReadStatusResponse>> getMessageReadStatus(
       @AuthenticationPrincipal CustomUser customUser,
       @PathVariable String chatroomId,

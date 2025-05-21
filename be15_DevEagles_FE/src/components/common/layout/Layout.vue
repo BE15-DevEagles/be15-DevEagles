@@ -18,7 +18,7 @@
   import Header from './Header.vue';
   import Sidebar from './Sidebar.vue';
   import TeamSidebar from './TeamSidebar.vue';
-  import Content from './Content.vue';
+  import Content from '../Content.vue';
   import RightSidebar from './RightSidebar.vue';
   import Footer from './Footer.vue';
 

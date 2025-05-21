@@ -1,6 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.chat.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.ChatMessageResponse;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.ChatRoomResponse;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.AiChatService;
@@ -8,11 +9,11 @@ import com.deveagles.be15_deveagles_be.features.chat.command.application.service
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatRoomService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.MoodInquiryService;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.UserMoodHistory;
-import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,10 +46,10 @@ public class AiChatController {
   public ResponseEntity<ApiResponse<ChatRoomResponse>> createOrGetAiChatRoom(
       @RequestParam String userId,
       @RequestParam(required = false, defaultValue = "AI 어시스턴트") String aiName,
-      Principal principal) {
+      @AuthenticationPrincipal CustomUser customUser) {
 
-    if (principal != null && !principal.getName().equals(userId)) {
-      userId = principal.getName();
+    if (customUser != null && !String.valueOf(customUser.getUserId()).equals(userId)) {
+      userId = String.valueOf(customUser.getUserId());
     }
 
     ChatRoomResponse chatRoom = chatRoomService.createOrGetPersonalAiChatRoom(null, userId, aiName);
@@ -58,12 +59,12 @@ public class AiChatController {
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(chatRoom));
   }
 
-  @GetMapping("/my")
+  @GetMapping("/me")
   public ResponseEntity<ApiResponse<List<ChatRoomResponse>>> getUserAiChatRooms(
-      @RequestParam String userId, Principal principal) {
+      @RequestParam String userId, @AuthenticationPrincipal CustomUser customUser) {
 
-    if (principal != null && !principal.getName().equals(userId)) {
-      userId = principal.getName();
+    if (customUser != null && !String.valueOf(customUser.getUserId()).equals(userId)) {
+      userId = String.valueOf(customUser.getUserId());
     }
 
     // TODO: 실제 구현에서는 사용자의 AI 채팅방 목록을 조회하는 서비스 메서드 필요
@@ -76,7 +77,7 @@ public class AiChatController {
       @PathVariable String chatroomId,
       @RequestParam(required = false, defaultValue = "0") int page,
       @RequestParam(required = false, defaultValue = "20") int size,
-      Principal principal) {
+      @AuthenticationPrincipal CustomUser customUser) {
 
     // TODO: 실제 구현에서는 채팅방 접근 권한 검증 필요
 
@@ -87,10 +88,10 @@ public class AiChatController {
 
   @PostMapping("/mood-inquiry")
   public ResponseEntity<ApiResponse<UserMoodHistory>> generateMoodInquiry(
-      @RequestParam String userId, Principal principal) {
+      @RequestParam String userId, @AuthenticationPrincipal CustomUser customUser) {
 
-    if (principal != null && !principal.getName().equals(userId)) {
-      userId = principal.getName();
+    if (customUser != null && !String.valueOf(customUser.getUserId()).equals(userId)) {
+      userId = String.valueOf(customUser.getUserId());
     }
 
     UserMoodHistory moodInquiry = moodInquiryService.generateMoodInquiry(userId);
@@ -104,7 +105,8 @@ public class AiChatController {
 
   @PostMapping("/mood-answer")
   public ResponseEntity<ApiResponse<UserMoodHistory>> saveMoodAnswer(
-      @RequestBody Map<String, String> requestBody, Principal principal) {
+      @RequestBody Map<String, String> requestBody,
+      @AuthenticationPrincipal CustomUser customUser) {
 
     String inquiryId = requestBody.get("inquiryId");
     String answer = requestBody.get("answer");
@@ -125,10 +127,10 @@ public class AiChatController {
 
   @GetMapping("/mood-history")
   public ResponseEntity<ApiResponse<List<UserMoodHistory>>> getUserMoodHistory(
-      @RequestParam String userId, Principal principal) {
+      @RequestParam String userId, @AuthenticationPrincipal CustomUser customUser) {
 
-    if (principal != null && !principal.getName().equals(userId)) {
-      userId = principal.getName();
+    if (customUser != null && !String.valueOf(customUser.getUserId()).equals(userId)) {
+      userId = String.valueOf(customUser.getUserId());
     }
 
     List<UserMoodHistory> moodHistory = moodInquiryService.getUserMoodHistory(userId);

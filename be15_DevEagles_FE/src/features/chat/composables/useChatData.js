@@ -1,77 +1,94 @@
-import { ref, computed, inject } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useAuthStore } from '@/store/auth.js';
+import { getChatRooms, markAsRead } from '../api/chatService';
 
 export function useChatData() {
+  const authStore = useAuthStore();
   // 채팅 데이터
-  const chats = ref([
-    {
-      id: 1,
-      name: '김경록',
-      isOnline: true,
-      userThumbnail: null,
-      lastMessage: '안녕하세요! 오늘 회의 자료 확인했습니다.',
-      lastMessageTime: '14:12 전',
-      unreadCount: 0,
-      messages: [
-        { text: '안녕하세요! 오늘 회의 자료 확인했습니다.', time: '14:12', isMe: false },
-        { text: '네! 확인 감사합니다.', time: '14:15', isMe: true },
-        { text: '추가 자료는 언제쯤 받을 수 있을까요?', time: '14:20', isMe: false },
-        { text: '내일 오전까지 보내드리겠습니다.', time: '14:22', isMe: true },
-      ],
-    },
-    {
-      id: 2,
-      name: '박준석',
-      isOnline: true,
-      userThumbnail: null,
-      lastMessage: '일정입니다!',
-      lastMessageTime: '어제',
-      unreadCount: 2,
-      messages: [
-        { text: '안녕하세요, 다음 주 일정 공유드립니다.', time: '어제 15:30', isMe: false },
-        { text: '감사합니다. 일정 확인했습니다.', time: '어제 16:45', isMe: true },
-        { text: '미팅 시간이 30분 당겨질 수 있을까요?', time: '어제 17:20', isMe: false },
-        { text: '네, 가능합니다!', time: '어제 17:22', isMe: false },
-      ],
-    },
-    {
-      id: 3,
-      name: '류현진',
-      isOnline: false,
-      userThumbnail: null,
-      lastMessage: '음이에용 뭐 먹을까요...',
-      lastMessageTime: '2일 전',
-      unreadCount: 0,
-      messages: [
-        { text: '점심 뭐 먹을까요?', time: '2일 전 12:30', isMe: false },
-        { text: '저는 김치찌개 어떨까요?', time: '2일 전 12:31', isMe: true },
-        { text: '좋아요! 김치찌개 먹어요.', time: '2일 전 12:32', isMe: false },
-      ],
-    },
-    {
-      id: 4,
-      name: '코디 폰스',
-      isOnline: true,
-      userThumbnail: null,
-      lastMessage: 'how are you bro ...',
-      lastMessageTime: '5일 전',
-      unreadCount: 0,
-      messages: [
-        { text: 'Hello there!', time: '5일 전 09:15', isMe: false },
-        { text: 'Hey, how are you?', time: '5일 전 09:17', isMe: true },
-        { text: "I'm good, thanks! how are you bro?", time: '5일 전 09:20', isMe: false },
-      ],
-    },
-  ]);
+  const chats = ref([]);
+  const isLoading = ref(false);
 
   // 읽지 않은 메시지 수 계산
   const unreadCount = computed(() => {
     return chats.value.reduce((total, chat) => total + (chat.unreadCount || 0), 0);
   });
 
+  // 백엔드에서 채팅방 목록 가져오기
+  async function loadChatRooms() {
+    try {
+      isLoading.value = true;
+      const chatRooms = await getChatRooms();
+
+      if (chatRooms && Array.isArray(chatRooms)) {
+        // 서버에서 받은 데이터를 컴포넌트 형식으로 변환
+        chats.value = chatRooms.map(room => ({
+          id: room.id,
+          name: room.name || getParticipantName(room.participants),
+          isOnline: isParticipantOnline(room.participants),
+          userThumbnail: getParticipantThumbnail(room.participants),
+          lastMessage: room.lastMessage?.content || '메시지가 없습니다.',
+          lastMessageTime: formatLastMessageTime(room.lastMessage?.timestamp),
+          unreadCount: room.unreadCount || 0,
+          messages: [], // 메시지는 채팅방 선택 시 별도로 로드
+        }));
+      }
+    } catch (error) {
+      console.error('채팅방 목록 로딩 실패:', error);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // 채팅방의 다른 참여자 이름 가져오기 (1:1 채팅인 경우)
+  function getParticipantName(participants) {
+    if (!participants || !Array.isArray(participants)) return '알 수 없는 대화';
+
+    // 현재 사용자가 아닌 첫 번째 참여자 찾기
+    const otherParticipant = participants.find(p => p.id !== authStore.userId);
+    return otherParticipant ? otherParticipant.name : '대화방';
+  }
+
+  // 참여자 온라인 상태 확인
+  function isParticipantOnline(participants) {
+    if (!participants || !Array.isArray(participants)) return false;
+
+    // 현재 사용자가 아닌 첫 번째 참여자 찾기
+    const otherParticipant = participants.find(p => p.id !== authStore.userId);
+    return otherParticipant ? otherParticipant.isOnline : false;
+  }
+
+  // 참여자 썸네일 가져오기
+  function getParticipantThumbnail(participants) {
+    if (!participants || !Array.isArray(participants)) return null;
+
+    // 현재 사용자가 아닌 첫 번째 참여자 찾기
+    const otherParticipant = participants.find(p => p.id !== authStore.userId);
+    return otherParticipant ? otherParticipant.thumbnail : null;
+  }
+
+  // 마지막 메시지 시간 포맷
+  function formatLastMessageTime(timestamp) {
+    if (!timestamp) return '';
+
+    const now = new Date();
+    const msgTime = new Date(timestamp);
+    const diffMs = now - msgTime;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return '방금';
+    if (diffMins < 60) return `${diffMins}분 전`;
+    if (diffHours < 24) return `${diffHours}시간 전`;
+    if (diffDays < 7) return `${diffDays}일 전`;
+
+    return `${msgTime.getMonth() + 1}월 ${msgTime.getDate()}일`;
+  }
+
   // 팀원과 채팅 시작
   function startChat(member) {
     // 해당 팀원과의 채팅이 이미 있는지 확인
-    let chat = chats.value.find(c => c.id === member.id);
+    let chat = chats.value.find(c => c.name === member.name);
 
     // 채팅이 없으면 새로 생성
     if (!chat) {
@@ -91,62 +108,50 @@ export function useChatData() {
     return chat;
   }
 
-  // 메시지 전송
-  function sendMessage(chatId, messageText) {
-    if (!messageText.trim()) {
-      return null;
-    }
-
-    // 현재 시간 생성
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const timeString = `${hours}:${minutes}`;
-
-    // 새 메시지 객체 생성
-    const message = {
-      text: messageText,
-      time: timeString,
-      isMe: true,
-    };
-
-    // 채팅 메시지에 추가
+  // 메시지 전송 (로컬 UI 업데이트용)
+  function sendMessage(chatId, message) {
     const chatIndex = chats.value.findIndex(c => c.id === chatId);
-    if (chatIndex !== -1) {
-      chats.value[chatIndex].messages.push(message);
-      chats.value[chatIndex].lastMessage = messageText;
-      chats.value[chatIndex].lastMessageTime = '방금';
+    if (chatIndex === -1) return null;
 
-      // 해당 채팅을 목록의 맨 위로 이동
-      const chat = chats.value.splice(chatIndex, 1)[0];
-      chats.value.unshift(chat);
+    chats.value[chatIndex].lastMessage = message.text;
+    chats.value[chatIndex].lastMessageTime = '방금';
 
-      return chat;
-    }
+    // 해당 채팅을 목록의 맨 위로 이동
+    const chat = chats.value.splice(chatIndex, 1)[0];
+    chats.value.unshift(chat);
 
-    return null;
+    return chat;
   }
 
-  // 자동 응답 생성
-  function generateAutoReply(chatId, messageText) {
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = (now.getMinutes() + 1).toString().padStart(2, '0');
-
-    const autoReply = {
-      text: `[자동응답] "${messageText}"에 대한 답변은 조금 후에 드리겠습니다.`,
-      time: `${hours}:${minutes}`,
-      isMe: false,
-    };
-
+  // 메시지 수신 (웹소켓으로부터 수신한 메시지 처리)
+  function receiveMessage(chatId, message) {
     const chatIndex = chats.value.findIndex(c => c.id === chatId);
-    if (chatIndex !== -1) {
-      chats.value[chatIndex].messages.push(autoReply);
-      chats.value[chatIndex].lastMessage = autoReply.text;
-      return chats.value[chatIndex];
+    if (chatIndex === -1) return null;
+
+    // 읽지 않은 메시지 카운트 증가 (내가 보낸 메시지가 아닌 경우만)
+    if (!message.isMe) {
+      chats.value[chatIndex].unreadCount += 1;
     }
 
-    return null;
+    chats.value[chatIndex].lastMessage = message.text;
+    chats.value[chatIndex].lastMessageTime = '방금';
+
+    // 해당 채팅을 목록의 맨 위로 이동
+    if (chatIndex > 0) {
+      const chat = chats.value.splice(chatIndex, 1)[0];
+      chats.value.unshift(chat);
+    }
+
+    return chats.value[chatIndex];
+  }
+
+  // 채팅 메시지 업데이트 (채팅 이력 로드 시)
+  function updateChatMessages(chatId, messages) {
+    const chatIndex = chats.value.findIndex(c => c.id === chatId);
+    if (chatIndex === -1) return null;
+
+    chats.value[chatIndex].messages = messages;
+    return chats.value[chatIndex];
   }
 
   // 채팅 열기 시 읽음 표시
@@ -154,15 +159,22 @@ export function useChatData() {
     const chatIndex = chats.value.findIndex(c => c.id === chatId);
     if (chatIndex !== -1) {
       chats.value[chatIndex].unreadCount = 0;
+      markAsRead(chatId); // 서버에 읽음 표시 업데이트
     }
   }
 
+  // 컴포넌트 마운트 시 채팅방 목록 로드
+  onMounted(loadChatRooms);
+
   return {
     chats,
+    isLoading,
     unreadCount,
     startChat,
     sendMessage,
-    generateAutoReply,
+    receiveMessage,
+    updateChatMessages,
     markChatAsRead,
+    loadChatRooms,
   };
 }
