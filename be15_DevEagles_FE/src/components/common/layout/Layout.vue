@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-screen bg-[var(--color-gray-100)]">
+  <div class="flex flex-col h-screen bg-[var(--color-gray-800)]">
     <Header />
     <div class="flex flex-1 overflow-hidden min-w-0">
       <TeamSidebar />
@@ -9,6 +9,7 @@
       </Content>
       <RightSidebar />
     </div>
+    <Footer />
   </div>
 </template>
 
@@ -19,6 +20,7 @@
   import TeamSidebar from './TeamSidebar.vue';
   import Content from './Content.vue';
   import RightSidebar from './RightSidebar.vue';
+  import Footer from './Footer.vue';
 
   // 현재 채널 정보
   const currentChannel = ref('일반');
@@ -29,7 +31,7 @@
   html,
   body {
     height: 100%;
-    margin: 0;
+    margin:;
     padding: 0;
     font-family: 'Noto Sans KR', sans-serif;
     color: var(--color-gray-800);
