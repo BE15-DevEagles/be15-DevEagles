@@ -94,8 +94,15 @@
     () => teamStore.currentTeamId,
     newTeamId => {
       if (newTeamId) {
-        // 팀 변경 시 관련 데이터 갱신
-        chatStore.fetchTeamChats();
+        try {
+          // 팀 변경 시 관련 데이터 갱신
+          chatStore.fetchTeamChats();
+
+          // 필요하다면 여기에 추가 데이터 갱신 로직 추가
+          console.log(`팀 변경: ${newTeamId}, 팀원 수: ${teamStore.teamMembers.length}`);
+        } catch (err) {
+          console.error('팀 관련 데이터 갱신 실패:', err);
+        }
       }
     },
     { immediate: true }

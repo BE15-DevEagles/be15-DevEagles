@@ -5,13 +5,13 @@ export const useTeamStore = defineStore('team', {
   state: () => ({
     currentTeam: null,
     teams: [],
+    teamMembers: [],
     loading: false,
     error: null,
   }),
 
   getters: {
     currentTeamId: state => state.currentTeam?.id,
-    teamMembers: state => state.currentTeam?.members || [],
     teamChannels: state => state.currentTeam?.channels || [],
   },
 
@@ -93,6 +93,7 @@ export const useTeamStore = defineStore('team', {
         };
 
         this.currentTeam = teamWithMembers;
+        this.teamMembers = teamWithMembers.members;
 
         // 브라우저 스토리지에 최근 선택 팀 저장
         localStorage.setItem('lastSelectedTeam', teamId);

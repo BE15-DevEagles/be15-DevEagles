@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-  import { defineProps, defineEmits } from 'vue';
+  import { defineProps, defineEmits, watch } from 'vue';
 
   /**
    * Props:
@@ -70,12 +70,21 @@
    *   ...
    * ]
    */
-  defineProps({
+  const props = defineProps({
     teamMembers: {
       type: Array,
       required: true,
     },
   });
+
+  // 팀원 목록 변경 감지
+  watch(
+    () => props.teamMembers,
+    newMembers => {
+      console.log('팀원 목록 변경됨:', newMembers);
+    },
+    { deep: true }
+  );
 
   /**
    * Emits:
