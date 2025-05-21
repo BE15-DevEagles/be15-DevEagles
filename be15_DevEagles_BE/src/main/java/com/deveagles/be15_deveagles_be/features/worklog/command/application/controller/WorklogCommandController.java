@@ -52,4 +52,16 @@ public class WorklogCommandController {
     PagedResponse<WorklogResponse> response = worklogService.findTeamWorklogs(userId, request);
     return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(response));
   }
+
+  /*업무일지 상세조회*/
+  @GetMapping("/{worklogId}")
+  public ResponseEntity<ApiResponse<WorklogDetailResponse>> getWorklog(
+          @PathVariable Long worklogId,
+          @AuthenticationPrincipal CustomUser customUser
+  ){
+    Long userId = customUser.getUserId();
+    WorklogDetailResponse response = worklogService.getWorklogById(worklogId,userId);
+
+    return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(response));
+  }
 }
