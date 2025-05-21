@@ -24,15 +24,6 @@ public class ChatroomQueryController {
 
   private final ChatroomQueryService chatroomQueryService;
 
-  /**
-   * 채팅방 목록 조회 API
-   *
-   * @param customUser 인증된 사용자 정보
-   * @param teamId 팀 ID (선택사항)
-   * @param page 페이지 번호 (기본값: 0)
-   * @param size 페이지 크기 (기본값: 20)
-   * @return 채팅방 목록 응답
-   */
   @GetMapping
   public ResponseEntity<ApiResponse<ChatroomListResponse>> getChatrooms(
       @AuthenticationPrincipal CustomUser customUser,
@@ -45,13 +36,6 @@ public class ChatroomQueryController {
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
-  /**
-   * 채팅방 상세 조회 API
-   *
-   * @param customUser 인증된 사용자 정보
-   * @param chatroomId 채팅방 ID
-   * @return 채팅방 상세 응답
-   */
   @GetMapping("/{chatroomId}")
   public ResponseEntity<ApiResponse<ChatroomResponse>> getChatroom(
       @AuthenticationPrincipal CustomUser customUser, @PathVariable String chatroomId) {
@@ -61,13 +45,6 @@ public class ChatroomQueryController {
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
-  /**
-   * 채팅방 읽음 상태 요약 조회 API
-   *
-   * @param customUser 인증된 사용자 정보
-   * @param chatroomId 채팅방 ID
-   * @return 채팅방 읽음 상태 요약 응답
-   */
   @GetMapping("/{chatroomId}/read-summary")
   public ResponseEntity<ApiResponse<ChatroomReadSummaryResponse>> getChatroomReadSummary(
       @AuthenticationPrincipal CustomUser customUser, @PathVariable String chatroomId) {

@@ -7,7 +7,7 @@ import lombok.Getter;
 @Builder
 public class TeamMemberResponse {
   private Long userId;
-  private String nickname;
+  private String userName;
   private String email;
   private String profileImageUrl;
 }

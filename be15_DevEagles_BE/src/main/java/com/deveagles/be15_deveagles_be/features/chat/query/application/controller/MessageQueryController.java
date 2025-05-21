@@ -23,15 +23,6 @@ public class MessageQueryController {
 
   private final MessageQueryService messageQueryService;
 
-  /**
-   * 채팅방 메시지 조회 API
-   *
-   * @param customUser 인증된 사용자 정보
-   * @param chatroomId 채팅방 ID
-   * @param before 해당 메시지 ID 이전의 메시지를 조회 (null인 경우 최신 메시지부터 조회)
-   * @param limit 조회할 메시지 개수 (기본값: 50)
-   * @return 메시지 목록 응답
-   */
   @GetMapping
   public ResponseEntity<ApiResponse<MessageListResponse>> getMessages(
       @AuthenticationPrincipal CustomUser customUser,
@@ -48,14 +39,6 @@ public class MessageQueryController {
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
-  /**
-   * 메시지 읽음 상태 조회 API
-   *
-   * @param customUser 인증된 사용자 정보
-   * @param chatroomId 채팅방 ID
-   * @param messageId 메시지 ID
-   * @return 메시지 읽음 상태 응답
-   */
   @GetMapping("/{messageId}/read-status")
   public ResponseEntity<ApiResponse<MessageReadStatusResponse>> getMessageReadStatus(
       @AuthenticationPrincipal CustomUser customUser,

@@ -1,19 +1,11 @@
 <script setup>
-
-import {useRoute} from "vue-router";
-import {computed} from "vue";
-
-const router = useRoute()
-
-const useLayout = computed(() => route.meta.layout !=='none');
+  import { Layout } from '@/components/common/layout';
 </script>
 
 <template>
-  <div class="useLayout ? 'layout' : '' ">
-    <router-view/>
-  </div>
+  <Layout>
+    <router-view />
+  </Layout>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

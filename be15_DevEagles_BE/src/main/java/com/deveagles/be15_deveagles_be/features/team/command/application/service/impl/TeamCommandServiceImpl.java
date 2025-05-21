@@ -2,6 +2,7 @@ package com.deveagles.be15_deveagles_be.features.team.command.application.servic
 
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.request.CreateTeamRequest;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.CreateTeamResponse;
+import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.TeamResponse;
 import com.deveagles.be15_deveagles_be.features.team.command.application.service.TeamCommandService;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.aggregate.Team;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.aggregate.TeamMember;
@@ -96,5 +97,15 @@ public class TeamCommandServiceImpl implements TeamCommandService {
 
     // 5. soft delete 처리
     team.softDelete();
+  }
+
+  @Transactional
+  @Override
+  public TeamResponse getTeamDetail(Long teamId) {
+    Team findTeam =
+        teamRepository
+            .findById(teamId)
+            .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.TEAM_NOT_FOUND));
+    return TeamResponse.builder().teamId(findTeam.getTeamId()).build();
   }
 }
