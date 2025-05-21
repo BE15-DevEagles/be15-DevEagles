@@ -20,4 +20,5 @@ public interface WorklogService {
 
   PagedResponse<WorklogResponse> findTeamWorklogs(Long userId, SearchWorklogRequest request);
 
+  WorklogDetailResponse getWorklogById(Long worklogId, Long userId);
 }

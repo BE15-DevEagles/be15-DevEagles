@@ -116,7 +116,7 @@ public class TeamCommandServiceImpl implements TeamCommandService {
         teamRepository
             .findById(teamId)
             .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.TEAM_NOT_FOUND));
-    return TeamResponse.builder().teamId(findTeam.getTeamId()).build();
+    return TeamResponse.builder().teamId(findTeam.getTeamId()).teamName(findTeam.getTeamName()).build();
   }
 
   @Transactional

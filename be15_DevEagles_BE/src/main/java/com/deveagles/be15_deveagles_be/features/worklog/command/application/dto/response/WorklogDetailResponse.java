@@ -16,6 +16,9 @@ public class WorklogDetailResponse {
   private LocalDateTime createdAt;
   private Long teamId;
   private Long userId;
+  private String userName;
+  private String teamName;
+  private LocalDateTime writtenAt;
 
   public static WorklogDetailResponse of(Worklog worklog) {
     return WorklogDetailResponse.builder()
