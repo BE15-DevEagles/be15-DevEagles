@@ -54,6 +54,7 @@ public class SecurityConfig {
                         "/api/v1/auth/login",
                         "/api/v1/auth/findId",
                         "/api/v1/auth/sendAuth",
+                        "/api/v1/auth/verify",
                         "/api/v1/summary")
                     .permitAll()
                     .anyRequest()

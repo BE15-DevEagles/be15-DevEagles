@@ -80,4 +80,8 @@ public class User {
   public void deleteUser(LocalDateTime deletedAt) {
     this.deletedAt = deletedAt;
   }
+
+  public void setEnabledUser(UserStatus userStatus) {
+    this.userStatus = userStatus;
+  }
 }

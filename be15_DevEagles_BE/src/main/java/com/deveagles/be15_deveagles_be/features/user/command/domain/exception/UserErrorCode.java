@@ -19,7 +19,8 @@ public enum UserErrorCode {
   // 이메일 인증
   SEND_EMAIL_FAILURE_EXCEPTION("100100", "인증 메일 전송이 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
   DUPLICATE_SEND_AUTH_EXCEPTION(
-      "10001001", "이미 인증 메일을 발송했습니다. 잠시 후 다시 시도해주세요.", HttpStatus.BAD_REQUEST);
+      "1000101", "이미 인증 메일을 발송했습니다. 잠시 후 다시 시도해주세요.", HttpStatus.BAD_REQUEST),
+  INVALID_AUTH_CODE("1000102", "유효한 인증이 아닙니다.", HttpStatus.BAD_REQUEST);
 
   private final String code;
   private final String message;

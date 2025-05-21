@@ -7,7 +7,9 @@ import static org.mockito.Mockito.*;
 import com.deveagles.be15_deveagles_be.common.jwt.JwtTokenProvider;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.LoginRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.UserFindIdRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.service.AuthCodeService;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.service.AuthServiceImpl;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.service.MailService;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.service.RefreshTokenService;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserBusinessException;
@@ -30,6 +32,8 @@ class AuthExceptionTest {
   private RefreshTokenService refreshTokenService;
   private RedisTemplate<String, String> redisTemplate;
   private AuthServiceImpl authService;
+  private AuthCodeService authCodeService;
+  private MailService mailService;
 
   private String email;
   private String password;
@@ -41,10 +45,18 @@ class AuthExceptionTest {
     jwtTokenProvider = mock(JwtTokenProvider.class);
     refreshTokenService = mock(RefreshTokenService.class);
     redisTemplate = mock(RedisTemplate.class);
+    authCodeService = mock(AuthCodeService.class);
+    mailService = mock(MailService.class);
 
     authService =
         new AuthServiceImpl(
-            userRepository, passwordEncoder, jwtTokenProvider, refreshTokenService, redisTemplate);
+            userRepository,
+            passwordEncoder,
+            jwtTokenProvider,
+            refreshTokenService,
+            redisTemplate,
+            authCodeService,
+            mailService);
 
     email = "test@email.com";
     password = "password123!";
@@ -89,6 +101,74 @@ class AuthExceptionTest {
         .thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> authService.findId(request))
+        .isInstanceOf(UserBusinessException.class)
+        .hasMessageContaining(UserErrorCode.NOT_FOUND_USER_EXCEPTION.getMessage());
+  }
+
+  @Test
+  @DisplayName("인증 메일 전송 실패 - 유저 없음")
+  void testSendAuthEmail_UserNotFound() {
+    when(userRepository.findUserByEmail(email)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> authService.sendAuthEmail(email))
+        .isInstanceOf(UserBusinessException.class)
+        .hasMessageContaining(UserErrorCode.NOT_FOUND_USER_EXCEPTION.getMessage());
+  }
+
+  @Test
+  @DisplayName("인증 메일 전송 실패 - 중복 요청")
+  void testSendAuthEmail_DuplicateRequest() {
+    when(userRepository.findUserByEmail(email)).thenReturn(Optional.of(mock(User.class)));
+    when(authCodeService.getAuthCode(email)).thenReturn("alreadySent");
+
+    assertThatThrownBy(() -> authService.sendAuthEmail(email))
+        .isInstanceOf(UserBusinessException.class)
+        .hasMessageContaining(UserErrorCode.DUPLICATE_SEND_AUTH_EXCEPTION.getMessage());
+  }
+
+  @Test
+  @DisplayName("인증 메일 전송 실패 - 메일 발송 오류")
+  void testSendAuthEmail_MailException() throws Exception {
+    User mockUser = mock(User.class);
+
+    when(userRepository.findUserByEmail(email)).thenReturn(Optional.of(mockUser));
+    when(authCodeService.getAuthCode(email)).thenReturn(null);
+    doThrow(new UserBusinessException(UserErrorCode.SEND_EMAIL_FAILURE_EXCEPTION))
+        .when(mailService)
+        .sendAuthMail(eq(email), anyString());
+
+    assertThatThrownBy(() -> authService.sendAuthEmail(email))
+        .isInstanceOf(UserBusinessException.class)
+        .hasMessageContaining(UserErrorCode.SEND_EMAIL_FAILURE_EXCEPTION.getMessage());
+  }
+
+  @Test
+  @DisplayName("인증 코드 검증 실패 - 코드 없음")
+  void testVerifyAuthCode_NoSavedCode() {
+    when(authCodeService.getAuthCode(email)).thenReturn(null);
+
+    assertThatThrownBy(() -> authService.verifyAuthCode(email, "123456"))
+        .isInstanceOf(UserBusinessException.class)
+        .hasMessageContaining(UserErrorCode.INVALID_AUTH_CODE.getMessage());
+  }
+
+  @Test
+  @DisplayName("인증 코드 검증 실패 - 코드 불일치")
+  void testVerifyAuthCode_Mismatch() {
+    when(authCodeService.getAuthCode(email)).thenReturn("654321");
+
+    assertThatThrownBy(() -> authService.verifyAuthCode(email, "123456"))
+        .isInstanceOf(UserBusinessException.class)
+        .hasMessageContaining(UserErrorCode.INVALID_AUTH_CODE.getMessage());
+  }
+
+  @Test
+  @DisplayName("인증 코드 검증 실패 - 유저 없음")
+  void testVerifyAuthCode_UserNotFound() {
+    when(authCodeService.getAuthCode(email)).thenReturn("abc123");
+    when(userRepository.findUserByEmail(email)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> authService.verifyAuthCode(email, "abc123"))
         .isInstanceOf(UserBusinessException.class)
         .hasMessageContaining(UserErrorCode.NOT_FOUND_USER_EXCEPTION.getMessage());
   }
