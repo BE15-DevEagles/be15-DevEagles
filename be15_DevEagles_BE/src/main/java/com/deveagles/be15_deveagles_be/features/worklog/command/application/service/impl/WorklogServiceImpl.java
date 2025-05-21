@@ -1,18 +1,33 @@
 package com.deveagles.be15_deveagles_be.features.worklog.command.application.service.impl;
 
+import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.TeamMemberResponse;
+import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.TeamResponse;
+import com.deveagles.be15_deveagles_be.features.team.command.application.service.TeamCommandService;
+import com.deveagles.be15_deveagles_be.features.team.command.application.service.TeamMemberCommandService;
+import com.deveagles.be15_deveagles_be.features.team.command.domain.exception.TeamBusinessException;
+import com.deveagles.be15_deveagles_be.features.team.command.domain.exception.TeamErrorCode;
+import com.deveagles.be15_deveagles_be.features.user.command.application.dto.response.UserDetailResponse;
+import com.deveagles.be15_deveagles_be.features.user.command.application.service.UserCommandService;
+import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserBusinessException;
+import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserErrorCode;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request.WorkSummaryRequest;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request.WorklogCreateRequest;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.GeminiApiResponseDto;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.SummaryResponse;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogDetailResponse;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.GeneratorBuilder;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.WorklogService;
+import com.deveagles.be15_deveagles_be.features.worklog.command.domain.aggregate.Worklog;
 import com.deveagles.be15_deveagles_be.features.worklog.command.domain.exception.WorklogBusinessException;
 import com.deveagles.be15_deveagles_be.features.worklog.command.domain.exception.WorklogErrorCode;
+import com.deveagles.be15_deveagles_be.features.worklog.command.domain.repository.WorklogRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -21,6 +36,10 @@ public class WorklogServiceImpl implements WorklogService {
   private final ObjectMapper objectMapper;
   private static final double DEFAULT_TEMPERATURE = 0.7;
   private static final int MAX_OUTPUT_TOKENS = 80;
+  private final WorklogRepository worklogRepository;
+  private final UserCommandService userCommandService;
+  private final TeamCommandService teamCommandService;
+  private final TeamMemberCommandService teamMemberCommandService;
 
   @Value("${gemini.api.summary}")
   private String summaryKey;
@@ -28,13 +47,25 @@ public class WorklogServiceImpl implements WorklogService {
   @Value("${gemini.api.url}")
   private String apiUrl;
 
-  public WorklogServiceImpl(RestTemplate restTemplate, ObjectMapper objectMapper) {
+  public WorklogServiceImpl(
+      RestTemplate restTemplate,
+      ObjectMapper objectMapper,
+      WorklogRepository worklogRepository,
+      UserCommandService userCommandService,
+      TeamCommandService teamCommandService,
+      TeamMemberCommandService teamMemberCommandService) {
     this.restTemplate = restTemplate;
     this.objectMapper = objectMapper;
+    this.worklogRepository = worklogRepository;
+    this.userCommandService = userCommandService;
+    this.teamCommandService = teamCommandService;
+    this.teamMemberCommandService = teamMemberCommandService;
   }
 
+  @Transactional
   @Override
-  public SummaryResponse summaryGenerate(WorkSummaryRequest request) {
+  public SummaryResponse summaryGenerate(Long userId, WorkSummaryRequest request) {
+    validateUserExists(userId);
     String prompt =
         GeneratorBuilder.ContentsPrompt(request.getWorkContent(), request.getWorkContent());
     Map<String, Object> body =
@@ -97,6 +128,54 @@ public class WorklogServiceImpl implements WorklogService {
     } catch (ClassCastException | NullPointerException e) {
       throw new WorklogBusinessException(
           WorklogErrorCode.GEMINI_API_ERROR, "Gemini API 응답 구조가 올바르지 않습니다");
+    }
+  }
+
+  /* 업무일지 등록하기 */
+  @Transactional
+  @Override
+  public WorklogDetailResponse createWorklog(
+      Long userId, Long teamId, WorklogCreateRequest worklogCreateRequest) {
+    if(worklogRepository.existsByWorkDateOnly(worklogCreateRequest.getWrittenAt())){
+      throw new WorklogBusinessException(
+              WorklogErrorCode.WORKLOG_ALREADY_EXISTS
+      );
+    }
+    validateUserExists(userId);
+    validateTeamExists(teamId);
+    validateTeamMemberExists(teamId, userId);
+
+    return WorklogDetailResponse.of(
+        worklogRepository.save(
+            Worklog.builder()
+                .summary(worklogCreateRequest.getSummary())
+                .workContent(worklogCreateRequest.getWorkContent())
+                .note(worklogCreateRequest.getNote())
+                .planContent(worklogCreateRequest.getPlanContent())
+                .teamId(teamId)
+                .userId(userId)
+                .writtenAt(worklogCreateRequest.getWrittenAt())
+                .build()));
+  }
+
+  public void validateUserExists(Long userId) {
+    UserDetailResponse detail = userCommandService.getUserDetails(userId);
+    if (detail == null || detail.getUserId() == null) {
+      throw new UserBusinessException(UserErrorCode.NOT_FOUND_USER_EXCEPTION);
+    }
+  }
+
+  public void validateTeamExists(Long teamId) {
+    TeamResponse detail = teamCommandService.getTeamDetail(teamId);
+    if (detail == null || detail.getTeamId() == null) {
+      throw new TeamBusinessException(TeamErrorCode.TEAM_NOT_FOUND);
+    }
+  }
+
+  public void validateTeamMemberExists(Long teamId, Long userId) {
+    TeamMemberResponse detail = teamMemberCommandService.findTeamMember(userId, teamId);
+    if (detail == null || detail.getTeamId() == null || detail.getUserId() == null) {
+      throw new TeamBusinessException(TeamErrorCode.NOT_TEAM_MEMBER);
     }
   }
 }
