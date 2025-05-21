@@ -16,7 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class TeamQueryServiceImplTest {
+class TeamMemberListTest {
 
   private TeamMapper teamMapper;
   private TeamMemberRepository teamMemberRepository;
