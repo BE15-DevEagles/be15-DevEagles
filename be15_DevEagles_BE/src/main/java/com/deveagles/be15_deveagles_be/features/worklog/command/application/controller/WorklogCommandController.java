@@ -56,11 +56,10 @@ public class WorklogCommandController {
   /*업무일지 상세조회*/
   @GetMapping("/{worklogId}")
   public ResponseEntity<ApiResponse<WorklogDetailResponse>> getWorklog(
-          @PathVariable Long worklogId,
-          @AuthenticationPrincipal CustomUser customUser
-  ){
+      @PathVariable Long worklogId, @AuthenticationPrincipal CustomUser customUser) {
     Long userId = customUser.getUserId();
-    WorklogDetailResponse response = worklogService.getWorklogById(worklogId,userId);
+    System.out.println("ASDFASDFASDF");
+    WorklogDetailResponse response = worklogService.getWorklogById(worklogId, userId);
 
     return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(response));
   }

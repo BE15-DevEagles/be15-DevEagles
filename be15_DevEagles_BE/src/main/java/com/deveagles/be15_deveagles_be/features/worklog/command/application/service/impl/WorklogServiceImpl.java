@@ -235,9 +235,14 @@ public class WorklogServiceImpl implements WorklogService {
 
   @Transactional(readOnly = true)
   @Override
-  public WorklogDetailResponse getWorklogById(Long worklogId, Long userId){
-    Worklog worklog = worklogRepository.findById(worklogId).
-            orElseThrow(() -> new WorklogBusinessException(WorklogErrorCode.INVALID_WORKLOG_INPUT, "업무일지를 찾을 수 없습니다."));
+  public WorklogDetailResponse getWorklogById(Long worklogId, Long userId) {
+    Worklog worklog =
+        worklogRepository
+            .findById(worklogId)
+            .orElseThrow(
+                () ->
+                    new WorklogBusinessException(
+                        WorklogErrorCode.INVALID_WORKLOG_INPUT, "업무일지를 찾을 수 없습니다."));
 
     Long teamId = worklog.getTeamId();
     validateTeamMemberExists(teamId, userId);
@@ -245,16 +250,16 @@ public class WorklogServiceImpl implements WorklogService {
     String teamName = teamCommandService.getTeamDetail(teamId).getTeamName();
     System.out.println(teamName);
     return WorklogDetailResponse.builder()
-            .worklogId(worklog.getWorklogId())
-            .summary(worklog.getSummary())
-            .note(worklog.getNote())
-            .planContent(worklog.getPlanContent())
-            .userName(userName)
-            .teamName(teamName)
-            .teamId(teamId)
-            .userId(userId)
-            .writtenAt(worklog.getWrittenAt())
-            .build();
+        .worklogId(worklog.getWorklogId())
+        .summary(worklog.getSummary())
+        .note(worklog.getNote())
+        .planContent(worklog.getPlanContent())
+        .userName(userName)
+        .teamName(teamName)
+        .teamId(teamId)
+        .userId(userId)
+        .writtenAt(worklog.getWrittenAt())
+        .build();
   }
 
   public void validateUserExists(Long userId) {
