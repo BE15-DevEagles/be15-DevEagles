@@ -14,7 +14,13 @@ public enum UserErrorCode {
   DUPLICATE_USER_PHONE_EXCEPTION("100002", "중복된 전화번호입니다.", HttpStatus.BAD_REQUEST),
 
   // 유저 조회
-  NOT_FOUND_USER_EXCEPTION("100003", "존재하지 않는 유저입니다.", HttpStatus.NOT_FOUND);
+  NOT_FOUND_USER_EXCEPTION("100003", "존재하지 않는 유저입니다.", HttpStatus.NOT_FOUND),
+
+  // 이메일 인증
+  SEND_EMAIL_FAILURE_EXCEPTION("100100", "인증 메일 전송이 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+  DUPLICATE_SEND_AUTH_EXCEPTION(
+      "1000101", "이미 인증 메일을 발송했습니다. 잠시 후 다시 시도해주세요.", HttpStatus.BAD_REQUEST),
+  INVALID_AUTH_CODE("1000102", "유효한 인증이 아닙니다.", HttpStatus.BAD_REQUEST);
 
   private final String code;
   private final String message;
