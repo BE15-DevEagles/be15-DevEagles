@@ -1,24 +1,30 @@
 package com.deveagles.be15_deveagles_be.features.chat.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
-import com.deveagles.be15_deveagles_be.common.dto.PagedResponse;
-import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.ChatMessageResponse;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatMessageService;
-import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatMessage;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.exception.ChatBusinessException;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.exception.ChatErrorCode;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.ChatMessageRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/messages")
+@RequestMapping("/api/v1/admin/messages")
+@Tag(name = "메시지 관리", description = "메시지 관리 API (관리자용)")
 public class ChatMessageController {
 
   private final ChatMessageService chatMessageService;
@@ -31,7 +37,19 @@ public class ChatMessageController {
   }
 
   @GetMapping("/chatroom/{chatroomId}")
+  @Operation(summary = "채팅방 메시지 조회 (관리자용)", description = "채팅방의 메시지를 페이지로 조회합니다")
+  @ApiResponses(
+      value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "조회 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404",
+            description = "채팅방을 찾을 수 없음",
+            content = @Content)
+      })
   public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessagesByChatroom(
+      @AuthenticationPrincipal CustomUser customUser,
       @PathVariable String chatroomId,
       @RequestParam(required = false, defaultValue = "0") int page,
       @RequestParam(required = false, defaultValue = "20") int size) {
@@ -40,50 +58,20 @@ public class ChatMessageController {
     return ResponseEntity.ok(ApiResponse.success(messages));
   }
 
-  @GetMapping("/chatroom/{chatroomId}/messages")
-  public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessages(
-      @PathVariable String chatroomId,
-      @RequestParam(required = false) String before,
-      @RequestParam(required = false) String after,
-      @RequestParam(required = false, defaultValue = "20") int limit) {
-
-    List<ChatMessageResponse> messages;
-
-    if (before != null) {
-      messages = chatMessageService.getMessagesByChatroomBefore(chatroomId, before, limit);
-    } else if (after != null) {
-      messages = chatMessageService.getMessagesByChatroomAfter(chatroomId, after, limit);
-    } else {
-      messages = chatMessageService.getMessagesByChatroom(chatroomId, 0, limit);
-    }
-
-    return ResponseEntity.ok(ApiResponse.success(messages));
-  }
-
-  // TODO: 관리자용 페이징 모드(필요? 삭제?)
-  @GetMapping("/chatroom/{chatroomId}/messages/paged")
-  public ResponseEntity<ApiResponse<PagedResponse<ChatMessageResponse>>> getMessagesWithPagination(
-      @PathVariable String chatroomId,
-      @RequestParam(required = false, defaultValue = "0") int page,
-      @RequestParam(required = false, defaultValue = "20") int size) {
-
-    PagedResult<ChatMessage> pagedResult =
-        chatMessageRepository.findMessagesByChatroomIdWithPagination(chatroomId, page, size);
-
-    List<ChatMessageResponse> messages =
-        pagedResult.getContent().stream()
-            .map(ChatMessageResponse::from)
-            .collect(Collectors.toList());
-
-    PagedResponse<ChatMessageResponse> response =
-        new PagedResponse<>(messages, pagedResult.getPagination());
-
-    return ResponseEntity.ok(ApiResponse.success(response));
-  }
-
   @GetMapping("/{messageId}")
+  @Operation(summary = "메시지 조회 (관리자용)", description = "특정 메시지를 ID로 조회합니다")
+  @ApiResponses(
+      value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "조회 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404",
+            description = "메시지를 찾을 수 없음",
+            content = @Content)
+      })
   public ResponseEntity<ApiResponse<ChatMessageResponse>> getMessage(
-      @PathVariable String messageId) {
+      @AuthenticationPrincipal CustomUser customUser, @PathVariable String messageId) {
     Optional<ChatMessageResponse> message = chatMessageService.getMessage(messageId);
     return message
         .map(response -> ResponseEntity.ok(ApiResponse.success(response)))
@@ -91,6 +79,21 @@ public class ChatMessageController {
   }
 
   @DeleteMapping("/{messageId}")
+  @Operation(summary = "메시지 삭제 (관리자용)", description = "특정 메시지를 ID로 삭제합니다")
+  @ApiResponses(
+      value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "삭제 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404",
+            description = "메시지를 찾을 수 없음",
+            content = @Content),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "403",
+            description = "삭제 권한 없음",
+            content = @Content)
+      })
   public ResponseEntity<ApiResponse<ChatMessageResponse>> deleteMessage(
       @PathVariable String messageId, @AuthenticationPrincipal CustomUser customUser) {
     if (customUser == null) {

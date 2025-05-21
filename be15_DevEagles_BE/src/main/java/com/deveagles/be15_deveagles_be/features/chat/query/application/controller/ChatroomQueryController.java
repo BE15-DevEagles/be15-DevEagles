@@ -6,6 +6,10 @@ import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.respo
 import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.ChatroomReadSummaryResponse;
 import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.ChatroomResponse;
 import com.deveagles.be15_deveagles_be.features.chat.query.application.service.ChatroomQueryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -20,11 +24,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/chatrooms")
+@Tag(name = "채팅방 조회", description = "채팅방 조회 API")
 public class ChatroomQueryController {
 
   private final ChatroomQueryService chatroomQueryService;
 
   @GetMapping
+  @Operation(summary = "채팅방 목록 조회", description = "사용자의 채팅방 목록을 조회합니다")
+  @ApiResponses(
+      value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "조회 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404",
+            description = "채팅방을 찾을 수 없음",
+            content = @Content)
+      })
   public ResponseEntity<ApiResponse<ChatroomListResponse>> getChatrooms(
       @AuthenticationPrincipal CustomUser customUser,
       @RequestParam(required = false) String teamId,
@@ -37,6 +53,17 @@ public class ChatroomQueryController {
   }
 
   @GetMapping("/{chatroomId}")
+  @Operation(summary = "채팅방 상세 조회", description = "채팅방의 상세 정보를 조회합니다")
+  @ApiResponses(
+      value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "조회 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404",
+            description = "채팅방을 찾을 수 없음",
+            content = @Content)
+      })
   public ResponseEntity<ApiResponse<ChatroomResponse>> getChatroom(
       @AuthenticationPrincipal CustomUser customUser, @PathVariable String chatroomId) {
     log.info("채팅방 상세 조회 요청 -> 사용자: {}, 채팅방ID: {}", customUser.getUsername(), chatroomId);
@@ -46,6 +73,17 @@ public class ChatroomQueryController {
   }
 
   @GetMapping("/{chatroomId}/read-summary")
+  @Operation(summary = "채팅방 읽음 상태 요약 조회", description = "채팅방의 읽음 상태 요약 정보를 조회합니다")
+  @ApiResponses(
+      value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "조회 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404",
+            description = "채팅방을 찾을 수 없음",
+            content = @Content)
+      })
   public ResponseEntity<ApiResponse<ChatroomReadSummaryResponse>> getChatroomReadSummary(
       @AuthenticationPrincipal CustomUser customUser, @PathVariable String chatroomId) {
     log.info("채팅방 읽음 상태 요약 조회 요청 -> 사용자: {}, 채팅방ID: {}", customUser.getUsername(), chatroomId);
