@@ -63,7 +63,6 @@ public class AiChatServiceImpl implements AiChatService {
     this.geminiApiAdapter = geminiApiAdapter;
   }
 
-  // 유틸리티 메서드들을 먼저 정의합니다
   private String getContextKey(String userId, String chatroomId) {
     return userId + ":" + chatroomId;
   }
@@ -135,10 +134,9 @@ public class AiChatServiceImpl implements AiChatService {
     return chatMessageService.sendMessage(feedbackRequest);
   }
 
-  // 인터페이스 구현 메서드들
   @Override
   public void initializeAiChatSession(String userId, String chatroomId) {
-    cleanupExpiredSessions(); // 만료된 세션 정리
+    cleanupExpiredSessions();
 
     String contextKey = getContextKey(userId, chatroomId);
     Map<String, Object> context = new HashMap<>();

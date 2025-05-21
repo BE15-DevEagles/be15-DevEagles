@@ -1,0 +1,161 @@
+/*───────────────────────────────────────────────────────────────────────────
+   1. Color Palette
+────────────────────────────────────────────────────────────────────────────*/
+:root {
+  /* Neutral */
+  --color-neutral-dark: #1f1f1f;
+  --color-neutral-white: #ffffff;
+
+  /* Gray */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* Semantic */
+  --color-error-50: #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-200: #fecaca;
+  --color-error-300: #dc2626;
+  --color-error-400: #991b1b;
+  --color-error-500: #7f1d1d;
+  --color-error-600: #450a0a;
+
+  --color-info-50: #fffcf4;
+  --color-info-100: #fff6dd;
+  --color-info-200: #fff3d0;
+  --color-info-300: #f2e5bf;
+  --color-info-400: #eed691;
+  --color-info-500: #efc036;
+  --color-info-600: #c59100;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #f59e0b;
+  --color-warning-400: #92400e;
+  --color-warning-500: #78350f;
+  --color-warning-600: #451a03;
+
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #247f46;
+  --color-success-400: #047857;
+  --color-success-500: #065f46;
+  --color-success-600: #064e3b;
+
+  /* Brand */
+  --color-primary-50: #ebf6f9;
+  --color-primary-100: #d7eef3;
+  --color-primary-200: #afdee8;
+  --color-primary-300: #167a89;
+  --color-primary-400: #14626c;
+  --color-primary-500: #0e3d40;
+  --color-primary-main: #257180;
+
+  --color-secondary-50: #feeee5;
+  --color-secondary-100: #feddcc;
+  --color-secondary-200: #fdbb9a;
+  --color-secondary-300: #f55504;
+  --color-secondary-400: #cd4604;
+  --color-secondary-500: #923100;
+  --color-secondary-main: #fd8b51;
+}
+
+/*───────────────────────────────────────────────────────────────────────────
+     2. Typography
+  ────────────────────────────────────────────────────────────────────────────*/
+/* Base font family */
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  color: var(--color-neutral-dark);
+}
+
+/* Screen Title */
+.font-screen-title {
+  font-size: 36px;
+  line-height: 46.8px;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: none;
+}
+
+/* Section Title */
+.font-section-title {
+  font-size: 24px;
+  line-height: 31.2px;
+  font-weight: 700;
+}
+
+/* Section Inner Title */
+.font-section-inner {
+  font-size: 16px;
+  line-height: 20.8px;
+  font-weight: 700;
+}
+
+/* Body */
+.font-body {
+  font-size: 14px;
+  line-height: 21px;
+  font-weight: 400;
+}
+
+/* One Liner Regular */
+.font-one-liner {
+  font-size: 14px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+/* One Liner Semibold */
+.font-one-liner-semibold {
+  font-size: 14px;
+  line-height: 16px;
+  font-weight: 700;
+}
+
+/* Small Regular */
+.font-small {
+  font-size: 12px;
+  line-height: 15.6px;
+  font-weight: 400;
+}
+
+/* Small Semibold */
+.font-small-semibold {
+  font-size: 12px;
+  line-height: 15.6px;
+  font-weight: 700;
+}
+
+/* Extra Small Semibold */
+.font-xs-semibold {
+  font-size: 10px;
+  line-height: 10px;
+  font-weight: 700;
+}
+
+/*───────────────────────────────────────────────────────────────────────────
+   3. Text Color Utilities
+────────────────────────────────────────────────────────────────────────────*/
+/* 흰색 텍스트 */
+.text-white {
+  color: var(--color-neutral-white) !important;
+}
+
+/*───────────────────────────────────────────────────────────────────────────
+     4. Effects
+  ────────────────────────────────────────────────────────────────────────────*/
+/* Drop shadow utility */
+.shadow-drop {
+  /* x-offset: 0px; y-offset: 8px; blur: 40px; spread: -10px; color: rgba(0,0,0,0.08) */
+  box-shadow: 0 8px 40px -10px rgba(0, 0, 0, 0.08);
+}

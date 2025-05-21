@@ -4,10 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.websocket.servlet.WebSocketServletAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
@@ -19,9 +16,6 @@ import org.springframework.test.context.TestPropertySource;
 // 의존성 사용하게 되면 아래 코드 삭제
 @EnableAutoConfiguration(
     exclude = {
-      DataSourceAutoConfiguration.class,
-      HibernateJpaAutoConfiguration.class,
-      SecurityAutoConfiguration.class,
       WebSocketServletAutoConfiguration.class, // WebSocket 자동설정 제외
       MongoAutoConfiguration.class, // MongoDB 자동설정 제외
       MongoDataAutoConfiguration.class, // MongoDB 데이터 자동설정 제외
