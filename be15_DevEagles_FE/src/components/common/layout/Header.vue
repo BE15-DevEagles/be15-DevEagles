@@ -45,10 +45,17 @@
               class="rounded-full bg-white h-8 w-8 overflow-hidden flex items-center justify-center border-2 border-white"
             >
               <img
-                src="./assets/image/profile-default.png"
-                alt="사용자 프로필"
+                v-if="user.userThumbnail"
+                :src="user.userThumbnail"
+                :alt="user.name"
                 class="w-full h-full object-cover"
               />
+              <div
+                v-else
+                class="w-full h-full flex items-center justify-center bg-[var(--color-primary-300)] text-white font-one-liner-semibold"
+              >
+                {{ user.name ? user.name.charAt(0) : '?' }}
+              </div>
             </div>
             <span class="font-one-liner-semibold">사용자</span>
           </button>
@@ -78,4 +85,13 @@
   </header>
 </template>
 
-<script setup></script>
+<script setup>
+  import { ref } from 'vue';
+
+  // 예시 사용자 데이터 (실제로는 props 또는 store에서 가져와야 함)
+  const user = ref({
+    name: '사용자', // 예시 이름
+    userThumbnail: null, // 예시 (null이면 첫 글자 표시)
+    // userThumbnail: 'https://via.placeholder.com/40', // 이미지 URL 예시
+  });
+</script>
