@@ -7,7 +7,7 @@
     <CollapsedSidebar
       v-if="isCollapsed"
       :current-mode="currentMode"
-      :unread-count="unreadCount"
+      :unread-count="chatStore.unreadCount"
       :selected-chat="selectedChat"
       @toggle-collapse="toggleCollapse"
       @toggle-mode="toggleMode"
@@ -50,15 +50,12 @@
 
           <!-- 채팅 목록 (하단) -->
           <ChatList
-            :chats="chats"
+            :chats="chatStore.chats"
             class="flex-grow"
             :style="{ height: `${100 - teamListHeight}%` }"
             @select-chat="selectChat"
           />
         </div>
-
-        <!-- 푸터 -->
-        <SidebarFooter class="flex-shrink-0" />
       </div>
     </div>
 
@@ -71,19 +68,27 @@
 </template>
 
 <script setup>
-  import { onBeforeUnmount, ref, onMounted } from 'vue';
+  import { onBeforeUnmount, ref, onMounted, computed, watch } from 'vue';
   import CollapsedSidebar from './CollapsedSidebar.vue';
   import { useSidebar } from './composables/useSidebar';
+  import { useTeamStore } from '@/store/team';
+  import { useChatStore } from '@/store/chat';
 
   import TeamMemberList from '@/features/team/components/TeamMemberList.vue';
   import ChatList from '@/features/chat/components/ChatList.vue';
   import ChatWindow from '@/features/chat/components/ChatWindow.vue';
-  import { useChatData } from '@/features/chat/composables/useChatData.js';
-  import { useTeamData } from '@/features/team/composables/useTeamData.js';
   import SidebarHeader from '@/components/common/layout/SidebarHeader.vue';
 
+  const teamStore = useTeamStore();
+  const chatStore = useChatStore();
+
+  // 팀원 목록
+  const teamMembers = computed(() => {
+    return teamStore.teamMembers;
+  });
+
   // 리사이저 관련 상태
-  const teamListHeight = ref(50); // 초기 팀원 목록 높이 (50%)
+  const teamListHeight = ref(50);
   const contentContainer = ref(null);
   const isDragging = ref(false);
   const initialY = ref(0);
@@ -100,20 +105,16 @@
     document.addEventListener('mouseup', stopResize);
   };
 
-  // 리사이징 중
   const onMouseMove = e => {
     if (!isDragging.value) return;
 
-    // 컨테이너의 높이 확인
     const containerHeight = contentContainer.value?.offsetHeight || 0;
     if (containerHeight === 0) return;
 
-    // 마우스 이동에 따른 높이 변화 계산
     const deltaY = e.clientY - initialY.value;
     const deltaPercent = (deltaY / containerHeight) * 100;
     let newHeight = initialHeight.value + deltaPercent;
 
-    // 10% ~ 90% 사이로 제한
     newHeight = Math.max(20, Math.min(80, newHeight));
     teamListHeight.value = newHeight;
   };
@@ -142,12 +143,16 @@
     cleanup,
   } = useSidebar();
 
-  // 채팅 데이터 관리
-  const { chats, unreadCount, startChat, sendMessage, generateAutoReply, markChatAsRead } =
-    useChatData();
-
-  // 팀 데이터 관리
-  const { teamMembers, viewWorkLog: viewTeamMemberWorkLog } = useTeamData();
+  // 현재 팀이 변경될 때마다 데이터 갱신
+  watch(
+    () => teamStore.currentTeamId,
+    (newTeamId, oldTeamId) => {
+      if (newTeamId && newTeamId !== oldTeamId) {
+        // 채팅창이 열려있는 경우 닫기
+        selectedChat.value = null;
+      }
+    }
+  );
 
   // 채팅창 닫기
   const closeChat = () => {
@@ -157,27 +162,44 @@
   // 채팅 선택
   const selectChat = chat => {
     selectedChat.value = chat;
-    markChatAsRead(chat.id);
+    chatStore.markChatAsRead(chat.id);
   };
 
   // 팀원과 채팅 시작
   const startChatWithMember = member => {
-    const chat = startChat(member);
-    selectChat(chat);
+    // 실제 구현에서는 회원 ID로 채팅방을 찾거나 생성
+    // 테스트 목적으로 임시 로직 사용
+    const existingChat = chatStore.chats.find(c => c.name === member.name);
+    if (existingChat) {
+      selectChat(existingChat);
+    } else {
+      const chatId = `chat-${Date.now()}`;
+      const newChat = {
+        id: chatId,
+        name: member.name,
+        isOnline: member.isOnline,
+        userThumbnail: member.thumbnail,
+        lastMessage: '',
+        lastMessageTime: '방금',
+        unreadCount: 0,
+        messages: [],
+      };
+
+      // 실제로는 API를 통해 채팅방을 생성하고 결과를 받아야 함
+      chatStore.chats.unshift(newChat);
+      selectChat(newChat);
+    }
   };
 
   // 메시지 전송 처리
   const handleSendMessage = ({ text, chatId }) => {
-    const updatedChat = sendMessage(chatId, text);
-    if (updatedChat) {
-      selectedChat.value = updatedChat;
-    }
+    chatStore.sendMessage(chatId, text);
   };
 
   // 일지보기 버튼 클릭 처리
   const viewWorkLog = member => {
-    viewTeamMemberWorkLog(member.id);
-    // TODO: 실제 구현에서는 모달이나 상세 페이지로 이동
+    // 현재는 간단하게 알림만 표시
+    alert(`${member.name}님의 작업 로그: 준비 중입니다.`);
   };
 </script>
 

@@ -6,17 +6,17 @@
           <div class="flex items-center justify-between">
             <h1 class="font-section-title">
               <span class="text-[var(--color-gray-600)]">#</span>
-              {{ currentChannel }}
+              {{ currentPage }}
             </h1>
           </div>
           <p class="text-[var(--color-gray-500)] font-one-liner mt-1">
-            {{ channelDescription }}
+            {{ pageDescription }}
           </p>
         </div>
 
         <div class="flex-grow overflow-y-auto space-y-4 mb-4">
-          <!-- 기본 컨텐츠 영역 -->
-          디자인 참고용 샘플 파일
+          <!-- 라우터 뷰를 통해 동적으로 내용을 표시 -->
+          <router-view></router-view>
         </div>
       </div>
     </div>
@@ -26,11 +26,11 @@
 <script setup>
   // Props
   const props = defineProps({
-    currentChannel: {
+    currentPage: {
       type: String,
       default: '샘플',
     },
-    channelDescription: {
+    pageDescription: {
       type: String,
       default: '샘플 설명',
     },
