@@ -201,6 +201,38 @@ public class WorklogServiceImpl implements WorklogService {
     return new PagedResponse<>(worklogResponses, pagination);
   }
 
+  @Transactional
+  @Override
+  public PagedResponse<WorklogResponse> findTeamWorklogs(
+      Long userId, SearchWorklogRequest request) {
+    validateTeamExists(request.getTeamId());
+    validateTeamMemberExists(request.getTeamId(), userId);
+    String userName = userCommandService.getUserDetails(userId).getUserName();
+    String teamName = teamCommandService.getTeamDetail(request.getTeamId()).getTeamName();
+    Pageable pageable = PageRequestUtil.createPageRequest(request.getPage(), request.getSize());
+    Page<Worklog> worklogPage = worklogRepository.findByTeamId(request.getTeamId(), pageable);
+    List<WorklogResponse> contents =
+        worklogPage.getContent().stream()
+            .map(
+                w ->
+                    WorklogResponse.builder()
+                        .worklogId(w.getWorklogId())
+                        .userName(userName)
+                        .teamName(teamName)
+                        .summary(w.getSummary())
+                        .writtenAt(w.getWrittenAt())
+                        .build())
+            .toList();
+
+    Pagination pagination =
+        new Pagination(
+            worklogPage.getNumber() + 1,
+            worklogPage.getTotalPages(),
+            worklogPage.getTotalElements());
+
+    return new PagedResponse<>(contents, pagination);
+  }
+
   public void validateUserExists(Long userId) {
     UserDetailResponse detail = userCommandService.getUserDetails(userId);
     if (detail == null || detail.getUserId() == null) {
