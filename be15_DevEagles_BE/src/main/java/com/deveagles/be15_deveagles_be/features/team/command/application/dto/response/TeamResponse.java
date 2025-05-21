@@ -7,4 +7,5 @@ import lombok.Getter;
 @Builder
 public class TeamResponse {
   private Long teamId;
+  private String teamName;
 }

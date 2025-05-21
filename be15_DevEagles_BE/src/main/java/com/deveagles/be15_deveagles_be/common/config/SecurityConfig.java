@@ -56,6 +56,7 @@ public class SecurityConfig {
                         "/api/v1/auth/sendAuth",
                         "/api/v1/auth/verify",
                         "/api/v1/summary")
+                        "api/v1/timecapsules")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

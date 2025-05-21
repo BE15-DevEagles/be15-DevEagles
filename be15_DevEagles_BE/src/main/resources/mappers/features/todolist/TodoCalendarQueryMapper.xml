@@ -13,12 +13,10 @@
             due_date AS dueDate,
             team_id AS teamId
         FROM todo
-        WHERE writer_id = #{userId}
-          AND deleted_at IS NULL
+        WHERE user_id = #{userId}
     </select>
 
-    <select id="selectTeamCalendarTodos"
-            parameterType="long"
+    <select id="selectTeamCalendarTodos" parameterType="long"
             resultType="com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.TeamCalendarTodoResponse">
         SELECT
             todo_id AS todoId,
@@ -27,6 +25,6 @@
             due_date AS dueDate
         FROM todo
         WHERE team_id = #{teamId}
-          AND deleted_at IS NULL
     </select>
+
 </mapper>

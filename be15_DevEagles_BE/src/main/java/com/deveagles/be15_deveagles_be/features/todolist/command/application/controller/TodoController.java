@@ -5,7 +5,9 @@ import com.deveagles.be15_deveagles_be.features.auth.command.application.model.C
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.request.CreateTodoRequest;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.request.UpdateTodoRequest;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.response.TodoResponse;
+import com.deveagles.be15_deveagles_be.features.todolist.command.application.dto.response.WorklogWrittenCheckResponse;
 import com.deveagles.be15_deveagles_be.features.todolist.command.application.service.TodoService;
+import com.deveagles.be15_deveagles_be.features.todolist.command.application.service.WorklogQueryService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class TodoController {
 
   private final TodoService todoService;
+  private final WorklogQueryService worklogQueryService;
 
   @PostMapping
   public ResponseEntity<ApiResponse<List<TodoResponse>>> createTodos(
@@ -47,5 +50,13 @@ public class TodoController {
       @AuthenticationPrincipal CustomUser user, @PathVariable Long todoId) {
     TodoResponse response = todoService.deleteTodo(user.getUserId(), todoId);
     return ResponseEntity.ok(ApiResponse.success(response));
+  }
+
+  @GetMapping("/worklog/written")
+  public ResponseEntity<ApiResponse<WorklogWrittenCheckResponse>> checkWorklogWrittenToday(
+      @AuthenticationPrincipal CustomUser user, @RequestParam Long teamId) {
+
+    boolean written = worklogQueryService.hasWrittenToday(user.getUserId(), teamId);
+    return ResponseEntity.ok(ApiResponse.success(WorklogWrittenCheckResponse.of(written)));
   }
 }
