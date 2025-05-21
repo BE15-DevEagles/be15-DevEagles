@@ -5,7 +5,9 @@ import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.req
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.UserFindIdRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.UserFindIdResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.service.AuthService;
+import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.UserStatus;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -56,6 +59,19 @@ public class AuthController {
     UserFindIdResponse response = authService.findId(request);
 
     return ResponseEntity.ok().body(ApiResponse.success(response));
+  }
+
+  @PostMapping("/valid")
+  public ResponseEntity<ApiResponse<Boolean>> validUserStatus(
+      @AuthenticationPrincipal CustomUser customUser) {
+
+    Boolean is_valid;
+
+    if (customUser.getUserStatus().equals(UserStatus.PENDING)) is_valid = Boolean.FALSE;
+    else if (customUser.getUserStatus().equals(UserStatus.ENABLED)) is_valid = Boolean.TRUE;
+    else return null;
+
+    return ResponseEntity.ok().body(ApiResponse.success(is_valid));
   }
 
   private ResponseEntity<ApiResponse<TokenResponse>> buildTokenResponse(TokenResponse response) {

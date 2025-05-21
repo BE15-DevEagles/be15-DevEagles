@@ -1,5 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.auth.command.application.model;
 
+import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.UserStatus;
 import java.util.Collection;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,6 +14,7 @@ public class CustomUser implements UserDetails {
   private final Long userId;
   private final String username;
   private final String password;
+  private final UserStatus userStatus;
   private final Collection<? extends GrantedAuthority> authorities;
 
   @Override
