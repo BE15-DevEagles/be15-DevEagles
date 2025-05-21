@@ -6,6 +6,7 @@ import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.res
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.AiChatService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatMessageService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatRoomService;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.impl.WebSocketMessageService;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom.ChatRoomType;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.ChatRoomRepository;
 import java.security.Principal;
@@ -15,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 @Controller
@@ -27,19 +27,19 @@ public class ChatWebSocketController {
   private final ChatRoomService chatRoomService;
   private final AiChatService aiChatService;
   private final ChatRoomRepository chatRoomRepository;
-  private final SimpMessagingTemplate messagingTemplate;
+  private final WebSocketMessageService webSocketMessageService;
 
   public ChatWebSocketController(
       ChatMessageService chatMessageService,
       ChatRoomService chatRoomService,
       AiChatService aiChatService,
       ChatRoomRepository chatRoomRepository,
-      SimpMessagingTemplate messagingTemplate) {
+      WebSocketMessageService webSocketMessageService) {
     this.chatMessageService = chatMessageService;
     this.chatRoomService = chatRoomService;
     this.aiChatService = aiChatService;
     this.chatRoomRepository = chatRoomRepository;
-    this.messagingTemplate = messagingTemplate;
+    this.webSocketMessageService = webSocketMessageService;
   }
 
   @MessageMapping("/chat.send")
@@ -96,10 +96,11 @@ public class ChatWebSocketController {
         chatRoomService.updateLastReadMessage(
             request.getChatroomId(), principal.getName(), request.getMessageId());
 
-    messagingTemplate.convertAndSend(
-        "/topic/chatroom." + request.getChatroomId() + ".read",
+    ReadStatusResponse readStatusResponse =
         new ReadStatusResponse(
-            request.getChatroomId(), principal.getName(), request.getMessageId()));
+            request.getChatroomId(), principal.getName(), request.getMessageId());
+
+    webSocketMessageService.sendReadStatusEvent(request.getChatroomId(), readStatusResponse);
   }
 
   @MessageMapping("/chat.ai.init")

@@ -28,6 +28,7 @@ public enum ChatErrorCode implements ErrorCodeType {
   MESSAGE_NOT_FOUND("30101", "메시지를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   MESSAGE_SEND_FAILED("30102", "메시지 전송에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
   MESSAGE_DELETE_FAILED("30103", "메시지 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+  MESSAGE_DELETE_ACCESS_DENIED("30104", "메시지 삭제 권한이 없습니다.", HttpStatus.FORBIDDEN),
 
   // WebSocket 관련 오류
   WEBSOCKET_CONNECTION_FAILED("30201", "WebSocket 연결에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),

@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.chat.command.application.contro
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.common.dto.PagedResponse;
 import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.ChatMessageResponse;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatMessageService;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatMessage;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -90,7 +92,11 @@ public class ChatMessageController {
 
   @DeleteMapping("/{messageId}")
   public ResponseEntity<ApiResponse<ChatMessageResponse>> deleteMessage(
-      @PathVariable String messageId) {
+      @PathVariable String messageId, @AuthenticationPrincipal CustomUser customUser) {
+    if (customUser == null) {
+      throw new ChatBusinessException(ChatErrorCode.MESSAGE_DELETE_ACCESS_DENIED);
+    }
+
     Optional<ChatMessageResponse> deletedMessage = chatMessageService.deleteMessage(messageId);
     return deletedMessage
         .map(response -> ResponseEntity.ok(ApiResponse.success(response)))

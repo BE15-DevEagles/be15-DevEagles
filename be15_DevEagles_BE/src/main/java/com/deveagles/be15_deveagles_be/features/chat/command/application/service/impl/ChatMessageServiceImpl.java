@@ -14,7 +14,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,15 +24,15 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
   private final ChatMessageRepository chatMessageRepository;
   private final ChatRoomRepository chatRoomRepository;
-  private final SimpMessagingTemplate messagingTemplate;
+  private final WebSocketMessageService webSocketMessageService;
 
   public ChatMessageServiceImpl(
       ChatMessageRepository chatMessageRepository,
       ChatRoomRepository chatRoomRepository,
-      SimpMessagingTemplate messagingTemplate) {
+      WebSocketMessageService webSocketMessageService) {
     this.chatMessageRepository = chatMessageRepository;
     this.chatRoomRepository = chatRoomRepository;
-    this.messagingTemplate = messagingTemplate;
+    this.webSocketMessageService = webSocketMessageService;
   }
 
   @Override
@@ -78,7 +79,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     updateChatRoomLastMessage(chatRoom, savedMessage);
 
     ChatMessageResponse response = ChatMessageResponse.from(savedMessage);
-    messagingTemplate.convertAndSend("/topic/chatroom." + request.getChatroomId(), response);
+    webSocketMessageService.sendChatroomMessage(request.getChatroomId(), response);
 
     return response;
   }
@@ -113,18 +114,22 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
     ChatMessage message = messageOpt.get();
 
-    // TODO: 삭제 권한 검증 추가 - 시큐리티 구현 후 활성화
-    // 메시지 작성자 또는 관리자만 삭제 가능하도록 처리
-    // if (!message.getSenderId().equals(currentUser.getId()) && !currentUser.hasRole("ADMIN")) {
-    //     throw new ChatBusinessException(ChatErrorCode.MESSAGE_DELETE_ACCESS_DENIED);
-    // }
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null) {
+      throw new ChatBusinessException(ChatErrorCode.MESSAGE_DELETE_ACCESS_DENIED);
+    }
+
+    String currentUserId = authentication.getName();
+
+    if (!message.getSenderId().equals(currentUserId)) {
+      throw new ChatBusinessException(ChatErrorCode.MESSAGE_DELETE_ACCESS_DENIED);
+    }
 
     message.delete();
     ChatMessage updatedMessage = chatMessageRepository.save(message);
 
     ChatMessageResponse response = ChatMessageResponse.from(updatedMessage);
-    messagingTemplate.convertAndSend(
-        "/topic/chatroom." + message.getChatroomId() + ".delete", response);
+    webSocketMessageService.sendMessageDeletedEvent(message.getChatroomId(), response);
 
     return Optional.of(response);
   }
@@ -136,14 +141,15 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         .findById(chatroomId)
         .orElseThrow(() -> new ChatBusinessException(ChatErrorCode.CHAT_ROOM_NOT_FOUND));
 
-    ChatMessage referenceMessage =
-        chatMessageRepository
-            .findById(messageId)
-            .orElseThrow(() -> new ChatBusinessException(ChatErrorCode.MESSAGE_NOT_FOUND));
+    Optional<ChatMessage> messageOpt = chatMessageRepository.findById(messageId);
+    if (messageOpt.isEmpty()) {
+      throw new ChatBusinessException(ChatErrorCode.MESSAGE_NOT_FOUND);
+    }
 
+    ChatMessage message = messageOpt.get();
     List<ChatMessage> messages =
         chatMessageRepository.findMessagesByChatroomIdBeforeTimestamp(
-            chatroomId, referenceMessage.getCreatedAt(), limit);
+            chatroomId, message.getCreatedAt(), limit);
 
     return messages.stream().map(ChatMessageResponse::from).collect(Collectors.toList());
   }
@@ -155,14 +161,15 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         .findById(chatroomId)
         .orElseThrow(() -> new ChatBusinessException(ChatErrorCode.CHAT_ROOM_NOT_FOUND));
 
-    ChatMessage referenceMessage =
-        chatMessageRepository
-            .findById(messageId)
-            .orElseThrow(() -> new ChatBusinessException(ChatErrorCode.MESSAGE_NOT_FOUND));
+    Optional<ChatMessage> messageOpt = chatMessageRepository.findById(messageId);
+    if (messageOpt.isEmpty()) {
+      throw new ChatBusinessException(ChatErrorCode.MESSAGE_NOT_FOUND);
+    }
 
+    ChatMessage message = messageOpt.get();
     List<ChatMessage> messages =
         chatMessageRepository.findMessagesByChatroomIdAfterTimestamp(
-            chatroomId, referenceMessage.getCreatedAt(), limit);
+            chatroomId, message.getCreatedAt(), limit);
 
     return messages.stream().map(ChatMessageResponse::from).collect(Collectors.toList());
   }
