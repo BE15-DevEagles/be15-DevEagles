@@ -3,9 +3,8 @@ package com.deveagles.be15_deveagles_be.features.todolist.query.application.serv
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.MyDdayTodoPage;
+import com.deveagles.be15_deveagles_be.common.dto.PagedResponse;
 import com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.MyDdayTodoResponse;
-import com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.MyTeamDdayTodoPage;
 import com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.MyTeamDdayTodoResponse;
 import com.deveagles.be15_deveagles_be.features.todolist.query.application.mapper.TodoDdayQueryMapper;
 import java.time.LocalDate;
@@ -46,10 +45,11 @@ class TodoDdayQueryServiceTest {
         .thenReturn(mockList);
     when(todoDdayQueryMapper.countMyIncompleteTodos(userId)).thenReturn(1);
 
-    MyDdayTodoPage result = todoDdayQueryService.getMyIncompleteTodosWithDday(userId, page, size);
+    PagedResponse<MyDdayTodoResponse> result =
+        todoDdayQueryService.getMyIncompleteTodosWithDday(userId, page, size);
 
-    assertThat(result.getTodos()).hasSize(1);
-    assertThat(result.getTodos().get(0).getTodoId()).isEqualTo(101L);
+    assertThat(result.getContent()).hasSize(1);
+    assertThat(result.getContent().get(0).getTodoId()).isEqualTo(101L);
     assertThat(result.getPagination().getTotalItems()).isEqualTo(1);
     assertThat(result.getPagination().getTotalPages()).isEqualTo(1);
     assertThat(result.getPagination().getCurrentPage()).isEqualTo(1);
@@ -78,11 +78,11 @@ class TodoDdayQueryServiceTest {
         .thenReturn(mockList);
     when(todoDdayQueryMapper.countMyTeamIncompleteTodos(userId, teamId)).thenReturn(1);
 
-    MyTeamDdayTodoPage result =
+    PagedResponse<MyTeamDdayTodoResponse> result =
         todoDdayQueryService.getMyTeamIncompleteTodosWithDday(userId, teamId, page, size);
 
-    assertThat(result.getTodos()).hasSize(1);
-    assertThat(result.getTodos().get(0).getTodoId()).isEqualTo(301L);
+    assertThat(result.getContent()).hasSize(1);
+    assertThat(result.getContent().get(0).getTodoId()).isEqualTo(301L);
     assertThat(result.getPagination().getTotalItems()).isEqualTo(1);
     assertThat(result.getPagination().getTotalPages()).isEqualTo(1);
     assertThat(result.getPagination().getCurrentPage()).isEqualTo(1);
