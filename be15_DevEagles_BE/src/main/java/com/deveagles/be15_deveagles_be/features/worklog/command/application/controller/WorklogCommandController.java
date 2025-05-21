@@ -1,9 +1,12 @@
 package com.deveagles.be15_deveagles_be.features.worklog.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.common.dto.PagedResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request.SearchWorklogRequest;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request.WorklogCreateRequest;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogDetailResponse;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogResponse;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.WorklogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,5 +31,17 @@ public class WorklogCommandController {
     WorklogDetailResponse response =
         worklogService.createWorklog(userId, teamId, worklogCreateRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
+  }
+
+  /*내 업무일지 조회*/
+  @PostMapping("/myworklog")
+  public ResponseEntity<ApiResponse<PagedResponse<WorklogResponse>>> searchMyWorklog(
+          @AuthenticationPrincipal CustomUser customUser,
+          @RequestBody SearchWorklogRequest request
+  ){
+    Long userId = customUser.getUserId();
+
+    PagedResponse<WorklogResponse> response = worklogService.findMyWorklog(userId, request);
+    return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(response));
   }
 }
