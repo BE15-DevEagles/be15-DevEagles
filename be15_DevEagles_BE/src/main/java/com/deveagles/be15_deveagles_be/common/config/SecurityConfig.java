@@ -55,8 +55,14 @@ public class SecurityConfig {
                         "/api/v1/auth/findId",
                         "/api/v1/auth/sendAuth",
                         "/api/v1/auth/verify",
-                        "/api/v1/summary")
+                        "/api/v1/summary",
                         "api/v1/timecapsules")
+                    .permitAll()
+                    .requestMatchers(
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/swagger-resources/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
