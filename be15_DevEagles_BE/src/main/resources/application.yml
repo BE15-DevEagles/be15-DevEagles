@@ -2,6 +2,11 @@ spring:
   profiles:
     active: local
 
+  servlet:
+    multipart:
+      max-request-size: 30MB
+      max-file-size: 30MB
+
   # 데이터베이스 설정
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
@@ -88,9 +93,18 @@ spring-doc:
     operations-sorter: method
     doc-expansion: none
 
-# AWS 설정 (현재 비활성화)
-# cloud:
-#   aws:
+# AWS 설정
+cloud:
+  aws:
+    s3:
+      bucket: ${BUCKET}
+    region:
+      static: ap-northeast-2
+    stack:
+      auto: false
+    credentials:
+      access-key: ${ACCESSKEY}
+      secret-key: ${SECRETKEY}
 
 # 웹소켓 설정
 websocket:

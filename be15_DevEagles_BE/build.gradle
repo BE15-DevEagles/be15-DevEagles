@@ -60,7 +60,8 @@ dependencies {
     // // AWS SDK 환경 설정 없어서 통합 테스트시 오류, 향후 주석 풀어주세요
     // implementation 'io.awspring.cloud:spring-cloud-aws-starter:3.3.0'
     // implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.3.0'
-    
+    // S3
+    implementation("com.amazonaws:aws-java-sdk-s3:1.12.783")
     // WebSocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
