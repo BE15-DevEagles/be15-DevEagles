@@ -30,4 +30,17 @@
           AND tm.deleted_at IS NULL
     </select>
 
+    <select id="selectTeamInformation" parameterType="long"
+            resultType="com.deveagles.be15_deveagles_be.features.team.query.dto.response.TeamInformationResponse">
+        SELECT
+            team_id AS teamId,
+            team_name AS teamName,
+            introduction,
+            url AS teamThumbnailUrl
+        FROM team
+        WHERE team_id = #{teamId}
+          AND deleted_at IS NULL
+    </select>
+
+
 </mapper>

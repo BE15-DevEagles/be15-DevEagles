@@ -1,7 +1,16 @@
 <template>
-  <header class="bg-[var(--color-primary-300)] h-14 w-full flex items-center px-6 shadow-drop z-10">
+  <header class="bg-[var(--color-gray-800)] h-14 w-full flex items-center px-3 shadow-drop z-10">
     <div class="flex items-center justify-between w-full">
-      <div class="flex items-center">넣을 타이틀</div>
+      <!--      <div class="flex items-center monofett-regular text-[var(&#45;&#45;color-info-500)] text-4xl">-->
+      <!--        GOODY-->
+      <!--      </div>-->
+      <div class="w-30 h-10">
+        <img
+          src="/assets/image/logo-goody-with-text.png"
+          alt="Goody Logo"
+          class="w-full h-full object-contain"
+        />
+      </div>
 
       <div class="flex items-center space-x-4">
         <!-- 검색 -->
@@ -36,10 +45,17 @@
               class="rounded-full bg-white h-8 w-8 overflow-hidden flex items-center justify-center border-2 border-white"
             >
               <img
-                src="./assets/image/profile-default.png"
-                alt="사용자 프로필"
+                v-if="user.userThumbnail"
+                :src="user.userThumbnail"
+                :alt="user.name"
                 class="w-full h-full object-cover"
               />
+              <div
+                v-else
+                class="w-full h-full flex items-center justify-center bg-[var(--color-primary-300)] text-white font-one-liner-semibold"
+              >
+                {{ user.name ? user.name.charAt(0) : '?' }}
+              </div>
             </div>
             <span class="font-one-liner-semibold">사용자</span>
           </button>
@@ -69,4 +85,13 @@
   </header>
 </template>
 
-<script setup></script>
+<script setup>
+  import { ref } from 'vue';
+
+  // 예시 사용자 데이터 (실제로는 props 또는 store에서 가져와야 함)
+  const user = ref({
+    name: '사용자', // 예시 이름
+    userThumbnail: null, // 예시 (null이면 첫 글자 표시)
+    // userThumbnail: 'https://via.placeholder.com/40', // 이미지 URL 예시
+  });
+</script>

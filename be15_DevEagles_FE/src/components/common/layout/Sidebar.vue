@@ -1,8 +1,10 @@
 <template>
-  <aside class="bg-[var(--color-gray-700)] h-full w-[190px] flex flex-col shadow-drop">
+  <aside
+    class="bg-[var(--color-gray-700)] h-full w-[190px] flex flex-col shadow-drop rounded-l-2xl"
+  >
     <!-- 워크스페이스 헤더 -->
     <div class="p-3 flex items-center border-b border-[var(--color-gray-600)]">
-      <h1 class="text-white font-section-inner">ㅌㅣㅁ 이름</h1>
+      <h1 class="text-white font-section-inner">팀 이름</h1>
     </div>
 
     <div class="overflow-y-auto flex-grow">

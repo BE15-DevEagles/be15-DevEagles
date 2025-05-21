@@ -1,13 +1,6 @@
 <template>
   <aside class="bg-[var(--color-gray-800)] h-full w-16 flex flex-col items-center py-4">
     <!-- 로고 영역 -->
-    <div class="w-10 h-10 mb-6">
-      <img
-        src="/assets/image/logo-goody.png"
-        alt="Goody Logo"
-        class="w-full h-full object-contain"
-      />
-    </div>
 
     <!-- 팀 썸네일 목록 -->
     <div class="flex flex-col items-center space-y-4 overflow-y-auto flex-grow">
@@ -72,7 +65,7 @@
       <div
         class="absolute left-14 z-10 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-200 bg-[var(--color-gray-800)] text-white px-3 py-2 rounded font-small shadow-drop"
       >
-        팀 생성하기
+        New Team
       </div>
     </div>
   </aside>
