@@ -4,12 +4,15 @@ import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request.WorklogCreateRequest;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogDetailResponse;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogResponse;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.WorklogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/worklog")
@@ -28,5 +31,18 @@ public class WorklogCommandController {
     WorklogDetailResponse response =
         worklogService.createWorklog(userId, teamId, worklogCreateRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
+  }
+
+  /*내 업무일지 조회*/
+  @PostMapping("/myWorklog")
+  public ResponseEntity<ApiResponse<List<WorklogResponse>>> searchMyWorklog(
+          @AuthenticationPrincipal CustomUser customUser,
+          @RequestParam Long teamId
+  ){
+    Long userId = customUser.getUserId();
+
+    List<WorklogResponse> response =
+            worklogService.findMyWorklog(userId,teamId);
+    return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(response));
   }
 }

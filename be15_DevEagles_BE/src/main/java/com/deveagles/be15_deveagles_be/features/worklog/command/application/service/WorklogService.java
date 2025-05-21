@@ -4,11 +4,18 @@ import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request.WorklogCreateRequest;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.SummaryResponse;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogDetailResponse;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogResponse;
+
+import java.util.List;
 
 public interface WorklogService {
-  /*업무일지 등록 기능*/
-  WorklogDetailResponse createWorklog(
-      Long userId, Long teamId, WorklogCreateRequest worklogCreateRequest);
+
 
   SummaryResponse summaryGenerate(Long userId, WorkSummaryRequest request);
+
+  /*업무일지 등록 기능*/
+  WorklogDetailResponse createWorklog(
+          Long userId, Long teamId, WorklogCreateRequest worklogCreateRequest);
+
+  List<WorklogResponse> findMyWorklog(Long userId, Long teamId);
 }

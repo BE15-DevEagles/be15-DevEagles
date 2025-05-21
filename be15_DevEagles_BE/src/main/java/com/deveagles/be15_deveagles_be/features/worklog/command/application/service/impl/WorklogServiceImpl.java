@@ -15,6 +15,7 @@ import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.GeminiApiResponseDto;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.SummaryResponse;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogDetailResponse;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogResponse;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.GeneratorBuilder;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.WorklogService;
 import com.deveagles.be15_deveagles_be.features.worklog.command.domain.aggregate.Worklog;
@@ -24,6 +25,8 @@ import com.deveagles.be15_deveagles_be.features.worklog.command.domain.repositor
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -157,6 +160,27 @@ public class WorklogServiceImpl implements WorklogService {
                 .writtenAt(worklogCreateRequest.getWrittenAt())
                 .build()));
   }
+
+  @Transactional
+  @Override
+  public List<WorklogResponse> findMyWorklog(Long userId,Long teamId){
+    validateUserExists(userId);
+    validateTeamExists(teamId);
+    validateTeamMemberExists(teamId, userId);
+    List<Worklog> myWorklog = worklogRepository.findByUserIdAndTeamId(userId,teamId);
+    String userName = userCommandService.getUserDetails(userId).getUserName();
+    String teamName = teamCommandService.getTeamDetail(teamId).getTeamName();
+    return myWorklog.stream()
+            .map(w -> WorklogResponse.builder()
+                    .worklogId(w.getWorklogId())
+                    .userName(userName)
+                    .teamName(teamName)
+                    .summary(w.getSummary())
+                    .writtenAt(w.getWrittenAt())
+                    .build())
+            .collect(Collectors.toList());
+  }
+
 
   public void validateUserExists(Long userId) {
     UserDetailResponse detail = userCommandService.getUserDetails(userId);
