@@ -30,7 +30,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -164,6 +163,7 @@ public class WorklogServiceImpl implements WorklogService {
                 .writtenAt(worklogCreateRequest.getWrittenAt())
                 .build()));
   }
+
   @Transactional
   @Override
   public PagedResponse<WorklogResponse> findMyWorklog(Long userId, SearchWorklogRequest request) {
@@ -178,23 +178,59 @@ public class WorklogServiceImpl implements WorklogService {
 
     String userName = userCommandService.getUserDetails(userId).getUserName();
     String teamName = teamCommandService.getTeamDetail(teamId).getTeamName();
-    List<WorklogResponse> worklogResponses = myWorklogPage.getContent().stream()
-            .map(w -> WorklogResponse.builder()
-                    .worklogId(w.getWorklogId())
-                    .userName(userName)
-                    .teamName(teamName)
-                    .summary(w.getSummary())
-                    .writtenAt(w.getWrittenAt())
-                    .build())
+    List<WorklogResponse> worklogResponses =
+        myWorklogPage.getContent().stream()
+            .map(
+                w ->
+                    WorklogResponse.builder()
+                        .worklogId(w.getWorklogId())
+                        .userName(userName)
+                        .teamName(teamName)
+                        .summary(w.getSummary())
+                        .writtenAt(w.getWrittenAt())
+                        .build())
             .collect(Collectors.toList());
 
-    Pagination pagination = Pagination.builder()
+    Pagination pagination =
+        Pagination.builder()
             .currentPage(myWorklogPage.getNumber() + 1)
             .totalPages(myWorklogPage.getTotalPages())
             .totalItems(myWorklogPage.getTotalElements())
             .build();
 
     return new PagedResponse<>(worklogResponses, pagination);
+  }
+
+  @Transactional
+  @Override
+  public PagedResponse<WorklogResponse> findTeamWorklogs(
+      Long userId, SearchWorklogRequest request) {
+    validateTeamExists(request.getTeamId());
+    validateTeamMemberExists(request.getTeamId(), userId);
+    String userName = userCommandService.getUserDetails(userId).getUserName();
+    String teamName = teamCommandService.getTeamDetail(request.getTeamId()).getTeamName();
+    Pageable pageable = PageRequestUtil.createPageRequest(request.getPage(), request.getSize());
+    Page<Worklog> worklogPage = worklogRepository.findByTeamId(request.getTeamId(), pageable);
+    List<WorklogResponse> contents =
+        worklogPage.getContent().stream()
+            .map(
+                w ->
+                    WorklogResponse.builder()
+                        .worklogId(w.getWorklogId())
+                        .userName(userName)
+                        .teamName(teamName)
+                        .summary(w.getSummary())
+                        .writtenAt(w.getWrittenAt())
+                        .build())
+            .toList();
+
+    Pagination pagination =
+        new Pagination(
+            worklogPage.getNumber() + 1,
+            worklogPage.getTotalPages(),
+            worklogPage.getTotalElements());
+
+    return new PagedResponse<>(contents, pagination);
   }
 
   public void validateUserExists(Long userId) {

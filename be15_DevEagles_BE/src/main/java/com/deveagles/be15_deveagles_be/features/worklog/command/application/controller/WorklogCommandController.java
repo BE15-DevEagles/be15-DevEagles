@@ -36,12 +36,20 @@ public class WorklogCommandController {
   /*내 업무일지 조회*/
   @PostMapping("/myworklog")
   public ResponseEntity<ApiResponse<PagedResponse<WorklogResponse>>> searchMyWorklog(
-          @AuthenticationPrincipal CustomUser customUser,
-          @RequestBody SearchWorklogRequest request
-  ){
+      @AuthenticationPrincipal CustomUser customUser, @RequestBody SearchWorklogRequest request) {
     Long userId = customUser.getUserId();
 
     PagedResponse<WorklogResponse> response = worklogService.findMyWorklog(userId, request);
+    return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(response));
+  }
+
+  /*팀 업무일지 조회*/
+  @PostMapping("/team")
+  public ResponseEntity<ApiResponse<PagedResponse<WorklogResponse>>> getTeamWorklogs(
+      @AuthenticationPrincipal CustomUser customUser, @RequestBody SearchWorklogRequest request) {
+
+    Long userId = customUser.getUserId(); // 인증된 사용자 ID
+    PagedResponse<WorklogResponse> response = worklogService.findTeamWorklogs(userId, request);
     return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(response));
   }
 }

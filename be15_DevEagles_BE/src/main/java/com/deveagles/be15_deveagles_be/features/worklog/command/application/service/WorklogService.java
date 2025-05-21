@@ -14,6 +14,8 @@ public interface WorklogService {
       Long userId, Long teamId, WorklogCreateRequest worklogCreateRequest);
 
   PagedResponse<WorklogResponse> findMyWorklog(Long userId, SearchWorklogRequest reqeust);
+
   SummaryResponse summaryGenerate(Long userId, WorkSummaryRequest request);
 
+  PagedResponse<WorklogResponse> findTeamWorklogs(Long userId, SearchWorklogRequest request);
 }
