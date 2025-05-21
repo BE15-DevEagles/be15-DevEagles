@@ -5,31 +5,55 @@
 
 <mapper namespace="com.deveagles.be15_deveagles_be.features.todolist.query.application.mapper.TodoTeamQueryMapper">
 
-    <select id="selectTeamTodosByUser"
+    <select id="selectTeamTodosByCondition"
             resultType="com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.TeamFilteredTodoResponse">
         SELECT
-            t.todo_id AS todoId,
-            t.content,
-            t.start_date AS startDate,
-            t.due_date AS dueDate,
-            u.user_id AS userId,
-            u.user_name AS userName,
-            u.user_thumbnail_url AS userThumbnailUrl
+        t.todo_id AS todoId,
+        t.content,
+        t.start_date AS startDate,
+        t.due_date AS dueDate,
+        u.user_id AS userId,
+        u.user_name AS userName,
+        u.user_thumbnail_url AS userThumbnailUrl
         FROM todo t
-                 JOIN user u ON t.writer_id = u.user_id
-        WHERE t.team_id = #{teamId}
-          AND t.writer_id = #{userId}
-          AND t.deleted_at IS NULL
+        JOIN user u ON t.user_id = u.user_id
+        <where>
+            t.team_id = #{cond.teamId}
+            <if test="cond.userIds != null and cond.userIds.size() > 0">
+                AND t.user_id IN
+                <foreach collection="cond.userIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+            <if test="cond.status == 'completed'">
+                AND t.completed_at IS NOT NULL
+            </if>
+            <if test="cond.status == 'incomplete'">
+                AND t.completed_at IS NULL
+            </if>
+        </where>
         ORDER BY t.due_date ASC
-            LIMIT #{size} OFFSET #{offset}
+        LIMIT #{cond.size} OFFSET #{cond.offset}
     </select>
 
-    <select id="countTeamTodosByUser" resultType="int">
+    <select id="countTeamTodosByCondition" resultType="int">
         SELECT COUNT(*)
         FROM todo
-        WHERE team_id = #{teamId}
-          AND writer_id = #{userId}
-          AND deleted_at IS NULL
+        <where>
+            team_id = #{cond.teamId}
+            <if test="cond.userIds != null and cond.userIds.size() > 0">
+                AND user_id IN
+                <foreach collection="cond.userIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+            <if test="cond.status == 'completed'">
+                AND completed_at IS NOT NULL
+            </if>
+            <if test="cond.status == 'incomplete'">
+                AND completed_at IS NULL
+            </if>
+        </where>
     </select>
 
 </mapper>

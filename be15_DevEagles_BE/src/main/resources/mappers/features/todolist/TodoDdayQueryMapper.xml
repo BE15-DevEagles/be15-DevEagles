@@ -13,9 +13,8 @@
             team_id AS teamId,
             DATEDIFF(due_date, CURRENT_DATE()) AS dday
         FROM todo
-        WHERE writer_id = #{userId}
-          AND is_completed = false
-          AND deleted_at IS NULL
+        WHERE user_id = #{userId}
+          AND completed_at IS NULL
         ORDER BY due_date ASC
             LIMIT #{size} OFFSET #{offset}
     </select>
@@ -23,9 +22,8 @@
     <select id="countMyIncompleteTodos" resultType="int">
         SELECT COUNT(*)
         FROM todo
-        WHERE writer_id = #{userId}
-          AND is_completed = false
-          AND deleted_at IS NULL
+        WHERE user_id = #{userId}
+          AND completed_at IS NULL
     </select>
 
     <select id="selectMyTeamIncompleteTodosWithDday"
@@ -37,10 +35,9 @@
             team_id AS teamId,
             DATEDIFF(due_date, CURRENT_DATE()) AS dday
         FROM todo
-        WHERE writer_id = #{userId}
+        WHERE user_id = #{userId}
           AND team_id = #{teamId}
-          AND is_completed = false
-          AND deleted_at IS NULL
+          AND completed_at IS NULL
         ORDER BY due_date ASC
             LIMIT #{size} OFFSET #{offset}
     </select>
@@ -48,10 +45,9 @@
     <select id="countMyTeamIncompleteTodos" resultType="int">
         SELECT COUNT(*)
         FROM todo
-        WHERE writer_id = #{userId}
+        WHERE user_id = #{userId}
           AND team_id = #{teamId}
-          AND is_completed = false
-          AND deleted_at IS NULL
+          AND completed_at IS NULL
     </select>
-
 </mapper>
+
