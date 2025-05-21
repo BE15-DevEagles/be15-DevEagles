@@ -23,10 +23,11 @@ class TodoTeamQueryServiceTest {
   @InjectMocks private TodoTeamQueryService todoTeamQueryService;
 
   @Test
-  @DisplayName("특정 팀 todo 리스트를 작성자 기준으로 필터링 조회 성공")
-  void getTeamTodosByUser_success() {
+  @DisplayName("특정 팀 todo 리스트를 필터링 조건으로 조회 성공")
+  void getTeamTodosByCondition_success() {
     Long teamId = 1L;
-    Long userId = 2L;
+    List<Long> userIds = List.of(2L, 3L);
+    String status = "incomplete";
     int page = 1;
     int size = 5;
     int offset = 0;
@@ -38,17 +39,31 @@ class TodoTeamQueryServiceTest {
                 .content("코드 리뷰")
                 .startDate(LocalDate.of(2025, 5, 20))
                 .dueDate(LocalDate.of(2025, 5, 22))
-                .userId(userId)
+                .userId(2L)
                 .userName("니코")
                 .userThumbnailUrl("https://example.com/profile.jpg")
                 .build());
 
-    when(todoTeamQueryMapper.selectTeamTodosByUser(teamId, userId, offset, size))
+    when(todoTeamQueryMapper.selectTeamTodosByCondition(
+            org.mockito.ArgumentMatchers.argThat(
+                cond ->
+                    cond.getTeamId().equals(teamId)
+                        && cond.getUserIds().equals(userIds)
+                        && cond.getStatus().equals(status)
+                        && cond.getOffset() == offset
+                        && cond.getSize() == size)))
         .thenReturn(mockList);
-    when(todoTeamQueryMapper.countTeamTodosByUser(teamId, userId)).thenReturn(1);
+
+    when(todoTeamQueryMapper.countTeamTodosByCondition(
+            org.mockito.ArgumentMatchers.argThat(
+                cond ->
+                    cond.getTeamId().equals(teamId)
+                        && cond.getUserIds().equals(userIds)
+                        && cond.getStatus().equals(status))))
+        .thenReturn(1);
 
     PagedResponse<TeamFilteredTodoResponse> result =
-        todoTeamQueryService.getTeamTodosByUser(teamId, userId, page, size);
+        todoTeamQueryService.getTeamTodosByCondition(teamId, userIds, status, page, size);
 
     assertThat(result.getContent()).hasSize(1);
     assertThat(result.getContent().get(0).getTodoId()).isEqualTo(100L);
