@@ -37,8 +37,7 @@ function connectWebSocket(providedStore = null) {
   const socket = new SockJS(`${import.meta.env.VITE_API_BASE_URL}/ws`);
   stompClient = Stomp.over(socket);
 
-  // 디버그 로그 비활성화
-  stompClient.debug = null;
+  stompClient.debug = true;
 
   const headers = {};
   if (authStore.accessToken) {
