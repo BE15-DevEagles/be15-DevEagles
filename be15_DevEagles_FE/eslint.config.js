@@ -1,8 +1,5 @@
 import js from '@eslint/js';
 import eslintPluginVue from 'eslint-plugin-vue';
-// vue-eslint-parser는 eslint-plugin-vue의 flat/recommended 설정에 의해 내부적으로 사용될 수 있지만,
-// 명시적으로 이해를 돕기 위해 언급합니다. 별도 설치가 필요할 수 있습니다.
-// import vueEslintParser from 'vue-eslint-parser';
 import eslintConfigPrettier from 'eslint-config-prettier'; // Prettier와의 충돌 방지
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -38,7 +35,6 @@ export default [
   {
     files: ['**/*.vue'],
     rules: {
-      // 기존에 사용하시던 Vue 관련 규칙들
       'vue/multi-word-component-names': 'off',
       'vue/html-self-closing': [
         'warn',

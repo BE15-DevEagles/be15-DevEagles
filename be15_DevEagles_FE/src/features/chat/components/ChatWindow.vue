@@ -154,7 +154,9 @@
 </template>
 
 <script setup>
-  import { ref, defineProps, defineEmits } from 'vue';
+  import { ref, defineProps, defineEmits, onMounted, onUnmounted, watch } from 'vue';
+  import { sendMessage as sendChatMessage, initializeChat } from '../api/chatService';
+  import { useAuthStore } from '@/store/auth';
 
   /**
    * Props:
@@ -183,6 +185,7 @@
   });
 
   const newMessage = ref('');
+  const authStore = useAuthStore();
 
   /**
    * Emits:
@@ -198,11 +201,19 @@
   function sendMessage() {
     if (!newMessage.value.trim()) return;
 
+    // 부모 컴포넌트에 메시지 전송 이벤트 발생
     emit('send-message', {
       text: newMessage.value,
       chatId: props.chat.id,
     });
 
+    // 메시지 입력 필드 초기화
     newMessage.value = '';
   }
+
+  // 컴포넌트 마운트 시 채팅 초기화
+  onMounted(() => {
+    // 컴포넌트가 마운트될 때 웹소켓 초기화
+    initializeChat();
+  });
 </script>
