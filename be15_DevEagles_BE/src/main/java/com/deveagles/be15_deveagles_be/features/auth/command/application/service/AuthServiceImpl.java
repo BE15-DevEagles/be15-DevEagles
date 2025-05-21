@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.auth.command.application.servic
 import com.deveagles.be15_deveagles_be.common.jwt.JwtTokenProvider;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.LoginRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.UserFindIdRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.UserFindPwdRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.UserFindIdResponse;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
@@ -75,6 +76,17 @@ public class AuthServiceImpl implements AuthService {
             .orElseThrow(() -> new UserBusinessException(UserErrorCode.NOT_FOUND_USER_EXCEPTION));
 
     return UserFindIdResponse.builder().email(validUser.getEmail()).build();
+  }
+
+  @Override
+  public String findPwd(UserFindPwdRequest request) {
+
+    userRepository
+        .findValidUserForGetPwd(
+            request.userName(), request.email(), LocalDateTime.now().minusMonths(1))
+        .orElseThrow(() -> new UserBusinessException(UserErrorCode.NOT_FOUND_USER_EXCEPTION));
+
+    return sendAuthEmail(request.email());
   }
 
   @Override
