@@ -23,7 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-class TransferLeadershipTest {
+class TransferLeaderTest {
 
   private TeamRepository teamRepository;
   private UserRepository userRepository;
