@@ -56,4 +56,8 @@ public class Team {
   public void softDelete() {
     this.deletedAt = LocalDateTime.now();
   }
+
+  public void setUrl(String fileUrl) {
+    this.url = fileUrl;
+  }
 }

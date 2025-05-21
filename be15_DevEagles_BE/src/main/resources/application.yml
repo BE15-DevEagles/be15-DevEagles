@@ -16,6 +16,7 @@ spring:
 
   # JPA 설정
   jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: none # 기존 테이블 유지
     properties:

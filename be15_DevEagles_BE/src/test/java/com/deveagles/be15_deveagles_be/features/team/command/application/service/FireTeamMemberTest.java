@@ -19,6 +19,7 @@ import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class FireTeamMemberTest {
@@ -38,7 +39,8 @@ class FireTeamMemberTest {
   }
 
   @Test
-  void 팀원_추방_성공() {
+  @DisplayName("팀원 추방 - 성공")
+  void fireTeamMember_success() {
     Long teamId = 1L;
     Long leaderId = 10L;
     Long memberId = 20L;
@@ -60,9 +62,9 @@ class FireTeamMemberTest {
   }
 
   @Test
-  void 팀이_없으면_예외() {
+  @DisplayName("팀원 추방 - 존재하지 않는 팀일 경우 예외 발생")
+  void fireTeamMember_teamNotFound() {
     Long teamId = 1L;
-
     when(teamRepository.findById(teamId)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> teamCommandService.fireTeamMember(1L, teamId, "email@example.com"))
@@ -71,7 +73,8 @@ class FireTeamMemberTest {
   }
 
   @Test
-  void 팀장이_아니면_예외() {
+  @DisplayName("팀원 추방 - 팀장이 아닌 사용자가 시도하면 예외 발생")
+  void fireTeamMember_notTeamLeader() {
     Long teamId = 1L;
     Long leaderId = 999L;
     Team team = Team.builder().teamId(teamId).userId(1L).build();
@@ -85,7 +88,8 @@ class FireTeamMemberTest {
   }
 
   @Test
-  void 유저가_없으면_예외() {
+  @DisplayName("팀원 추방 - 유저가 존재하지 않으면 예외 발생")
+  void fireTeamMember_userNotFound() {
     Long teamId = 1L;
     Long leaderId = 1L;
     String email = "unknown@example.com";
@@ -101,12 +105,12 @@ class FireTeamMemberTest {
   }
 
   @Test
-  void 팀장이_자기자신을_추방하려하면_예외() {
+  @DisplayName("팀원 추방 - 팀장이 자신을 추방하려 할 경우 예외 발생")
+  void fireTeamMember_cannotFireSelf() {
     Long teamId = 1L;
     Long leaderId = 1L;
     String email = "leader@example.com";
 
-    // 팀장 본인
     Team team = Team.builder().teamId(teamId).userId(leaderId).build();
     User leader = createUser(leaderId, email);
 
@@ -119,7 +123,8 @@ class FireTeamMemberTest {
   }
 
   @Test
-  void 팀원이_아니면_예외() {
+  @DisplayName("팀원 추방 - 대상이 팀원이 아닐 경우 예외 발생")
+  void fireTeamMember_notTeamMember() {
     Long teamId = 1L;
     Long leaderId = 1L;
     Long targetId = 20L;
@@ -139,7 +144,8 @@ class FireTeamMemberTest {
   }
 
   @Test
-  void 이미_삭제된_팀원이라면_예외() {
+  @DisplayName("팀원 추방 - 이미 삭제된 팀원일 경우 예외 발생")
+  void fireTeamMember_alreadyDeletedMember() {
     Long teamId = 1L;
     Long leaderId = 1L;
     Long targetId = 20L;

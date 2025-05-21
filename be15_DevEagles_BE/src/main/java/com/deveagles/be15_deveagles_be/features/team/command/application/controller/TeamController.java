@@ -6,11 +6,13 @@ import com.deveagles.be15_deveagles_be.features.team.command.application.dto.req
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.CreateTeamResponse;
 import com.deveagles.be15_deveagles_be.features.team.command.application.service.TeamCommandService;
 import jakarta.validation.Valid;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,5 +41,16 @@ public class TeamController {
     teamCommandService.deleteTeam(userId, teamId);
 
     return ResponseEntity.ok(ApiResponse.success("팀이 삭제되었습니다."));
+  }
+
+  @PostMapping("/teams/{teamId}/thumbnail")
+  public ResponseEntity<ApiResponse<String>> uploadTeamThumbnail(
+      @AuthenticationPrincipal CustomUser customUser,
+      @PathVariable Long teamId,
+      @RequestParam("file") MultipartFile file)
+      throws IOException {
+
+    String url = teamCommandService.uploadTeamThumbnail(customUser.getUserId(), teamId, file);
+    return ResponseEntity.ok(ApiResponse.success(url));
   }
 }
