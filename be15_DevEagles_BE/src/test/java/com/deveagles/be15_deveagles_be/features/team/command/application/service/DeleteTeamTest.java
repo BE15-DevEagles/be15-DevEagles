@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.team.command.application.servic
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.deveagles.be15_deveagles_be.features.team.command.application.service.impl.TeamCommandServiceImpl;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.aggregate.Team;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.aggregate.TeamMember;
@@ -31,7 +32,9 @@ class DeleteTeamTest {
   void setUp() {
     teamRepository = mock(TeamRepository.class);
     teamMemberRepository = mock(TeamMemberRepository.class);
-    teamCommandService = new TeamCommandServiceImpl(teamRepository, null, teamMemberRepository);
+    AmazonS3 amazonS3 = mock(AmazonS3.class);
+    teamCommandService =
+        new TeamCommandServiceImpl(teamRepository, null, teamMemberRepository, amazonS3);
   }
 
   @Test

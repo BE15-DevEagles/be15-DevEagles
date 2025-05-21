@@ -51,31 +51,6 @@
           </li>
         </ul>
       </div>
-
-      <div class="px-3 py-2">
-        <ul>
-          <li
-            v-for="(user, index) in directMessages"
-            :key="index"
-            class="flex items-center px-2 py-1 rounded-md mb-1 cursor-pointer text-black hover:text-white"
-            :class="
-              user.active ? 'bg-[var(--color-primary-300)]' : 'hover:bg-[var(--color-primary-400)]'
-            "
-          >
-            <div
-              class="w-3 h-3 rounded-full mr-3"
-              :class="user.online ? 'bg-[var(--color-success-300)]' : 'bg-[var(--color-gray-400)]'"
-            ></div>
-            <span class="font-one-liner truncate">{{ user.name }}</span>
-            <span
-              v-if="user.unread"
-              class="ml-auto bg-[var(--color-error-300)] text-white rounded-full text-xs w-5 h-5 flex items-center justify-center"
-            >
-              {{ user.unread }}
-            </span>
-          </li>
-        </ul>
-      </div>
     </div>
   </aside>
 </template>

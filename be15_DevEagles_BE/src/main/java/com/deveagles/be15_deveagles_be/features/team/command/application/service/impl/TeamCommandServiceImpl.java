@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.team.command.application.service.impl;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.request.CreateTeamRequest;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.CreateTeamResponse;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.TeamResponse;
@@ -13,10 +15,14 @@ import com.deveagles.be15_deveagles_be.features.team.command.domain.repository.T
 import com.deveagles.be15_deveagles_be.features.team.command.domain.repository.TeamRepository;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
 import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
+import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +31,10 @@ public class TeamCommandServiceImpl implements TeamCommandService {
   private final TeamRepository teamRepository;
   private final UserRepository userRepository;
   private final TeamMemberRepository teamMemberRepository;
+  private final AmazonS3 amazonS3;
+
+  @Value("${cloud.aws.s3.bucket}")
+  private String bucket;
 
   @Override
   @Transactional
@@ -106,6 +116,34 @@ public class TeamCommandServiceImpl implements TeamCommandService {
         teamRepository
             .findById(teamId)
             .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.TEAM_NOT_FOUND));
-    return TeamResponse.builder().teamId(findTeam.getTeamId()).build();
+    return TeamResponse.builder()
+        .teamId(findTeam.getTeamId())
+        .teamName(findTeam.getTeamName())
+        .build();
+  }
+
+  @Transactional
+  public String uploadTeamThumbnail(Long userId, Long teamId, MultipartFile file)
+      throws IOException {
+    Team team =
+        teamRepository
+            .findById(teamId)
+            .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.TEAM_NOT_FOUND));
+
+    if (!team.getUserId().equals(userId)) {
+      throw new TeamBusinessException(TeamErrorCode.NOT_TEAM_LEADER);
+    }
+
+    String fileName = "team/thumbnail_" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+
+    ObjectMetadata metadata = new ObjectMetadata();
+    metadata.setContentLength(file.getSize());
+    metadata.setContentType(file.getContentType());
+
+    amazonS3.putObject(bucket, fileName, file.getInputStream(), metadata);
+    String fileUrl = amazonS3.getUrl(bucket, fileName).toString();
+
+    team.setUrl(fileUrl);
+    return fileUrl;
   }
 }

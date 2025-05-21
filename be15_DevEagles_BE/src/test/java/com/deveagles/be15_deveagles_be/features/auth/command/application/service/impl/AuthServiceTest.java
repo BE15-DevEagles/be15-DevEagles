@@ -9,9 +9,12 @@ import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.req
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.UserFindIdRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.UserFindIdResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.service.AuthCodeService;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.service.AuthServiceImpl;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.service.MailService;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.service.RefreshTokenService;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
+import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.UserStatus;
 import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -31,6 +34,8 @@ class AuthServiceImplTest {
   private RefreshTokenService refreshTokenService;
   private RedisTemplate<String, String> redisTemplate;
   private AuthServiceImpl authService;
+  private AuthCodeService authCodeService;
+  private MailService mailService;
 
   private String email;
   private String password;
@@ -42,10 +47,18 @@ class AuthServiceImplTest {
     jwtTokenProvider = mock(JwtTokenProvider.class);
     refreshTokenService = mock(RefreshTokenService.class);
     redisTemplate = mock(RedisTemplate.class);
+    authCodeService = mock(AuthCodeService.class);
+    mailService = mock(MailService.class);
 
     authService =
         new AuthServiceImpl(
-            userRepository, passwordEncoder, jwtTokenProvider, refreshTokenService, redisTemplate);
+            userRepository,
+            passwordEncoder,
+            jwtTokenProvider,
+            refreshTokenService,
+            redisTemplate,
+            authCodeService,
+            mailService);
 
     email = "test@email.com";
     password = "password123!";
@@ -118,5 +131,37 @@ class AuthServiceImplTest {
     verify(refreshTokenService).deleteRefreshToken(email);
     verify(valueOperations)
         .set(eq("BL:" + accessToken), eq("logout"), eq(Duration.ofMillis(remainingMillis)));
+  }
+
+  @Test
+  @DisplayName("인증 메일 전송 성공")
+  void testSendAuthEmailSuccess() throws Exception {
+    User mockUser = mock(User.class);
+
+    when(userRepository.findUserByEmail(email)).thenReturn(Optional.of(mockUser));
+    when(authCodeService.getAuthCode(email)).thenReturn(null);
+    doNothing().when(mailService).sendAuthMail(eq(email), anyString());
+
+    String resultCode = authService.sendAuthEmail(email);
+
+    assertThat(resultCode).hasSize(6);
+    verify(authCodeService).saveAuthCode(eq(email), eq(resultCode));
+    verify(mailService).sendAuthMail(eq(email), eq(resultCode));
+  }
+
+  @Test
+  @DisplayName("인증 코드 검증 성공")
+  void testVerifyAuthCodeSuccess() {
+    String authCode = "abc123";
+    User mockUser = mock(User.class);
+
+    when(authCodeService.getAuthCode(email)).thenReturn(authCode);
+    when(userRepository.findUserByEmail(email)).thenReturn(Optional.of(mockUser));
+
+    authService.verifyAuthCode(email, authCode);
+
+    verify(mockUser).setEnabledUser(UserStatus.ENABLED);
+    verify(userRepository).save(mockUser);
+    verify(authCodeService).deleteAuthCode(email);
   }
 }

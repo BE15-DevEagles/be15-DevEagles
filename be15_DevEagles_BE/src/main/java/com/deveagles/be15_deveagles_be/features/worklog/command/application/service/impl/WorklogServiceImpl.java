@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.worklog.command.application.service.impl;
 
+import com.deveagles.be15_deveagles_be.common.dto.PagedResponse;
+import com.deveagles.be15_deveagles_be.common.dto.Pagination;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.TeamMemberResponse;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.TeamResponse;
 import com.deveagles.be15_deveagles_be.features.team.command.application.service.TeamCommandService;
@@ -10,12 +12,15 @@ import com.deveagles.be15_deveagles_be.features.user.command.application.dto.res
 import com.deveagles.be15_deveagles_be.features.user.command.application.service.UserCommandService;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserBusinessException;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserErrorCode;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request.SearchWorklogRequest;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request.WorkSummaryRequest;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request.WorklogCreateRequest;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.GeminiApiResponseDto;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.SummaryResponse;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogDetailResponse;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogResponse;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.GeneratorBuilder;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.PageRequestUtil;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.WorklogService;
 import com.deveagles.be15_deveagles_be.features.worklog.command.domain.aggregate.Worklog;
 import com.deveagles.be15_deveagles_be.features.worklog.command.domain.exception.WorklogBusinessException;
@@ -24,7 +29,10 @@ import com.deveagles.be15_deveagles_be.features.worklog.command.domain.repositor
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -154,6 +162,104 @@ public class WorklogServiceImpl implements WorklogService {
                 .userId(userId)
                 .writtenAt(worklogCreateRequest.getWrittenAt())
                 .build()));
+  }
+
+  @Transactional
+  @Override
+  public PagedResponse<WorklogResponse> findMyWorklog(Long userId, SearchWorklogRequest request) {
+    Long teamId = request.getTeamId();
+    validateUserExists(userId);
+    validateTeamExists(teamId);
+    validateTeamMemberExists(teamId, userId);
+
+    Pageable pageable = PageRequestUtil.createPageRequest(request.getPage(), request.getSize());
+
+    Page<Worklog> myWorklogPage = worklogRepository.findByUserIdAndTeamId(userId, teamId, pageable);
+
+    String userName = userCommandService.getUserDetails(userId).getUserName();
+    String teamName = teamCommandService.getTeamDetail(teamId).getTeamName();
+    List<WorklogResponse> worklogResponses =
+        myWorklogPage.getContent().stream()
+            .map(
+                w ->
+                    WorklogResponse.builder()
+                        .worklogId(w.getWorklogId())
+                        .userName(userName)
+                        .teamName(teamName)
+                        .summary(w.getSummary())
+                        .writtenAt(w.getWrittenAt())
+                        .build())
+            .collect(Collectors.toList());
+
+    Pagination pagination =
+        Pagination.builder()
+            .currentPage(myWorklogPage.getNumber() + 1)
+            .totalPages(myWorklogPage.getTotalPages())
+            .totalItems(myWorklogPage.getTotalElements())
+            .build();
+
+    return new PagedResponse<>(worklogResponses, pagination);
+  }
+
+  @Transactional(readOnly = true)
+  @Override
+  public PagedResponse<WorklogResponse> findTeamWorklogs(
+      Long userId, SearchWorklogRequest request) {
+    validateTeamExists(request.getTeamId());
+    validateTeamMemberExists(request.getTeamId(), userId);
+    String userName = userCommandService.getUserDetails(userId).getUserName();
+    String teamName = teamCommandService.getTeamDetail(request.getTeamId()).getTeamName();
+    Pageable pageable = PageRequestUtil.createPageRequest(request.getPage(), request.getSize());
+    Page<Worklog> worklogPage = worklogRepository.findByTeamId(request.getTeamId(), pageable);
+    List<WorklogResponse> contents =
+        worklogPage.getContent().stream()
+            .map(
+                w ->
+                    WorklogResponse.builder()
+                        .worklogId(w.getWorklogId())
+                        .userName(userName)
+                        .teamName(teamName)
+                        .summary(w.getSummary())
+                        .writtenAt(w.getWrittenAt())
+                        .build())
+            .toList();
+
+    Pagination pagination =
+        new Pagination(
+            worklogPage.getNumber() + 1,
+            worklogPage.getTotalPages(),
+            worklogPage.getTotalElements());
+
+    return new PagedResponse<>(contents, pagination);
+  }
+
+  @Transactional(readOnly = true)
+  @Override
+  public WorklogDetailResponse getWorklogById(Long worklogId, Long userId) {
+    Worklog worklog =
+        worklogRepository
+            .findById(worklogId)
+            .orElseThrow(
+                () ->
+                    new WorklogBusinessException(
+                        WorklogErrorCode.INVALID_WORKLOG_INPUT, "업무일지를 찾을 수 없습니다."));
+
+    Long teamId = worklog.getTeamId();
+    validateTeamMemberExists(teamId, userId);
+    String userName = userCommandService.getUserDetails(userId).getUserName();
+    String teamName = teamCommandService.getTeamDetail(teamId).getTeamName();
+    System.out.println(teamName);
+    return WorklogDetailResponse.builder()
+        .worklogId(worklog.getWorklogId())
+        .summary(worklog.getSummary())
+        .note(worklog.getNote())
+        .planContent(worklog.getPlanContent())
+        .userName(userName)
+        .teamName(teamName)
+        .teamId(teamId)
+        .userId(userId)
+        .writtenAt(worklog.getWrittenAt())
+        .build();
   }
 
   public void validateUserExists(Long userId) {
