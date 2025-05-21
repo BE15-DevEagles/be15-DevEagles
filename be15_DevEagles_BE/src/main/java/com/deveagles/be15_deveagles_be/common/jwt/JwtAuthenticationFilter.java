@@ -28,18 +28,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     String token = getJwtFromRequest(request);
     log.info("## user login -> token: {}", token);
+    try {
+      if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
 
-    if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-      String username = jwtTokenProvider.getUsernameFromJWT(token);
+        if (jwtTokenProvider.isRefreshToken(token)) {
+          log.warn("# refreshToken으로 접근 시도 차단");
+          response.sendError(
+              HttpServletResponse.SC_UNAUTHORIZED, "refreshToken은 API 인증에 사용할 수 없습니다.");
+          return;
+        }
 
-      log.info("## user login -> username: {}", username);
+        if (Boolean.TRUE.equals(jwtTokenProvider.isAccessTokenBlacklisted(token))) {
+          log.warn("# 블랙리스트 토큰 사용 시도");
+          response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "로그아웃된 토큰입니다.");
+          return;
+        }
 
-      UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-      UsernamePasswordAuthenticationToken authentication =
-          new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-      SecurityContextHolder.getContext().setAuthentication(authentication);
+        String username = jwtTokenProvider.getUsernameFromJWT(token);
+        log.info("## user login -> username: {}", username);
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        UsernamePasswordAuthenticationToken authentication =
+            new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+      }
+    } catch (Exception e) {
+      log.error("# JWT 처리 중 에러 발생", e);
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "토큰 오류");
+      return;
     }
-
     filterChain.doFilter(request, response);
   }
 

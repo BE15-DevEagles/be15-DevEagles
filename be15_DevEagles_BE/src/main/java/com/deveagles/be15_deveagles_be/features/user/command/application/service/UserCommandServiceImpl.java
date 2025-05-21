@@ -7,6 +7,7 @@ import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.Us
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserBusinessException;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserErrorCode;
 import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,7 @@ public class UserCommandServiceImpl implements UserCommandService {
     }
 
     User user = modelMapper.map(request, User.class);
+
     user.setEncodedPassword(passwordEncoder.encode(request.password()));
 
     userRepository.save(user);
@@ -51,13 +53,8 @@ public class UserCommandServiceImpl implements UserCommandService {
   @Transactional
   public UserDetailResponse getUserDetails(Long userId) {
 
-    Optional<User> findUser = userRepository.findUserByUserId(userId);
-
-    if (findUser.isEmpty()) {
-      throw new UserBusinessException(UserErrorCode.NOT_FOUND_USER_EXCEPTION);
-    }
-
-    return buildUserDetailResponse(findUser.get());
+    User user = findUserByUserId(userId);
+    return buildUserDetailResponse(user);
   }
 
   @Override
@@ -65,13 +62,9 @@ public class UserCommandServiceImpl implements UserCommandService {
   public UserDetailResponse updateUserDetails(
       Long userId, UserUpdateRequest request, MultipartFile profile) {
 
-    Optional<User> findUser = userRepository.findUserByUserId(userId);
+    User user = findUserByUserId(userId);
 
-    if (findUser.isEmpty()) {
-      throw new UserBusinessException(UserErrorCode.NOT_FOUND_USER_EXCEPTION);
-    }
-
-    findUser.get().modifyUserInfo(request.userName(), request.phoneNumber());
+    user.modifyUserInfo(request.userName(), request.phoneNumber());
 
     // TODO : S3 연동 후 개발 필요
     /*
@@ -80,23 +73,50 @@ public class UserCommandServiceImpl implements UserCommandService {
      }
      */
 
-    User user = userRepository.save(findUser.get());
-
-    return buildUserDetailResponse(user);
+    return buildUserDetailResponse(userRepository.save(user));
   }
 
   @Override
   @Transactional
   public Boolean validUserPassword(Long userId, String password) {
 
-    Optional<User> validUser = userRepository.findUserByUserId(userId);
+    User user = findUserByUserId(userId);
 
-    if (validUser.isEmpty()) {
+    if (!passwordEncoder.matches(password, user.getPassword())) return Boolean.FALSE;
+    else return Boolean.TRUE;
+  }
+
+  @Override
+  @Transactional
+  public UserDetailResponse updateUserPassword(Long userId, String newPassword) {
+
+    User user = findUserByUserId(userId);
+
+    user.setEncodedPassword(passwordEncoder.encode(newPassword));
+
+    return buildUserDetailResponse(userRepository.save(user));
+  }
+
+  @Override
+  @Transactional
+  public void withDrawUser(Long userId) {
+
+    User user = findUserByUserId(userId);
+
+    user.deleteUser(LocalDateTime.now());
+
+    userRepository.save(user);
+  }
+
+  private User findUserByUserId(Long userId) {
+
+    Optional<User> findUser = userRepository.findUserByUserId(userId);
+
+    if (findUser.isEmpty()) {
       throw new UserBusinessException(UserErrorCode.NOT_FOUND_USER_EXCEPTION);
     }
 
-    if (!passwordEncoder.matches(password, validUser.get().getPassword())) return Boolean.FALSE;
-    else return Boolean.TRUE;
+    return findUser.get();
   }
 
   private UserDetailResponse buildUserDetailResponse(User user) {

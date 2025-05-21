@@ -76,4 +76,8 @@ public class User {
   public void setEncodedPassword(String encodedPassword) {
     this.password = encodedPassword;
   }
+
+  public void deleteUser(LocalDateTime deletedAt) {
+    this.deletedAt = deletedAt;
+  }
 }
