@@ -17,5 +17,5 @@ public interface AuthService {
 
   void verifyAuthCode(String email, String authCode);
 
-  String findPwd(UserFindPwdRequest request);
+  String sendFindPwdEmail(UserFindPwdRequest request);
 }

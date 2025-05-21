@@ -79,14 +79,27 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public String findPwd(UserFindPwdRequest request) {
+  public String sendFindPwdEmail(UserFindPwdRequest request) {
 
     userRepository
         .findValidUserForGetPwd(
             request.userName(), request.email(), LocalDateTime.now().minusMonths(1))
         .orElseThrow(() -> new UserBusinessException(UserErrorCode.NOT_FOUND_USER_EXCEPTION));
 
-    return sendAuthEmail(request.email());
+    if (authCodeService.getAuthCode(request.email()) != null) {
+      throw new UserBusinessException(UserErrorCode.DUPLICATE_SEND_AUTH_EXCEPTION);
+    }
+
+    String authCode = UUID.randomUUID().toString().substring(0, 6);
+    authCodeService.saveAuthCode(request.email(), authCode);
+
+    try {
+      mailService.sendFindPwdEmail(request.email(), authCode);
+    } catch (MessagingException e) {
+      throw new UserBusinessException(UserErrorCode.SEND_EMAIL_FAILURE_EXCEPTION);
+    }
+
+    return authCode;
   }
 
   @Override

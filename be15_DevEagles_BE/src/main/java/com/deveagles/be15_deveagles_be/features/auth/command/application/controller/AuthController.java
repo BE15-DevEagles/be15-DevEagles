@@ -72,7 +72,7 @@ public class AuthController {
   @PostMapping("/findPwd")
   public ResponseEntity<ApiResponse<Void>> findPwd(@RequestBody @Valid UserFindPwdRequest request) {
 
-    String authCode = authService.findPwd(request);
+    String authCode = authService.sendFindPwdEmail(request);
     log.info("### 비밀번호 찾기 인증 요청 authCode: {}", authCode);
 
     return ResponseEntity.ok().body(ApiResponse.success(null));
