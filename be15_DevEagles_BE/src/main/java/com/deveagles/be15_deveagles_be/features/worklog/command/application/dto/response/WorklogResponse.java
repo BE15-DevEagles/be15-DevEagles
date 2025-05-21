@@ -7,7 +7,9 @@ import lombok.Getter;
 @Getter
 @Builder
 public class WorklogResponse {
+  private Long worklogId;
   private String userName;
+  private String teamName;
   private String summary;
   private LocalDateTime writtenAt;
 }
