@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.worklog.command.application.service.impl;
 
+import com.deveagles.be15_deveagles_be.common.dto.PagedResponse;
+import com.deveagles.be15_deveagles_be.common.dto.Pagination;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.TeamMemberResponse;
 import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.TeamResponse;
 import com.deveagles.be15_deveagles_be.features.team.command.application.service.TeamCommandService;
@@ -10,6 +12,7 @@ import com.deveagles.be15_deveagles_be.features.user.command.application.dto.res
 import com.deveagles.be15_deveagles_be.features.user.command.application.service.UserCommandService;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserBusinessException;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserErrorCode;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request.SearchWorklogReqeust;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request.WorkSummaryRequest;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request.WorklogCreateRequest;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.GeminiApiResponseDto;
@@ -17,6 +20,7 @@ import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogDetailResponse;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogResponse;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.GeneratorBuilder;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.PageRequestUtil;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.WorklogService;
 import com.deveagles.be15_deveagles_be.features.worklog.command.domain.aggregate.Worklog;
 import com.deveagles.be15_deveagles_be.features.worklog.command.domain.exception.WorklogBusinessException;
@@ -28,6 +32,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -161,16 +167,20 @@ public class WorklogServiceImpl implements WorklogService {
                 .build()));
   }
 
-  @Transactional
   @Override
-  public List<WorklogResponse> findMyWorklog(Long userId,Long teamId){
+  public PagedResponse<WorklogResponse> findMyWorklog(Long userId, SearchWorklogReqeust request) {
+    Long teamId = request.getTeamId();
     validateUserExists(userId);
     validateTeamExists(teamId);
     validateTeamMemberExists(teamId, userId);
-    List<Worklog> myWorklog = worklogRepository.findByUserIdAndTeamId(userId,teamId);
+
+    Pageable pageable = PageRequestUtil.createPageRequest(request.getPage(), request.getSize());
+
+    Page<Worklog> myWorklogPage = worklogRepository.findByUserIdAndTeamId(userId, teamId, pageable);
+
     String userName = userCommandService.getUserDetails(userId).getUserName();
     String teamName = teamCommandService.getTeamDetail(teamId).getTeamName();
-    return myWorklog.stream()
+    List<WorklogResponse> worklogResponses = myWorklogPage.getContent().stream()
             .map(w -> WorklogResponse.builder()
                     .worklogId(w.getWorklogId())
                     .userName(userName)
@@ -179,6 +189,14 @@ public class WorklogServiceImpl implements WorklogService {
                     .writtenAt(w.getWrittenAt())
                     .build())
             .collect(Collectors.toList());
+
+    Pagination pagination = Pagination.builder()
+            .currentPage(myWorklogPage.getNumber() + 1)
+            .totalPages(myWorklogPage.getTotalPages())
+            .totalItems(myWorklogPage.getTotalElements())
+            .build();
+
+    return new PagedResponse<>(worklogResponses, pagination);
   }
 
 
