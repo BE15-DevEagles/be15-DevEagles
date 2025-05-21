@@ -30,7 +30,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -164,6 +163,7 @@ public class WorklogServiceImpl implements WorklogService {
                 .writtenAt(worklogCreateRequest.getWrittenAt())
                 .build()));
   }
+
   @Transactional
   @Override
   public PagedResponse<WorklogResponse> findMyWorklog(Long userId, SearchWorklogRequest request) {
@@ -178,17 +178,21 @@ public class WorklogServiceImpl implements WorklogService {
 
     String userName = userCommandService.getUserDetails(userId).getUserName();
     String teamName = teamCommandService.getTeamDetail(teamId).getTeamName();
-    List<WorklogResponse> worklogResponses = myWorklogPage.getContent().stream()
-            .map(w -> WorklogResponse.builder()
-                    .worklogId(w.getWorklogId())
-                    .userName(userName)
-                    .teamName(teamName)
-                    .summary(w.getSummary())
-                    .writtenAt(w.getWrittenAt())
-                    .build())
+    List<WorklogResponse> worklogResponses =
+        myWorklogPage.getContent().stream()
+            .map(
+                w ->
+                    WorklogResponse.builder()
+                        .worklogId(w.getWorklogId())
+                        .userName(userName)
+                        .teamName(teamName)
+                        .summary(w.getSummary())
+                        .writtenAt(w.getWrittenAt())
+                        .build())
             .collect(Collectors.toList());
 
-    Pagination pagination = Pagination.builder()
+    Pagination pagination =
+        Pagination.builder()
             .currentPage(myWorklogPage.getNumber() + 1)
             .totalPages(myWorklogPage.getTotalPages())
             .totalItems(myWorklogPage.getTotalElements())

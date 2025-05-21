@@ -36,9 +36,7 @@ public class WorklogCommandController {
   /*내 업무일지 조회*/
   @PostMapping("/myworklog")
   public ResponseEntity<ApiResponse<PagedResponse<WorklogResponse>>> searchMyWorklog(
-          @AuthenticationPrincipal CustomUser customUser,
-          @RequestBody SearchWorklogRequest request
-  ){
+      @AuthenticationPrincipal CustomUser customUser, @RequestBody SearchWorklogRequest request) {
     Long userId = customUser.getUserId();
 
     PagedResponse<WorklogResponse> response = worklogService.findMyWorklog(userId, request);
