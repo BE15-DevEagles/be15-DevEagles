@@ -35,20 +35,25 @@ public class Worklog {
   @Column(name = "user_id")
   private Long userId;
 
+  @Column(name = "written_at")
+  private LocalDateTime writtenAt;
+
   @Builder
   public Worklog(
-      String summary,
-      String workContent,
-      String note,
-      String planContent,
-      LocalDateTime createdAt,
-      Long teamId,
-      Long userId) {
+          String summary,
+          String workContent,
+          String note,
+          String planContent,
+          LocalDateTime createdAt,
+          LocalDateTime writtenAt,
+          Long teamId,
+          Long userId) {
     this.summary = summary;
     this.workContent = workContent;
     this.note = note;
     this.planContent = planContent;
     this.createdAt = createdAt;
+    this.writtenAt = writtenAt;
     this.teamId = teamId;
     this.userId = userId;
   }

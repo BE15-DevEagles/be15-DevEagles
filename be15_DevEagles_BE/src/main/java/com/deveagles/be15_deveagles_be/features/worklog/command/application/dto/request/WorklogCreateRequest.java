@@ -1,3 +1,18 @@
 package com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.request;
 
-public class WorklogCreateRequest {}
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Getter;
+
+import java.time.LocalDateTime;
+
+@Getter
+public class WorklogCreateRequest {
+
+    private String summary;
+    private String workContent;
+    private String note;
+    private String planContent;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime writtenAt;
+}
