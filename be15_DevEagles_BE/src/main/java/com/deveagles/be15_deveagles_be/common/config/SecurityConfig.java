@@ -53,7 +53,8 @@ public class SecurityConfig {
                         "/api/v1/users",
                         "/api/v1/auth/login",
                         "/api/v1/auth/findId",
-                        "/api/v1/summary")
+                        "/api/v1/summary",
+                        "api/v1/timecapsules")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
