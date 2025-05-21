@@ -15,7 +15,9 @@ public interface WorklogRepository extends JpaRepository<Worklog, Long> {
       "SELECT COUNT(w) > 0 FROM Worklog w WHERE FUNCTION('DATE', w.writtenAt) = FUNCTION('DATE', :dateTime)")
   boolean existsByWorkDateOnly(@Param("dateTime") LocalDateTime dateTime);
 
+
   Page<Worklog> findByUserIdAndTeamId(Long userId, Long teamId, Pageable pageable);
 
   Page<Worklog> findByTeamId(Long teamId, Pageable pageable);
+
 }
