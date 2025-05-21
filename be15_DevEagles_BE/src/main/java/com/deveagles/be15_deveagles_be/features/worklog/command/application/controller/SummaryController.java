@@ -18,11 +18,11 @@ public class SummaryController {
 
   @PostMapping
   public ResponseEntity<ApiResponse<SummaryResponse>> getSummaryFromAiChat(
-          @RequestBody WorkSummaryRequest workSummaryRequest,
-          @AuthenticationPrincipal CustomUser customUser) {
+      @RequestBody WorkSummaryRequest workSummaryRequest,
+      @AuthenticationPrincipal CustomUser customUser) {
 
     Long userId = customUser.getUserId();
     return ResponseEntity.ok(
-            ApiResponse.success(worklogService.summaryGenerate(userId, workSummaryRequest)));
+        ApiResponse.success(worklogService.summaryGenerate(userId, workSummaryRequest)));
   }
 }

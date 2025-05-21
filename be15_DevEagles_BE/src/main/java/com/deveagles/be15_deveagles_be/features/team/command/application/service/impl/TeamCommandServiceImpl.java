@@ -103,9 +103,9 @@ public class TeamCommandServiceImpl implements TeamCommandService {
   @Override
   public TeamResponse getTeamDetail(Long teamId) {
     Team findTeam =
-            teamRepository
-                    .findById(teamId)
-                    .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.TEAM_NOT_FOUND));
+        teamRepository
+            .findById(teamId)
+            .orElseThrow(() -> new TeamBusinessException(TeamErrorCode.TEAM_NOT_FOUND));
     return TeamResponse.builder().teamId(findTeam.getTeamId()).build();
   }
 }

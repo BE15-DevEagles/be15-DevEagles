@@ -40,14 +40,14 @@ public class Worklog {
 
   @Builder
   public Worklog(
-          String summary,
-          String workContent,
-          String note,
-          String planContent,
-          LocalDateTime createdAt,
-          LocalDateTime writtenAt,
-          Long teamId,
-          Long userId) {
+      String summary,
+      String workContent,
+      String note,
+      String planContent,
+      LocalDateTime createdAt,
+      LocalDateTime writtenAt,
+      Long teamId,
+      Long userId) {
     this.summary = summary;
     this.workContent = workContent;
     this.note = note;

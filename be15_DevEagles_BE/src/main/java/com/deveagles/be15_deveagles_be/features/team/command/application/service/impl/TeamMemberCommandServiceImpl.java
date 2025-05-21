@@ -11,14 +11,12 @@ import com.deveagles.be15_deveagles_be.features.team.command.domain.exception.Te
 import com.deveagles.be15_deveagles_be.features.team.command.domain.exception.TeamErrorCode;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.repository.TeamMemberRepository;
 import com.deveagles.be15_deveagles_be.features.team.command.domain.repository.TeamRepository;
-import com.deveagles.be15_deveagles_be.features.user.command.application.dto.response.UserDetailResponse;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
 import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -168,7 +166,7 @@ public class TeamMemberCommandServiceImpl implements TeamMemberCommandService {
   @Transactional
   public TeamMemberResponse findTeamMember(Long userId, Long teamId) {
     Optional<TeamMember> teamMember =
-            teamMemberRepository.findByTeamTeamIdAndUserUserId(teamId, userId);
+        teamMemberRepository.findByTeamTeamIdAndUserUserId(teamId, userId);
     if (teamMember.isEmpty()) {
       throw new TeamBusinessException(TeamErrorCode.NOT_TEAM_MEMBER);
     }
@@ -178,8 +176,8 @@ public class TeamMemberCommandServiceImpl implements TeamMemberCommandService {
   private TeamMemberResponse buildTeamMemberResponse(TeamMember teamMember) {
 
     return TeamMemberResponse.builder()
-            .userId(teamMember.getUser().getUserId())
-            .teamId(teamMember.getTeam().getTeamId())
-            .build();
+        .userId(teamMember.getUser().getUserId())
+        .teamId(teamMember.getTeam().getTeamId())
+        .build();
   }
 }

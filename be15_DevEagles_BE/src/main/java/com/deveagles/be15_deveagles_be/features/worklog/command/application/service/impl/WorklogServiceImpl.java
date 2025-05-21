@@ -48,12 +48,12 @@ public class WorklogServiceImpl implements WorklogService {
   private String apiUrl;
 
   public WorklogServiceImpl(
-          RestTemplate restTemplate,
-          ObjectMapper objectMapper,
-          WorklogRepository worklogRepository,
-          UserCommandService userCommandService,
-          TeamCommandService teamCommandService,
-          TeamMemberCommandService teamMemberCommandService) {
+      RestTemplate restTemplate,
+      ObjectMapper objectMapper,
+      WorklogRepository worklogRepository,
+      UserCommandService userCommandService,
+      TeamCommandService teamCommandService,
+      TeamMemberCommandService teamMemberCommandService) {
     this.restTemplate = restTemplate;
     this.objectMapper = objectMapper;
     this.worklogRepository = worklogRepository;
@@ -61,6 +61,7 @@ public class WorklogServiceImpl implements WorklogService {
     this.teamCommandService = teamCommandService;
     this.teamMemberCommandService = teamMemberCommandService;
   }
+
   @Transactional
   @Override
   public SummaryResponse summaryGenerate(Long userId, WorkSummaryRequest request) {
@@ -134,22 +135,22 @@ public class WorklogServiceImpl implements WorklogService {
   @Transactional
   @Override
   public WorklogDetailResponse createWorklog(
-          Long userId, Long teamId, WorklogCreateRequest worklogCreateRequest) {
+      Long userId, Long teamId, WorklogCreateRequest worklogCreateRequest) {
     validateUserExists(userId);
     validateTeamExists(teamId);
     validateTeamMemberExists(teamId, userId);
 
     return WorklogDetailResponse.of(
-            worklogRepository.save(
-                    Worklog.builder()
-                            .summary(worklogCreateRequest.getSummary())
-                            .workContent(worklogCreateRequest.getWorkContent())
-                            .note(worklogCreateRequest.getNote())
-                            .planContent(worklogCreateRequest.getPlanContent())
-                            .teamId(teamId)
-                            .userId(userId)
-                            .writtenAt(worklogCreateRequest.getWrittenAt())
-                            .build()));
+        worklogRepository.save(
+            Worklog.builder()
+                .summary(worklogCreateRequest.getSummary())
+                .workContent(worklogCreateRequest.getWorkContent())
+                .note(worklogCreateRequest.getNote())
+                .planContent(worklogCreateRequest.getPlanContent())
+                .teamId(teamId)
+                .userId(userId)
+                .writtenAt(worklogCreateRequest.getWrittenAt())
+                .build()));
   }
 
   public void validateUserExists(Long userId) {
@@ -172,6 +173,4 @@ public class WorklogServiceImpl implements WorklogService {
       throw new TeamBusinessException(TeamErrorCode.NOT_TEAM_MEMBER);
     }
   }
-
-
 }

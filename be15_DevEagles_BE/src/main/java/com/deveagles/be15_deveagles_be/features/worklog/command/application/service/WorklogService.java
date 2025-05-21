@@ -8,7 +8,7 @@ import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.
 public interface WorklogService {
   /*업무일지 등록 기능*/
   WorklogDetailResponse createWorklog(
-          Long userId, Long teamId, WorklogCreateRequest worklogCreateRequest);
+      Long userId, Long teamId, WorklogCreateRequest worklogCreateRequest);
 
   SummaryResponse summaryGenerate(Long userId, WorkSummaryRequest request);
 }

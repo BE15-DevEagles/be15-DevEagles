@@ -10,5 +10,4 @@ public interface TeamCommandService {
   void deleteTeam(Long userId, Long teamId);
 
   TeamResponse getTeamDetail(Long teamId);
-
 }

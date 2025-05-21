@@ -15,5 +15,4 @@ public interface TeamMemberCommandService {
   void transferLeadership(Long currentLeaderId, Long teamId, TransferLeaderRequest request);
 
   TeamMemberResponse findTeamMember(Long userId, Long teamId);
-
 }
