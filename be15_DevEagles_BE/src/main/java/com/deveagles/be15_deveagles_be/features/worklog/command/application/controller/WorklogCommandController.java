@@ -34,7 +34,7 @@ public class WorklogCommandController {
   }
 
   /*내 업무일지 조회*/
-  @PostMapping("/myWorklog")
+  @PostMapping("/myworklog")
   public ResponseEntity<ApiResponse<PagedResponse<WorklogResponse>>> searchMyWorklog(
           @AuthenticationPrincipal CustomUser customUser,
           @RequestBody SearchWorklogRequest request
