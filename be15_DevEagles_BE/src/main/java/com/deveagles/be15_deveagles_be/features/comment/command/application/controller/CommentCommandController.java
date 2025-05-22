@@ -5,6 +5,7 @@ import com.deveagles.be15_deveagles_be.features.auth.command.application.model.C
 import com.deveagles.be15_deveagles_be.features.comment.command.application.dto.request.CommentCreateRequest;
 import com.deveagles.be15_deveagles_be.features.comment.command.application.dto.response.CommentResponse;
 import com.deveagles.be15_deveagles_be.features.comment.command.application.service.CommentService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,5 +26,13 @@ public class CommentCommandController {
     CommentResponse response = commentService.registerComment(userId, request);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
+  }
+
+  @GetMapping("/{worklogId}")
+  public ResponseEntity<ApiResponse<List<CommentResponse>>> getCommentsByWorklog(
+      @PathVariable Long worklogId, @AuthenticationPrincipal CustomUser customUser) {
+    Long userId = customUser.getUserId();
+    List<CommentResponse> comments = commentService.getComments(worklogId, userId);
+    return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(comments));
   }
 }
