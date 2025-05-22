@@ -24,9 +24,9 @@ public class UserCommandController {
 
   @PostMapping("/users")
   public ResponseEntity<ApiResponse<Void>> userRegister(
-      @RequestBody @Valid UserCreateRequest request) {
+      @RequestPart @Valid UserCreateRequest request, @RequestPart MultipartFile profile) {
 
-    userCommandService.userRegister(request);
+    userCommandService.userRegister(request, profile);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
   }

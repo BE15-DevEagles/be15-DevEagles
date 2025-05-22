@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.user.command.application.servic
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserCreateRequest;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserUpdateRequest;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.response.UserDetailResponse;
@@ -30,6 +31,7 @@ public class UserCommandServiceTest {
   private String validPassword;
   private UserCreateRequest createUser;
   private UserUpdateRequest updateUser;
+  private AmazonS3 amazonS3;
 
   @BeforeEach
   void setUp() {
@@ -37,7 +39,8 @@ public class UserCommandServiceTest {
     modelMapper = mock(ModelMapper.class);
     passwordEncoder = mock(PasswordEncoder.class);
     profile = mock(MultipartFile.class);
-    userCommandService = new UserCommandServiceImpl(userRepository, modelMapper, passwordEncoder);
+    userCommandService =
+        new UserCommandServiceImpl(userRepository, modelMapper, passwordEncoder, amazonS3);
 
     validUserId = 1L;
     validPassword = "eagles1234!";
@@ -66,7 +69,7 @@ public class UserCommandServiceTest {
     when(passwordEncoder.encode(createUser.password())).thenReturn("encodedPassword");
 
     // when
-    userCommandService.userRegister(createUser);
+    userCommandService.userRegister(createUser, profile);
 
     // then
     verify(mockUser).setEncodedPassword("encodedPassword");

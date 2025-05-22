@@ -16,6 +16,9 @@ public enum UserErrorCode {
   // 유저 조회
   NOT_FOUND_USER_EXCEPTION("100003", "존재하지 않는 유저입니다.", HttpStatus.NOT_FOUND),
 
+  // 프로필 저장
+  PROFILE_SAVE_ERROR("100004", "프로필 저장에 실패했습니다.", HttpStatus.BAD_REQUEST),
+
   // 이메일 인증
   SEND_EMAIL_FAILURE_EXCEPTION("100100", "인증 메일 전송이 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
   DUPLICATE_SEND_AUTH_EXCEPTION(

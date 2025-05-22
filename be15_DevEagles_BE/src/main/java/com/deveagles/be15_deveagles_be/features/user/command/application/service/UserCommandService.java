@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface UserCommandService {
 
-  void userRegister(UserCreateRequest request);
+  void userRegister(UserCreateRequest request, MultipartFile profile);
 
   UserDetailResponse getUserDetails(Long userId);
 
