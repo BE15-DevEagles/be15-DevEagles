@@ -47,4 +47,13 @@ public class CommentCommandController {
     commentService.updateComment(commentId, request, userId);
     return ResponseEntity.ok().build();
   }
+
+  /*삭제*/
+  @DeleteMapping("/{commentId}")
+  public ResponseEntity<Void> deleteComment(
+      @PathVariable Long commentId, @AuthenticationPrincipal CustomUser customUser) {
+    Long userId = customUser.getUserId();
+    commentService.removeComment(commentId, userId);
+    return ResponseEntity.noContent().build();
+  }
 }

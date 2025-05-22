@@ -1,10 +1,15 @@
 package com.deveagles.be15_deveagles_be.common.jwt;
 
+import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
+import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +33,7 @@ public class JwtTokenProvider {
   private SecretKey secretKey;
 
   private final RedisTemplate<String, String> redisTemplate;
+  private final UserRepository userRepository;
 
   @PostConstruct
   public void init() {
@@ -41,10 +47,20 @@ public class JwtTokenProvider {
     Date now = new Date();
     Date expiration = new Date(now.getTime() + jwtExpiration);
 
+    Optional<User> findUser = userRepository.findUserByEmail(username);
+    User user = findUser.get();
+
+    Map<String, String> map = new HashMap<>();
+    map.put("type", "access");
+    map.put("name", user.getUserName());
+    map.put("userId", user.getUserId().toString());
+    map.put("userThumbnailUrl", user.getUserThumbnailUrl());
+    map.put("userStatus", user.getUserStatus().toString());
+
     return Jwts.builder()
         .subject(username)
         .issuedAt(now)
-        .claim("type", "access")
+        .claims(map)
         .expiration(expiration)
         .signWith(secretKey)
         .compact();

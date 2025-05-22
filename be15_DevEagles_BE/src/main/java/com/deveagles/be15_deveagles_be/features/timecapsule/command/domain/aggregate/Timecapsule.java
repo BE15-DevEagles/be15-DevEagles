@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.features.timecapsule.entity;
+package com.deveagles.be15_deveagles_be.features.timecapsule.command.domain.aggregate;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -13,7 +13,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Timecapsule {
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "timecapsule_id")
@@ -37,6 +36,9 @@ public class Timecapsule {
 
   @Column(name = "team_id", nullable = false)
   private Long teamId;
+
+  @Column(name = "opened_at")
+  private LocalDateTime openedAt;
 
   @PrePersist
   protected void onCreate() {
