@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.user.command.exception;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserCreateRequest;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserUpdateRequest;
 import com.deveagles.be15_deveagles_be.features.user.command.application.service.UserCommandServiceImpl;
@@ -25,6 +26,7 @@ class UserCommandServiceImplTest {
   private PasswordEncoder passwordEncoder;
   private MultipartFile profile;
   private UserCommandServiceImpl userCommandService;
+  private AmazonS3 amazonS3;
 
   private Long invalidUserId;
   private String validPassword;
@@ -37,7 +39,8 @@ class UserCommandServiceImplTest {
     modelMapper = mock(ModelMapper.class);
     passwordEncoder = mock(PasswordEncoder.class);
     profile = mock(MultipartFile.class);
-    userCommandService = new UserCommandServiceImpl(userRepository, modelMapper, passwordEncoder);
+    userCommandService =
+        new UserCommandServiceImpl(userRepository, modelMapper, passwordEncoder, amazonS3);
 
     invalidUserId = -1L;
     validPassword = "eagles1234!";
@@ -61,7 +64,7 @@ class UserCommandServiceImplTest {
         .thenReturn(Optional.of(mock(User.class)));
 
     // when & then
-    assertThatThrownBy(() -> userCommandService.userRegister(createUser))
+    assertThatThrownBy(() -> userCommandService.userRegister(createUser, profile))
         .isInstanceOf(UserBusinessException.class)
         .hasMessageContaining(UserErrorCode.DUPLICATE_USER_EMAIL_EXCEPTION.getMessage());
   }
@@ -75,7 +78,7 @@ class UserCommandServiceImplTest {
         .thenReturn(Optional.of(mock(User.class)));
 
     // when & then
-    assertThatThrownBy(() -> userCommandService.userRegister(createUser))
+    assertThatThrownBy(() -> userCommandService.userRegister(createUser, profile))
         .isInstanceOf(UserBusinessException.class)
         .hasMessageContaining(UserErrorCode.DUPLICATE_USER_PHONE_EXCEPTION.getMessage());
   }
