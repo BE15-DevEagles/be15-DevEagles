@@ -1,6 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.comment.command.application.service.impl;
 
 import com.deveagles.be15_deveagles_be.features.comment.command.application.dto.request.CommentCreateRequest;
+import com.deveagles.be15_deveagles_be.features.comment.command.application.dto.request.CommentUpdateRequest;
 import com.deveagles.be15_deveagles_be.features.comment.command.application.dto.response.CommentResponse;
 import com.deveagles.be15_deveagles_be.features.comment.command.application.service.CommentService;
 import com.deveagles.be15_deveagles_be.features.comment.command.domain.aggregate.Comment;
@@ -91,17 +92,24 @@ public class CommentServiceImpl implements CommentService {
         .collect(Collectors.toList());
   }
 
+  @Override
+  @Transactional
+  public void updateComment(Long commentId, CommentUpdateRequest request, Long userId) {
+    Comment comment =
+        commentRepository
+            .findById(commentId)
+            .orElseThrow(() -> new CommentBusinessException(CommentErrorCode.INVALID_REQUEST));
+    validateUserExists(userId);
+    if (!comment.getUserId().equals(userId)) {
+      throw new CommentBusinessException(CommentErrorCode.NO_PERMISSION, "수정 권한이 없습니다.");
+    }
+    comment.updateContent(request.getCommentContent());
+  }
+
   public void validateTeamMemberExists(Long teamId, Long userId) {
     TeamMemberResponse detail = teamMemberCommandService.findTeamMember(userId, teamId);
     if (detail == null || detail.getTeamId() == null || detail.getUserId() == null) {
       throw new TeamBusinessException(TeamErrorCode.NOT_TEAM_MEMBER);
-    }
-  }
-
-  public void validateUserExists(Long userId) {
-    UserDetailResponse detail = userCommandService.getUserDetails(userId);
-    if (detail == null || detail.getUserId() == null) {
-      throw new UserBusinessException(UserErrorCode.NOT_FOUND_USER_EXCEPTION);
     }
   }
 
@@ -110,6 +118,13 @@ public class CommentServiceImpl implements CommentService {
       worklogService.getWorklogById(worklogId, userId);
     } catch (CommentBusinessException e) {
       throw new CommentBusinessException(CommentErrorCode.INVALID_REQUEST, "해당 워크로그에 접근할 수 없습니다.");
+    }
+  }
+
+  public void validateUserExists(Long userId) {
+    UserDetailResponse detail = userCommandService.getUserDetails(userId);
+    if (detail == null || detail.getUserId() == null) {
+      throw new UserBusinessException(UserErrorCode.NOT_FOUND_USER_EXCEPTION);
     }
   }
 }
