@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.comment.command.application.con
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.comment.command.application.dto.request.CommentCreateRequest;
+import com.deveagles.be15_deveagles_be.features.comment.command.application.dto.request.CommentUpdateRequest;
 import com.deveagles.be15_deveagles_be.features.comment.command.application.dto.response.CommentResponse;
 import com.deveagles.be15_deveagles_be.features.comment.command.application.service.CommentService;
 import java.util.List;
@@ -34,5 +35,16 @@ public class CommentCommandController {
     Long userId = customUser.getUserId();
     List<CommentResponse> comments = commentService.getComments(worklogId, userId);
     return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(comments));
+  }
+
+  /*수정*/
+  @PutMapping("/{commentId}")
+  public ResponseEntity<Void> updateComment(
+      @PathVariable Long commentId,
+      @RequestBody CommentUpdateRequest request,
+      @AuthenticationPrincipal CustomUser customUser) {
+    Long userId = customUser.getUserId();
+    commentService.updateComment(commentId, request, userId);
+    return ResponseEntity.ok().build();
   }
 }
