@@ -2,7 +2,7 @@
   <div class="p-3 border-b border-[var(--color-gray-200)] flex items-center justify-between">
     <button
       class="text-[var(--color-gray-600)] hover:text-[var(--color-primary-300)] transition-colors mr-2"
-      @click="$emit('toggle-collapse')"
+      @click="emit('toggle-collapse')"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -18,12 +18,23 @@
 </template>
 
 <script setup>
-  /**
-   * Emits:
-   * toggle-collapse - 사이드바 접기/펼치기 버튼 클릭 시 발생
-   *
-   * 예시:
-   * this.$emit('toggle-collapse')
-   */
-  defineEmits(['toggle-collapse']);
+  import { watch } from 'vue';
+
+  const props = defineProps({
+    isCollapsed: {
+      type: Boolean,
+      required: true,
+    },
+  });
+
+  // ✅ emit 직접 사용
+  const emit = defineEmits(['toggle-collapse']);
+
+  // 상태 변경 감지
+  watch(
+    () => props.isCollapsed,
+    newVal => {
+      console.log('📦 Sidebar 상태 변경됨:', newVal ? '접힘' : '펼침');
+    }
+  );
 </script>

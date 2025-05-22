@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { ErrorPage } from '@/components/common/layout';
+import MyCalendarView from '@/features/todolist/views/MyCalendarView.vue';
+import { calendarRoutes } from '@/features/todolist/router.js';
 
 // 라우트 정의
 const routes = [
@@ -20,6 +22,8 @@ const routes = [
       errorMessage: '요청하신 페이지가 존재하지 않습니다. URL을 확인해 주세요.',
     },
   },
+
+  ...calendarRoutes,
 ];
 
 // 라우터 생성
