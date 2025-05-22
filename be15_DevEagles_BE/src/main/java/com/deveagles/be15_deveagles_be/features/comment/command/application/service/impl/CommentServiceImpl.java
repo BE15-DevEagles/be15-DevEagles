@@ -106,6 +106,24 @@ public class CommentServiceImpl implements CommentService {
     comment.updateContent(request.getCommentContent());
   }
 
+  @Transactional
+  @Override
+  public void removeComment(Long commentId, Long userId) {
+    validateUserExists(userId);
+    Comment comment =
+        commentRepository
+            .findById(commentId)
+            .orElseThrow(
+                () ->
+                    new CommentBusinessException(CommentErrorCode.INVALID_REQUEST, "해당 댓글이 없습니다."));
+
+    if (!comment.getUserId().equals(userId)) {
+      throw new CommentBusinessException(CommentErrorCode.NO_PERMISSION, "삭제 권한이 없습니다.");
+    }
+
+    comment.softDelete();
+  }
+
   public void validateTeamMemberExists(Long teamId, Long userId) {
     TeamMemberResponse detail = teamMemberCommandService.findTeamMember(userId, teamId);
     if (detail == null || detail.getTeamId() == null || detail.getUserId() == null) {
