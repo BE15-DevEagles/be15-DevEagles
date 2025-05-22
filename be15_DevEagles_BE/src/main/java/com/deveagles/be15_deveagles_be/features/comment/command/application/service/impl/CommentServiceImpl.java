@@ -7,12 +7,19 @@ import com.deveagles.be15_deveagles_be.features.comment.command.domain.aggregate
 import com.deveagles.be15_deveagles_be.features.comment.command.domain.exception.CommentBusinessException;
 import com.deveagles.be15_deveagles_be.features.comment.command.domain.exception.CommentErrorCode;
 import com.deveagles.be15_deveagles_be.features.comment.command.domain.repository.CommentRepository;
+import com.deveagles.be15_deveagles_be.features.team.command.application.dto.response.TeamMemberResponse;
+import com.deveagles.be15_deveagles_be.features.team.command.application.service.TeamMemberCommandService;
+import com.deveagles.be15_deveagles_be.features.team.command.domain.exception.TeamBusinessException;
+import com.deveagles.be15_deveagles_be.features.team.command.domain.exception.TeamErrorCode;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.response.UserDetailResponse;
 import com.deveagles.be15_deveagles_be.features.user.command.application.service.UserCommandService;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserBusinessException;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserErrorCode;
+import com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogDetailResponse;
 import com.deveagles.be15_deveagles_be.features.worklog.command.application.service.WorklogService;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +30,7 @@ public class CommentServiceImpl implements CommentService {
   private final WorklogService worklogService;
   private final CommentRepository commentRepository;
   private final UserCommandService userCommandService;
+  private final TeamMemberCommandService teamMemberCommandService;
 
   @Transactional
   @Override
@@ -53,6 +61,41 @@ public class CommentServiceImpl implements CommentService {
         .username(userName)
         .isEdited(false)
         .build();
+  }
+
+  @Transactional(readOnly = true)
+  @Override
+  public List<CommentResponse> getComments(Long worklogId, Long userId) {
+    WorklogDetailResponse worklog = worklogService.getWorklogById(worklogId, userId);
+    if (worklog.getWorklogId() == null) {
+      throw new CommentBusinessException(CommentErrorCode.INVALID_REQUEST);
+    }
+    Long teamId = worklog.getTeamId();
+    validateTeamMemberExists(teamId, userId);
+
+    List<Comment> comments = commentRepository.findByWorklogIdAndDeletedAtIsNull(worklogId);
+
+    return comments.stream()
+        .map(
+            comment -> {
+              LocalDateTime createdAt = comment.getCreatedAt();
+              LocalDateTime updatedAt = comment.getUpdatedAt();
+              boolean isEdited = updatedAt != null && updatedAt.isAfter(createdAt);
+              LocalDateTime time = isEdited ? updatedAt : createdAt;
+
+              String userName =
+                  userCommandService.getUserDetails(userId).getUserName(); // 필요하면 나중에 넣기
+
+              return CommentResponse.fromEntity(comment, time, userName, isEdited);
+            })
+        .collect(Collectors.toList());
+  }
+
+  public void validateTeamMemberExists(Long teamId, Long userId) {
+    TeamMemberResponse detail = teamMemberCommandService.findTeamMember(userId, teamId);
+    if (detail == null || detail.getTeamId() == null || detail.getUserId() == null) {
+      throw new TeamBusinessException(TeamErrorCode.NOT_TEAM_MEMBER);
+    }
   }
 
   public void validateUserExists(Long userId) {
