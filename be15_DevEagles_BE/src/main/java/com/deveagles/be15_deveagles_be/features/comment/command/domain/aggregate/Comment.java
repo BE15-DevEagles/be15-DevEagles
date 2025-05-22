@@ -48,4 +48,13 @@ public class Comment {
     this.deletedAt = deletedAt;
     this.userId = userId;
   }
+
+  public void updateContent(String content) {
+    this.commentContent = content;
+    this.updatedAt = LocalDateTime.now();
+  }
+
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }
