@@ -248,7 +248,7 @@ public class WorklogServiceImpl implements WorklogService {
     validateTeamMemberExists(teamId, userId);
     String userName = userCommandService.getUserDetails(userId).getUserName();
     String teamName = teamCommandService.getTeamDetail(teamId).getTeamName();
-    System.out.println(teamName);
+
     return WorklogDetailResponse.builder()
         .worklogId(worklog.getWorklogId())
         .summary(worklog.getSummary())

@@ -1,3 +1,8 @@
 package com.deveagles.be15_deveagles_be.features.comment.command.application.service;
 
-public class CommentService {}
+import com.deveagles.be15_deveagles_be.features.comment.command.application.dto.request.CommentCreateRequest;
+import com.deveagles.be15_deveagles_be.features.comment.command.application.dto.response.CommentResponse;
+
+public interface CommentService {
+  CommentResponse registerComment(Long userId, CommentCreateRequest request);
+}
