@@ -17,7 +17,7 @@
     <!-- 펼친 상태일 때 -->
     <div v-if="!isCollapsed && shouldRenderContent" class="flex flex-col h-full relative min-w-0">
       <!-- 상단 헤더 -->
-      <SidebarHeader class="flex-shrink-0" @toggle-collapse="toggleCollapse" />
+      <SidebarHeader class="flex-shrink-0" is-collapsed @toggle-collapse="toggleCollapse" />
 
       <!-- 채팅창이 열려 있을 때 - 사이드바 위에 오버레이 -->
       <transition name="fade">
@@ -131,17 +131,20 @@
     stopResize();
     cleanup();
   });
+  const props = defineProps({
+    isCollapsed: {
+      type: Boolean,
+      required: true,
+    },
+  });
+  const emit = defineEmits(['update:isCollapsed']);
+
+  const toggleCollapse = () => {
+    emit('update:isCollapsed', !props.isCollapsed);
+  };
 
   // 사이드바 상태 관리
-  const {
-    isCollapsed,
-    shouldRenderContent,
-    currentMode,
-    selectedChat,
-    toggleCollapse,
-    toggleMode,
-    cleanup,
-  } = useSidebar();
+  const { shouldRenderContent, currentMode, selectedChat, toggleMode, cleanup } = useSidebar();
 
   // 현재 팀이 변경될 때마다 데이터 갱신
   watch(
