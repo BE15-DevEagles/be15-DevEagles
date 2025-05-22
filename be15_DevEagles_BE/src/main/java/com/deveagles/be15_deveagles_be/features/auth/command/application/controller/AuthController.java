@@ -1,10 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.auth.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
-import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.LoginRequest;
-import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.SendAuthEmailRequest;
-import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.UserFindIdRequest;
-import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.UserVerifyRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.*;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.UserFindIdResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
@@ -72,6 +69,15 @@ public class AuthController {
     return ResponseEntity.ok().body(ApiResponse.success(response));
   }
 
+  @PostMapping("/findPwd")
+  public ResponseEntity<ApiResponse<Void>> findPwd(@RequestBody @Valid UserFindPwdRequest request) {
+
+    String authCode = authService.sendFindPwdEmail(request);
+    log.info("### 비밀번호 찾기 인증 요청 authCode: {}", authCode);
+
+    return ResponseEntity.ok().body(ApiResponse.success(null));
+  }
+
   @PostMapping("/valid")
   public ResponseEntity<ApiResponse<Boolean>> validUserStatus(
       @AuthenticationPrincipal CustomUser customUser) {
@@ -86,12 +92,15 @@ public class AuthController {
   }
 
   @PostMapping("/sendAuth")
-  public ResponseEntity<ApiResponse<String>> sendAuthEmail(
+  public ResponseEntity<ApiResponse<Void>> sendAuthEmail(
       @RequestBody @Valid SendAuthEmailRequest request) {
 
     try {
       String authCode = authService.sendAuthEmail(request.email());
-      return ResponseEntity.ok().body(ApiResponse.success(authCode));
+
+      log.info("### 본인 인증 요청 authCode: {}", authCode);
+
+      return ResponseEntity.ok().body(ApiResponse.success(null));
     } catch (UserBusinessException e) {
       return ResponseEntity.badRequest()
           .body(

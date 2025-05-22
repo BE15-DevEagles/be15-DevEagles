@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.auth.command.application.servic
 import com.deveagles.be15_deveagles_be.common.jwt.JwtTokenProvider;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.LoginRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.UserFindIdRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.UserFindPwdRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.UserFindIdResponse;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
@@ -75,6 +76,30 @@ public class AuthServiceImpl implements AuthService {
             .orElseThrow(() -> new UserBusinessException(UserErrorCode.NOT_FOUND_USER_EXCEPTION));
 
     return UserFindIdResponse.builder().email(validUser.getEmail()).build();
+  }
+
+  @Override
+  public String sendFindPwdEmail(UserFindPwdRequest request) {
+
+    userRepository
+        .findValidUserForGetPwd(
+            request.userName(), request.email(), LocalDateTime.now().minusMonths(1))
+        .orElseThrow(() -> new UserBusinessException(UserErrorCode.NOT_FOUND_USER_EXCEPTION));
+
+    if (authCodeService.getAuthCode(request.email()) != null) {
+      throw new UserBusinessException(UserErrorCode.DUPLICATE_SEND_AUTH_EXCEPTION);
+    }
+
+    String authCode = UUID.randomUUID().toString().substring(0, 6);
+    authCodeService.saveAuthCode(request.email(), authCode);
+
+    try {
+      mailService.sendFindPwdEmail(request.email(), authCode);
+    } catch (MessagingException e) {
+      throw new UserBusinessException(UserErrorCode.SEND_EMAIL_FAILURE_EXCEPTION);
+    }
+
+    return authCode;
   }
 
   @Override

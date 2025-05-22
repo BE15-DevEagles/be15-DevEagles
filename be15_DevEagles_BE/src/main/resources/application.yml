@@ -82,6 +82,7 @@ spring:
           writetimeout: 5000
       auth-code-expiration-millis: 1800000
     auth-url: ${AUTH_URL}
+    pwd-url: ${PWD-URL}
 
 # MyBatis 설정
 mybatis:
