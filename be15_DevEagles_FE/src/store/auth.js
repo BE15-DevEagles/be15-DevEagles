@@ -16,9 +16,13 @@ export const useAuthStore = defineStore('auth', () => {
   // ✅ 추가 상태
   const name = ref(null);
   const userThumbnailUrl = ref(null);
+  const userStatus = ref(null);
 
   const isAuthenticated = computed(
-    () => !!accessToken.value && Date.now() < (expirationTime.value || 0)
+    () =>
+      !!accessToken.value &&
+      Date.now() < (expirationTime.value || 0) &&
+      userStatus.value === 'ENABLED'
   );
 
   function setAuth(at) {
@@ -30,6 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
       name.value = payload.name || null;
       userThumbnailUrl.value = payload.userThumbnailUrl || null;
       expirationTime.value = payload.exp * 1000;
+      userStatus.value = payload.userStatus;
 
       localStorage.setItem('accessToken', at);
     } catch (e) {
