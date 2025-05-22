@@ -47,9 +47,4 @@
   </div>
 </template>
 
-<style scoped>
-  .fc {
-    max-width: 100%;
-    margin: 0 auto;
-  }
-</style>
+<style scoped></style>

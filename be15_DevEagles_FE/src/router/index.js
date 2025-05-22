@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { ErrorPage } from '@/components/common/layout';
-import MyCalendarView from '@/features/todolist/views/MyCalendarView.vue';
 import { calendarRoutes } from '@/features/todolist/router.js';
 
 // 라우트 정의
