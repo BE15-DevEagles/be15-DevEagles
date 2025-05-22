@@ -69,12 +69,12 @@ jobs:
         uses: sarisia/actions-status-discord@v1
         if: always()
         with:
-          webhook: https://discordapp.com/api/webhooks/1373208730384076830/xJglBK0zwY531d7uyP6hh62DnjqwtowArFplYLKJ1ZfR6i35mQSv1NDf2kTaYo-zD03T
+          webhook: ${{ secrets.BUILDTEST_DISCORD_WEBHOOK_URL }}
           title: "백엔드 빌드 테스트 결과"
           description: "백엔드 빌드 상태: ${{ steps.build-status.outputs.status }}"
-          color: ${{ steps.gradle-build.outcome == 'success' && '0x00ff00' || '0xff0000' }}
+          color: ${{ steps.gradle-build.outcome == 'Result:' && '0x00ff00' || '0xff0000' }}
           status: ${{ steps.gradle-build.outcome }}
-          content: ${{ steps.gradle-build.outcome != 'success' && ' 백엔드 빌드가 실패했습니다!' || '' }}
+          content: ${{ steps.gradle-build.outcome != 'Result:' && ' 백엔드 빌드가 실패했습니다!' || '' }}
 
   build-frontend:
     name: 프론트엔드 빌드 테스트
@@ -135,9 +135,9 @@ jobs:
         uses: sarisia/actions-status-discord@v1
         if: always()
         with:
-          webhook: https://discordapp.com/api/webhooks/1373208730384076830/xJglBK0zwY531d7uyP6hh62DnjqwtowArFplYLKJ1ZfR6i35mQSv1NDf2kTaYo-zD03T
+          webhook: ${{ secrets.BUILDTEST_DISCORD_WEBHOOK_URL }}
           title: "프론트엔드 빌드 테스트 결과"
           description: "프론트엔드 빌드 상태: ${{ steps.fe-build-status.outputs.status }}"
-          color: ${{ steps.npm-build.outcome == 'success' && '0x00ff00' || '0xff0000' }}
+          color: ${{ steps.npm-build.outcome == 'Result:' && '0x00ff00' || '0xff0000' }}
           status: ${{ steps.npm-build.outcome }}
-          content: ${{ steps.npm-build.outcome != 'success' && ' 프론트엔드 빌드가 실패했습니다!' || '' }}
+          content: ${{ steps.npm-build.outcome != 'Result:' && ' 프론트엔드 빌드가 실패했습니다!' || '' }}
