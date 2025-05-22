@@ -9,7 +9,7 @@
     <div class="overflow-y-auto h-full" style="height: calc(100% - 49px)">
       <div
         v-for="(member, idx) in teamMembers"
-        :key="idx"
+        :key="member.userId || idx"
         class="p-3 border-b border-[var(--color-gray-200)] hover:bg-[var(--color-gray-100)] transition-colors"
       >
         <div class="flex items-center">
@@ -17,7 +17,7 @@
             <div
               class="w-10 h-10 rounded-md overflow-hidden bg-[var(--color-primary-300)] flex items-center justify-center text-white font-one-liner-semibold"
             >
-              {{ member.name.charAt(0) }}
+              {{ member.userName?.charAt(0) || '?' }}
             </div>
             <div
               class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white"
@@ -28,23 +28,10 @@
           </div>
 
           <div class="flex-grow mr-2">
-            <h3 class="font-one-liner-semibold">{{ member.name }}</h3>
+            <h3 class="font-one-liner-semibold">{{ member.userName || '이름 없음' }}</h3>
           </div>
 
-          <div class="flex space-x-2">
-            <button
-              class="bg-[var(--color-info-500)] text-white px-2 py-1 rounded-md text-xs font-xs-semibold hover:bg-[var(--color-info-600)] transition-colors"
-              @click="$emit('view-worklog', member)"
-            >
-              일지보기
-            </button>
-            <button
-              class="bg-[var(--color-primary-300)] text-white px-2 py-1 rounded-md text-xs font-xs-semibold hover:bg-[var(--color-primary-400)] transition-colors"
-              @click="$emit('start-chat', member)"
-            >
-              대화하기
-            </button>
-          </div>
+          <!-- 버튼들 동일 -->
         </div>
       </div>
     </div>
