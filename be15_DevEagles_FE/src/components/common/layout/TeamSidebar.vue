@@ -5,15 +5,15 @@
     <!-- 팀 썸네일 목록 -->
     <div class="flex flex-col items-center space-y-4 overflow-y-auto flex-grow">
       <div
-        v-for="(team, index) in teams"
-        :key="index"
+        v-for="team in teamStore.teams"
+        :key="team.id"
         class="w-10 h-10 rounded-md flex items-center justify-center cursor-pointer relative overflow-hidden group transition-all duration-200 shadow-drop"
         :class="[
-          team.active
+          team.id === teamStore.currentTeamId
             ? 'bg-[var(--color-primary-300)]'
             : 'bg-[var(--color-gray-600)] hover:bg-[var(--color-gray-500)]',
         ]"
-        @click="selectTeam(team.id)"
+        @click="switchTeam(team.id)"
       >
         <img
           v-if="team.thumbnail"
@@ -25,7 +25,7 @@
 
         <!-- 활성 표시기 -->
         <div
-          v-if="team.active"
+          v-if="team.id === teamStore.currentTeamId"
           class="absolute -left-1 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-[var(--color-info-500)] rounded-r-full"
         ></div>
 
@@ -72,32 +72,45 @@
 </template>
 
 <script setup>
-  import { ref, defineEmits } from 'vue';
+  import { onMounted, watch } from 'vue';
+  import { useTeamStore } from '@/store/team';
+  import { useChatStore } from '@/store/chat';
 
-  const emit = defineEmits(['selectTeam', 'createTeam']);
+  const teamStore = useTeamStore();
+  const chatStore = useChatStore();
 
-  // Mock 데이터 나중에 교체하세요요
-  const teams = ref([
-    { id: 1, name: '홀', thumbnail: null, active: true },
-    { id: 2, name: '리', thumbnail: null, active: false },
-    { id: 3, name: '쉬', thumbnail: null, active: false },
-    { id: 4, name: '잇', thumbnail: null, active: false },
-  ]);
+  // 팀 데이터 로드
+  onMounted(async () => {
+    await teamStore.fetchTeams();
+  });
 
-  // 팀 선택 함수
-  const selectTeam = teamId => {
-    teams.value = teams.value.map(team => ({
-      ...team,
-      active: team.id === teamId,
-    }));
+  // 팀 전환 처리
+  function switchTeam(teamId) {
+    teamStore.setCurrentTeam(teamId);
+  }
 
-    // 부모 컴포넌트에 선택된 팀 ID 전달
-    emit('selectTeam', teamId);
-  };
+  // 팀 변경 감지 및 관련 데이터 갱신
+  watch(
+    () => teamStore.currentTeamId,
+    newTeamId => {
+      if (newTeamId) {
+        try {
+          // 팀 변경 시 관련 데이터 갱신
+          chatStore.fetchTeamChats();
+
+          // 필요하다면 여기에 추가 데이터 갱신 로직 추가
+          console.log(`팀 변경: ${newTeamId}, 팀원 수: ${teamStore.teamMembers.length}`);
+        } catch (err) {
+          console.error('팀 관련 데이터 갱신 실패:', err);
+        }
+      }
+    },
+    { immediate: true }
+  );
 
   // 팀 생성 함수
   const createTeam = () => {
     // 팀 생성 모달이나 페이지로 이동하는 로직 구현
-    emit('createTeam');
+    alert('팀 생성 기능은 아직 구현되지 않았습니다.');
   };
 </script>

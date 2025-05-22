@@ -1,9 +1,6 @@
 <template>
   <header class="bg-[var(--color-gray-800)] h-14 w-full flex items-center px-3 shadow-drop z-10">
     <div class="flex items-center justify-between w-full">
-      <!--      <div class="flex items-center monofett-regular text-[var(&#45;&#45;color-info-500)] text-4xl">-->
-      <!--        GOODY-->
-      <!--      </div>-->
       <div class="w-30 h-10">
         <img
           src="/assets/image/logo-goody-with-text.png"

@@ -20,7 +20,6 @@ export function useChatData() {
       const chatRooms = await getChatRooms();
 
       if (chatRooms && Array.isArray(chatRooms)) {
-        // 서버에서 받은 데이터를 컴포넌트 형식으로 변환
         chats.value = chatRooms.map(room => ({
           id: room.id,
           name: room.name || getParticipantName(room.participants),
@@ -29,7 +28,7 @@ export function useChatData() {
           lastMessage: room.lastMessage?.content || '메시지가 없습니다.',
           lastMessageTime: formatLastMessageTime(room.lastMessage?.timestamp),
           unreadCount: room.unreadCount || 0,
-          messages: [], // 메시지는 채팅방 선택 시 별도로 로드
+          messages: [],
         }));
       }
     } catch (error) {
@@ -39,34 +38,27 @@ export function useChatData() {
     }
   }
 
-  // 채팅방의 다른 참여자 이름 가져오기 (1:1 채팅인 경우)
   function getParticipantName(participants) {
     if (!participants || !Array.isArray(participants)) return '알 수 없는 대화';
 
-    // 현재 사용자가 아닌 첫 번째 참여자 찾기
     const otherParticipant = participants.find(p => p.id !== authStore.userId);
     return otherParticipant ? otherParticipant.name : '대화방';
   }
 
-  // 참여자 온라인 상태 확인
   function isParticipantOnline(participants) {
     if (!participants || !Array.isArray(participants)) return false;
 
-    // 현재 사용자가 아닌 첫 번째 참여자 찾기
     const otherParticipant = participants.find(p => p.id !== authStore.userId);
     return otherParticipant ? otherParticipant.isOnline : false;
   }
 
-  // 참여자 썸네일 가져오기
   function getParticipantThumbnail(participants) {
     if (!participants || !Array.isArray(participants)) return null;
 
-    // 현재 사용자가 아닌 첫 번째 참여자 찾기
     const otherParticipant = participants.find(p => p.id !== authStore.userId);
     return otherParticipant ? otherParticipant.thumbnail : null;
   }
 
-  // 마지막 메시지 시간 포맷
   function formatLastMessageTime(timestamp) {
     if (!timestamp) return '';
 

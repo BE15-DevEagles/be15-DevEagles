@@ -4,9 +4,10 @@
     <div class="flex flex-1 overflow-hidden min-w-0">
       <TeamSidebar />
       <Sidebar />
-      <Content :current-channel="currentChannel" :channel-description="channelDescription">
-        <slot></slot>
-      </Content>
+      <Content
+        :current-page="teamStore.currentTeam?.name || '일반'"
+        :page-description="teamStore.currentTeam?.description || '팀 채널 소통 공간'"
+      />
       <RightSidebar />
     </div>
     <Footer />
@@ -14,7 +15,8 @@
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { ref, computed } from 'vue';
+  import { useTeamStore } from '@/store/team';
   import Header from './Header.vue';
   import Sidebar from './Sidebar.vue';
   import TeamSidebar from './TeamSidebar.vue';
@@ -22,9 +24,7 @@
   import RightSidebar from './RightSidebar.vue';
   import Footer from './Footer.vue';
 
-  // 현재 채널 정보
-  const currentChannel = ref('일반');
-  const channelDescription = ref('팀 채널 소통 공간');
+  const teamStore = useTeamStore();
 </script>
 
 <style>
