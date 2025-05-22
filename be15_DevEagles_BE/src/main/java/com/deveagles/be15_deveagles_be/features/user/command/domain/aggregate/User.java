@@ -53,7 +53,8 @@ public class User {
       UserStatus userStatus,
       LocalDateTime createdAt,
       LocalDateTime modifiedAt,
-      LocalDateTime deletedAt) {
+      LocalDateTime deletedAt,
+      String user_thumbnail_url) {
     this.email = email;
     this.password = password;
     this.userName = userName;
@@ -62,6 +63,7 @@ public class User {
     this.createdAt = createdAt;
     this.modifiedAt = modifiedAt;
     this.deletedAt = deletedAt;
+    this.userThumbnailUrl = user_thumbnail_url;
   }
 
   public void modifyUserInfo(String userName, String phoneNumber) {
@@ -69,7 +71,7 @@ public class User {
     this.phoneNumber = phoneNumber;
   }
 
-  public void modifyProfile(String userThumbnailUrl) {
+  public void setProfile(String userThumbnailUrl) {
     this.userThumbnailUrl = userThumbnailUrl;
   }
 

@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.user.command.application.service;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserCreateRequest;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserUpdateRequest;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.response.UserDetailResponse;
@@ -7,11 +9,14 @@ import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.Us
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserBusinessException;
 import com.deveagles.be15_deveagles_be.features.user.command.domain.exception.UserErrorCode;
 import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,10 +30,14 @@ public class UserCommandServiceImpl implements UserCommandService {
   private final UserRepository userRepository;
   private final ModelMapper modelMapper;
   private final PasswordEncoder passwordEncoder;
+  private final AmazonS3 amazonS3;
+
+  @Value("${cloud.aws.s3.bucket}")
+  private String bucket;
 
   @Override
   @Transactional
-  public void userRegister(UserCreateRequest request) {
+  public void userRegister(UserCreateRequest request, MultipartFile profile) {
 
     Optional<User> duplEmail = userRepository.findUserByEmail(request.email());
 
@@ -46,6 +55,10 @@ public class UserCommandServiceImpl implements UserCommandService {
 
     user.setEncodedPassword(passwordEncoder.encode(request.password()));
 
+    if (!profile.isEmpty()) {
+      String profileUrl = saveProfile(profile);
+      user.setProfile(profileUrl);
+    }
     userRepository.save(user);
   }
 
@@ -66,12 +79,10 @@ public class UserCommandServiceImpl implements UserCommandService {
 
     user.modifyUserInfo(request.userName(), request.phoneNumber());
 
-    // TODO : S3 연동 후 개발 필요
-    /*
-    if(!profile.isEmpty()) {
-       user.modifyProfile(profile.getOriginalFilename());
-     }
-     */
+    if (!profile.isEmpty()) {
+      String profileUrl = saveProfile(profile);
+      user.setProfile(profileUrl);
+    }
 
     return buildUserDetailResponse(userRepository.save(user));
   }
@@ -128,5 +139,22 @@ public class UserCommandServiceImpl implements UserCommandService {
         .userName(user.getUserName())
         .thumbnailUrl(user.getUserThumbnailUrl())
         .build();
+  }
+
+  private String saveProfile(MultipartFile profile) {
+
+    String fileName = "user/thumbnail_" + UUID.randomUUID() + "_" + profile.getOriginalFilename();
+
+    ObjectMetadata metadata = new ObjectMetadata();
+    metadata.setContentLength(profile.getSize());
+    metadata.setContentType(profile.getContentType());
+
+    try {
+      amazonS3.putObject(bucket, fileName, profile.getInputStream(), metadata);
+    } catch (IOException e) {
+      throw new UserBusinessException(UserErrorCode.PROFILE_SAVE_ERROR);
+    }
+
+    return amazonS3.getUrl(bucket, fileName).toString();
   }
 }
