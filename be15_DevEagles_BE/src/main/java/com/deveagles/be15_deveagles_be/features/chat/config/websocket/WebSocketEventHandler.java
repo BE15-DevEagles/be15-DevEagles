@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
@@ -23,7 +24,10 @@ public class WebSocketEventHandler {
 
   private final WebSocketMessageService webSocketMessageService;
   private final MoodInquiryServiceImpl moodInquiryService;
+  private final RedisTemplate<String, String> redisTemplate;
   private final Map<String, String> connectedUsers = new ConcurrentHashMap<>();
+
+  private static final String REDIS_KEY_ONLINE_USERS = "chat:online_users";
 
   @EventListener
   public void handleWebSocketConnectListener(SessionConnectEvent event) {
@@ -45,6 +49,14 @@ public class WebSocketEventHandler {
     String userId = extractUserId(headerAccessor);
     if (userId != null) {
       logger.info("사용자 연결 완료: 사용자ID={}, 세션ID={}", userId, sessionId);
+
+      try {
+        redisTemplate.opsForSet().add(REDIS_KEY_ONLINE_USERS, userId);
+        logger.info("User {} added to online users in Redis.", userId);
+      } catch (Exception e) {
+        logger.error(
+            "Failed to add user {} to online_users in Redis: {}", userId, e.getMessage(), e);
+      }
 
       if (!connectedUsers.containsValue(userId)) {
         try {
@@ -73,7 +85,19 @@ public class WebSocketEventHandler {
       boolean userStillConnected = connectedUsers.values().contains(userId);
 
       if (!userStillConnected) {
+        try {
+          redisTemplate.opsForSet().remove(REDIS_KEY_ONLINE_USERS, userId);
+          logger.info("User {} removed from online users in Redis.", userId);
+        } catch (Exception e) {
+          logger.error(
+              "Failed to remove user {} from online_users in Redis: {}", userId, e.getMessage(), e);
+        }
+
         notifyUserStatusChange(userId, false);
+      } else {
+        logger.info(
+            "User {} still has other active sessions. Not removing from Redis online list.",
+            userId);
       }
     }
   }

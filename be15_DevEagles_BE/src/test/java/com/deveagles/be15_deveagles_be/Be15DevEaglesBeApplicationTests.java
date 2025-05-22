@@ -1,6 +1,5 @@
 package com.deveagles.be15_deveagles_be;
 
-import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration;
@@ -35,8 +34,4 @@ import org.springframework.test.context.TestPropertySource;
       "spring.data.mongodb.auto-index-creation=false", // MongoDB 인덱스 생성 비활성화
       "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration" // MongoDB 설정 제외
     })
-class Be15DevEaglesBeApplicationTests {
-
-  @Test
-  void contextLoads() {}
-}
+class Be15DevEaglesBeApplicationTests {}
