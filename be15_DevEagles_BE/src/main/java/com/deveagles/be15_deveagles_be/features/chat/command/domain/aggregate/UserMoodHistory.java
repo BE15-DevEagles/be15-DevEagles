@@ -142,7 +142,6 @@ public class UserMoodHistory {
     }
   }
 
-  @SuppressWarnings("unchecked")
   public List<Map<String, Object>> getEmotionAnalysis() {
     if (emotionAnalysis == null || emotionAnalysis.isBlank()) {
       return new ArrayList<>();
