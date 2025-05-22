@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deveagles.be15_deveagles_be.features.worklog.query.mapper.WorklogMapper">
+    <select id="searchWorklogs" resultType="com.deveagles.be15_deveagles_be.features.worklog.command.application.dto.response.WorklogResponse">
+        SELECT
+        w.worklog_id,
+        u.user_name,
+        t.team_name,
+        w.summary,
+        w.written_at
+        FROM worklog w
+        JOIN user u ON w.user_id = u.user_id
+        JOIN team t ON w.team_id = t.team_id
+        WHERE w.team_id = #{teamId}
+        <choose>
+            <when test="searchType == 'ALL'">
+                <if test="keyword != null and keyword != ''">
+                    AND (
+                    LOWER(u.user_name) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                    OR LOWER(w.summary) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                    OR LOWER(w.work_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                    OR LOWER(w.note) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                    OR LOWER(w.plan_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                    )
+                </if>
+            </when>
+            <when test="searchType == 'AUTHOR'">
+                <if test="keyword != null and keyword != ''">
+                    AND LOWER(u.user_name) = LOWER(#{keyword})
+                </if>
+            </when>
+            <when test="searchType == 'KEYWORD'">
+                <if test="keyword != null and keyword != ''">
+                    AND (
+                    LOWER(w.summary) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                    OR LOWER(w.work_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                    OR LOWER(w.note) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                    OR LOWER(w.plan_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+                    )
+                </if>
+            </when>
+            <when test="searchType == 'DATE'">
+                <if test="startDate != null and endDate != null">
+                    AND w.written_at BETWEEN #{startDate} AND #{endDate}
+                </if>
+            </when>
+        </choose>
+        ORDER BY w.written_at DESC
+    </select>
+
+</mapper>

@@ -78,11 +78,12 @@ public class WorklogServiceImpl implements WorklogService {
         GeneratorBuilder.ContentsPrompt(request.getWorkContent(), request.getWorkContent());
     Map<String, Object> body =
         Map.of(
-            "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
+            "contents",
+            List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
             "generationConfig",
-                Map.of(
-                    "temperature", DEFAULT_TEMPERATURE,
-                    "maxOutputTokens", MAX_OUTPUT_TOKENS));
+            Map.of(
+                "temperature", DEFAULT_TEMPERATURE,
+                "maxOutputTokens", MAX_OUTPUT_TOKENS));
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -144,7 +145,7 @@ public class WorklogServiceImpl implements WorklogService {
   @Override
   public WorklogDetailResponse createWorklog(
       Long userId, Long teamId, WorklogCreateRequest worklogCreateRequest) {
-    if (worklogRepository.existsByWorkDateOnly(worklogCreateRequest.getWrittenAt())) {
+    if (worklogRepository.existsByTeamIdAndWrittenAt(teamId, worklogCreateRequest.getWrittenAt())) {
       throw new WorklogBusinessException(WorklogErrorCode.WORKLOG_ALREADY_EXISTS);
     }
     validateUserExists(userId);
