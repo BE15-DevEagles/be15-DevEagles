@@ -11,7 +11,7 @@ export const useTeamStore = defineStore('team', {
   }),
 
   getters: {
-    currentTeamId: state => state.currentTeam?.id,
+    currentTeamId: state => state.currentTeam?.teamId,
     teamChannels: state => state.currentTeam?.channels || [],
   },
 
@@ -20,42 +20,17 @@ export const useTeamStore = defineStore('team', {
     async fetchTeams() {
       this.loading = true;
       try {
-        // 실제 API 구현 전까지는 테스트 데이터 사용
-        // const response = await api.get('/api/v1/teams');
-        // this.teams = response.data.data;
+        const response = await api.get('teams/my');
+        this.teams = response.data.data;
 
-        // 테스트 데이터
-        this.teams = [
-          {
-            id: 'team1',
-            name: 'DevEagles',
-            thumbnail: null,
-            description: '비욘드 SW캠프 3분기 DevEagles 팀',
-          },
-          {
-            id: 'team2',
-            name: '코드봉인',
-            thumbnail: null,
-            description: '코드봉인 프로젝트 팀',
-          },
-          {
-            id: 'team3',
-            name: '알파코더',
-            thumbnail: null,
-            description: '알파코더 스터디 그룹',
-          },
-        ];
-
-        // 로컬 스토리지에서 마지막 선택 팀 확인
         const lastSelectedTeam = localStorage.getItem('lastSelectedTeam');
         const teamToSelect =
-          lastSelectedTeam && this.teams.find(team => team.id === lastSelectedTeam)
-            ? lastSelectedTeam
-            : this.teams[0]?.id;
+          lastSelectedTeam && this.teams.find(team => team.teamId === Number(lastSelectedTeam))
+            ? Number(lastSelectedTeam)
+            : this.teams[0]?.teamId;
 
-        // 팀이 있는데 currentTeam이 없으면 첫 번째 팀을 선택
-        if (this.teams.length > 0 && !this.currentTeam && teamToSelect) {
-          this.setCurrentTeam(teamToSelect);
+        if (this.teams.length > 0 && teamToSelect) {
+          await this.setCurrentTeam(teamToSelect); // ✅ 항상 set 호출
         }
       } catch (err) {
         this.error = err.message;
@@ -67,35 +42,18 @@ export const useTeamStore = defineStore('team', {
 
     // 현재 팀 설정
     async setCurrentTeam(teamId) {
-      if (this.currentTeamId === teamId) return;
-
       this.loading = true;
       try {
-        // 실제 API 구현 전까지는 메모리에서 찾기
-        // const response = await api.get(`/api/v1/teams/${teamId}`);
-        // this.currentTeam = response.data.data;
+        // 팀 상세 정보 조회
+        const teamRes = await api.get(`teams/teams/${teamId}`);
+        this.currentTeam = teamRes.data.data;
 
-        // 메모리에서 팀 찾기
-        const team = this.teams.find(t => t.id === teamId);
-        if (!team) {
-          throw new Error('팀을 찾을 수 없습니다.');
-        }
+        // 팀 멤버 목록 조회
+        const memberRes = await api.get(`teams/${teamId}/members`);
+        this.teamMembers = Array.isArray(memberRes.data.data) ? memberRes.data.data : [];
 
-        // 테스트 데이터로 팀 멤버 추가
-        const teamWithMembers = {
-          ...team,
-          members: [
-            { id: 'user1', name: '김코딩', position: '팀장', thumbnail: null, isOnline: true },
-            { id: 'user2', name: '이해커', position: '개발자', thumbnail: null, isOnline: false },
-            { id: 'user3', name: '박알고', position: '디자이너', thumbnail: null, isOnline: true },
-            { id: 'user4', name: '최데브', position: '기획자', thumbnail: null, isOnline: false },
-          ],
-        };
+        console.log('📦 멤버 API 응답:', memberRes.data.data);
 
-        this.currentTeam = teamWithMembers;
-        this.teamMembers = teamWithMembers.members;
-
-        // 브라우저 스토리지에 최근 선택 팀 저장
         localStorage.setItem('lastSelectedTeam', teamId);
       } catch (err) {
         this.error = err.message;
