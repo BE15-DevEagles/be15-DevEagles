@@ -8,6 +8,7 @@
         SELECT
         t.todo_id AS todoId,
         t.user_id AS userId,
+        u.user_name AS userName,
         t.team_id AS teamId,
         tm.team_name AS teamName,
         t.content,
@@ -15,6 +16,7 @@
         t.due_date AS dueDate,
         t.completed_at IS NOT NULL AS isCompleted
         FROM todo t
+        JOIN user u ON t.user_id = u.user_id
         JOIN team tm ON t.team_id = tm.team_id
         WHERE t.todo_id = #{todoId}
         AND t.user_id = #{userId}

@@ -9,6 +9,7 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor
 public class MyCalendarTodoResponse {
+  private Long todoId;
   private String content;
   private LocalDate startDate;
   private LocalDate dueDate;

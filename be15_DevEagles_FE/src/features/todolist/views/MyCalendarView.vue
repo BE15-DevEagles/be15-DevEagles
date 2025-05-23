@@ -2,6 +2,7 @@
   import { ref, onMounted, watch } from 'vue';
   import TodoCalendar from '@/features/todolist/components/TodoCalendar.vue';
   import { fetchMyCalendarEvents } from '@/features/todolist/api/api.js';
+  import dayjs from 'dayjs';
 
   const myEvents = ref([]);
 
@@ -23,15 +24,15 @@
 
       console.log('📥 원본 일정 데이터:', response.data.data);
 
-      myEvents.value = response.data.data.map(todo => {
-        console.log('✅ todoId 확인:', todo.todoId, '| title:', todo.content);
-        return {
-          id: todo.todoId,
-          title: todo.content,
-          start: todo.startDate,
-          end: todo.dueDate,
-        };
-      });
+      myEvents.value = response.data.data.map(todo => ({
+        id: todo.todoId,
+        title: todo.content,
+        start: todo.startDate,
+        end: dayjs(todo.dueDate).add(1, 'day').format('YYYY-MM-DD'),
+        extendedProps: {
+          teamId: todo.teamId,
+        },
+      }));
 
       console.log('📅 최종 변환된 일정:', myEvents.value);
     } catch (error) {
@@ -216,14 +217,6 @@
   }
 
   /* FullCalendar 내부 스타일 */
-  ::v-deep(.fc-event) {
-    background-color: #afdee8 !important;
-    color: white !important;
-    border-radius: 4px;
-    padding: 2px 6px;
-    font-size: 13px;
-  }
-
   ::v-deep(.fc-day-today) {
     background-color: #fff3cd !important;
     font-weight: bold;
