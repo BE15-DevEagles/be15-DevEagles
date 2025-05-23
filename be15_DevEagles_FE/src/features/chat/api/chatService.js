@@ -12,11 +12,49 @@ export async function getChatRooms() {
   }
 }
 
-export async function getChatHistory(chatRoomId, page = 0, size = 20) {
+export async function getChatHistory(chatRoomId, before = null, limit = 20) {
   try {
-    const response = await api.get(`/chatrooms/${chatRoomId}/messages`, {
-      params: { page, size },
+    console.log('[chatService] 채팅 히스토리 요청:', {
+      chatRoomId,
+      before,
+      limit,
     });
+
+    const params = {};
+    if (before) {
+      params.before = before;
+    }
+    params.limit = limit;
+
+    const response = await api.get(`/chatrooms/${chatRoomId}/messages`, {
+      params,
+    });
+
+    // 메시지 데이터 검증
+    if (response.data.data && response.data.data.messages) {
+      const messages = response.data.data.messages;
+      console.log(`[chatService] 히스토리 로드: ${messages.length}개 메시지`);
+
+      // 타임스탬프가 없는 메시지 체크
+      const noTimestampCount = messages.filter(msg => !msg.timestamp && !msg.createdAt).length;
+      if (noTimestampCount > 0) {
+        console.warn(`[chatService] 타임스탬프 없는 메시지: ${noTimestampCount}개`);
+      }
+
+      // 메시지 정규화 - timestamp가 없으면 createdAt 사용
+      const normalizedMessages = messages.map(msg => {
+        if (!msg.timestamp && msg.createdAt) {
+          msg.timestamp = msg.createdAt;
+        }
+        return msg;
+      });
+
+      return {
+        ...response.data.data,
+        messages: normalizedMessages,
+      };
+    }
+
     return response.data.data;
   } catch (error) {
     console.error(`채팅 이력 조회 실패:`, error);

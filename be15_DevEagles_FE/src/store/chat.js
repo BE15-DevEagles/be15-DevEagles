@@ -1,14 +1,16 @@
 import { defineStore } from 'pinia';
 import { useAuthStore } from './auth';
-import { getChatRooms, getChatHistory, markAsRead } from '@/features/chat/api/chatService';
+import { getChatRooms, markAsRead } from '@/features/chat/api/chatService';
 import {
   initializeWebSocket,
   subscribeToChatRoom,
   sendWebSocketMessage,
   disconnectWebSocket,
   isWebSocketConnected,
-  getWebSocketStatus,
 } from '@/features/chat/api/webSocketService';
+import { useNotifications } from '@/features/chat/composables/useNotifications';
+import { transformChatRoom } from '@/features/chat/utils/chatUtils';
+import { formatLastMessageTime } from '@/features/chat/utils/timeUtils';
 
 export const useChatStore = defineStore('chat', {
   state: () => ({
@@ -62,7 +64,12 @@ export const useChatStore = defineStore('chat', {
         const chatRooms = await getChatRooms();
 
         if (chatRooms && Array.isArray(chatRooms)) {
-          this.chats = chatRooms.map(room => this.transformChatRoom(room));
+          const authStore = useAuthStore();
+          this.chats = chatRooms.map(room => transformChatRoom(room, authStore.userId));
+
+          // 알림 설정 초기화
+          const { initializeFromChatData } = useNotifications();
+          initializeFromChatData(this.chats);
         } else {
           this.chats = [];
         }
@@ -73,63 +80,6 @@ export const useChatStore = defineStore('chat', {
       } finally {
         this.isLoading = false;
       }
-    },
-
-    // 백엔드 채팅방 데이터를 프론트엔드 형식으로 변환
-    transformChatRoom(room) {
-      const authStore = useAuthStore();
-      const otherParticipants = room.participants?.filter(p => p.userId !== authStore.userId) || [];
-      const otherParticipant = otherParticipants[0];
-
-      return {
-        id: room.id,
-        name: room.name || this.getDisplayName(room, otherParticipant),
-        type: room.type,
-        isOnline: otherParticipant?.isOnline || false,
-        thumbnail: otherParticipant?.userThumbnail || null,
-        lastMessage: room.lastMessage?.content || '',
-        lastMessageTime: this.formatLastMessageTime(room.lastMessage?.timestamp),
-        lastMessageTimestamp: room.lastMessage?.timestamp,
-        unreadCount: room.unreadCount || 0,
-        participants: room.participants || [],
-        createdAt: room.createdAt,
-        updatedAt: room.updatedAt,
-      };
-    },
-
-    // 채팅방 표시명 결정
-    getDisplayName(room, otherParticipant) {
-      if (room.type === 'AI') {
-        return '🤖 AI 어시스턴트';
-      }
-
-      if (room.type === 'GROUP') {
-        return room.name || '그룹 채팅';
-      }
-
-      return otherParticipant?.userName || '알 수 없는 사용자';
-    },
-
-    // 시간 포맷팅
-    formatLastMessageTime(timestamp) {
-      if (!timestamp) return '';
-
-      const now = new Date();
-      const msgTime = new Date(timestamp);
-      const diffMs = now - msgTime;
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMins / 60);
-      const diffDays = Math.floor(diffHours / 24);
-
-      if (diffMins < 1) return '방금';
-      if (diffMins < 60) return `${diffMins}분 전`;
-      if (diffHours < 24) return `${diffHours}시간 전`;
-      if (diffDays < 7) return `${diffDays}일 전`;
-
-      return msgTime.toLocaleDateString('ko-KR', {
-        month: 'short',
-        day: 'numeric',
-      });
     },
 
     // 채팅방 선택 및 구독
@@ -199,19 +149,32 @@ export const useChatStore = defineStore('chat', {
     // 웹소켓 메시지 수신 처리
     handleIncomingMessage(message) {
       const authStore = useAuthStore();
+      const { showChatNotification } = useNotifications();
       const chatIndex = this.chats.findIndex(c => c.id === message.chatroomId);
 
       if (chatIndex > -1) {
         const chat = this.chats[chatIndex];
 
-        // 메시지가 내가 보낸 것이 아니면 읽지 않은 메시지 증가
-        if (message.senderId !== authStore.userId && this.currentChatId !== message.chatroomId) {
-          chat.unreadCount = (chat.unreadCount || 0) + 1;
+        // 메시지가 내가 보낸 것이 아니면 처리
+        if (message.senderId !== authStore.userId) {
+          // 현재 채팅방이 아닌 경우 읽지 않은 메시지 증가
+          if (this.currentChatId !== message.chatroomId) {
+            chat.unreadCount = (chat.unreadCount || 0) + 1;
+          }
+
+          // 알림 표시 (현재 활성화된 채팅방이 아닌 경우에만)
+          if (this.currentChatId !== message.chatroomId) {
+            showChatNotification({
+              chatroomId: message.chatroomId,
+              senderName: message.senderName || '알 수 없는 사용자',
+              content: message.content,
+            });
+          }
         }
 
         // 마지막 메시지 업데이트
         chat.lastMessage = message.content;
-        chat.lastMessageTime = '방금';
+        chat.lastMessageTime = formatLastMessageTime(message.timestamp);
         chat.lastMessageTimestamp = message.timestamp;
 
         // 해당 채팅을 목록 맨 위로 이동
@@ -253,7 +216,7 @@ export const useChatStore = defineStore('chat', {
         if (response.ok) {
           const result = await response.json();
           const newRoom = result.data || result;
-          const transformedRoom = this.transformChatRoom(newRoom);
+          const transformedRoom = transformChatRoom(newRoom, authStore.userId);
           this.chats.unshift(transformedRoom);
           return transformedRoom;
         } else {

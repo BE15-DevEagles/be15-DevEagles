@@ -37,6 +37,59 @@ public class MongoChatroomQueryRepositoryImpl implements ChatroomQueryRepository
   }
 
   @Override
+  public List<ChatRoom> findChatroomsByUserIdAndTeamId(
+      Long userId, String teamId, int page, int size) {
+    PageRequest pageRequest = PageRequest.of(page, size);
+
+    Criteria criteria = new Criteria();
+    // deletedAt이 존재하지 않거나 null인 경우
+    criteria.orOperator(
+        Criteria.where("deletedAt").isNull(), Criteria.where("deletedAt").exists(false));
+
+    if (teamId != null && !teamId.isBlank()) {
+      // 팀 채팅방 또는 해당 사용자의 AI 채팅방
+      Criteria userCriteria = new Criteria();
+      userCriteria.orOperator(
+          Criteria.where("teamId")
+              .is(teamId)
+              .and("participants.userId")
+              .is(String.valueOf(userId))
+              .andOperator(
+                  new Criteria()
+                      .orOperator(
+                          Criteria.where("participants.deletedAt").isNull(),
+                          Criteria.where("participants.deletedAt").exists(false))),
+          Criteria.where("teamId")
+              .is(teamId)
+              .and("userId")
+              .is(String.valueOf(userId))
+              .and("type")
+              .is("AI"));
+
+      criteria.andOperator(userCriteria);
+    } else {
+      // 사용자가 참여한 모든 채팅방
+      Criteria userCriteria = new Criteria();
+      userCriteria.orOperator(
+          Criteria.where("participants.userId")
+              .is(String.valueOf(userId))
+              .andOperator(
+                  new Criteria()
+                      .orOperator(
+                          Criteria.where("participants.deletedAt").isNull(),
+                          Criteria.where("participants.deletedAt").exists(false))),
+          Criteria.where("userId").is(String.valueOf(userId)).and("type").is("AI"));
+
+      criteria.andOperator(userCriteria);
+    }
+
+    Query query = new Query(criteria);
+    query.with(pageRequest);
+
+    return mongoTemplate.find(query, ChatRoom.class);
+  }
+
+  @Override
   public int countChatrooms(String teamId) {
     if (teamId != null && !teamId.isBlank()) {
       Query query = new Query(Criteria.where("teamId").is(teamId).and("deletedAt").isNull());
@@ -45,6 +98,54 @@ public class MongoChatroomQueryRepositoryImpl implements ChatroomQueryRepository
       Query query = new Query(Criteria.where("deletedAt").isNull());
       return (int) mongoTemplate.count(query, ChatRoom.class);
     }
+  }
+
+  @Override
+  public int countChatroomsByUserIdAndTeamId(Long userId, String teamId) {
+    Criteria criteria = new Criteria();
+    // deletedAt이 존재하지 않거나 null인 경우
+    criteria.orOperator(
+        Criteria.where("deletedAt").isNull(), Criteria.where("deletedAt").exists(false));
+
+    if (teamId != null && !teamId.isBlank()) {
+      // 팀 채팅방 또는 해당 사용자의 AI 채팅방
+      Criteria userCriteria = new Criteria();
+      userCriteria.orOperator(
+          Criteria.where("teamId")
+              .is(teamId)
+              .and("participants.userId")
+              .is(String.valueOf(userId))
+              .andOperator(
+                  new Criteria()
+                      .orOperator(
+                          Criteria.where("participants.deletedAt").isNull(),
+                          Criteria.where("participants.deletedAt").exists(false))),
+          Criteria.where("teamId")
+              .is(teamId)
+              .and("userId")
+              .is(String.valueOf(userId))
+              .and("type")
+              .is("AI"));
+
+      criteria.andOperator(userCriteria);
+    } else {
+      // 사용자가 참여한 모든 채팅방
+      Criteria userCriteria = new Criteria();
+      userCriteria.orOperator(
+          Criteria.where("participants.userId")
+              .is(String.valueOf(userId))
+              .andOperator(
+                  new Criteria()
+                      .orOperator(
+                          Criteria.where("participants.deletedAt").isNull(),
+                          Criteria.where("participants.deletedAt").exists(false))),
+          Criteria.where("userId").is(String.valueOf(userId)).and("type").is("AI"));
+
+      criteria.andOperator(userCriteria);
+    }
+
+    Query query = new Query(criteria);
+    return (int) mongoTemplate.count(query, ChatRoom.class);
   }
 
   @Override

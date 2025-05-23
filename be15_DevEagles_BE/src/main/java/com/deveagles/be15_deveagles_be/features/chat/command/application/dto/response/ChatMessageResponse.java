@@ -22,6 +22,7 @@ public class ChatMessageResponse {
   private String content;
   private Map<String, Object> metadata;
   private LocalDateTime createdAt;
+  private LocalDateTime timestamp;
   private boolean isDeleted;
 
   public static ChatMessageResponse from(ChatMessage message) {
@@ -34,6 +35,7 @@ public class ChatMessageResponse {
         .content(message.getContent())
         .metadata(message.getMetadata())
         .createdAt(message.getCreatedAt())
+        .timestamp(message.getCreatedAt())
         .isDeleted(message.isDeleted())
         .build();
   }
