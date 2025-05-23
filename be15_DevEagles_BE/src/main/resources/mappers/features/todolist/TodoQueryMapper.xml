@@ -14,7 +14,7 @@
         t.start_date AS startDate,
         t.due_date AS dueDate,
         t.completed_at IS NOT NULL AS isCompleted
-        FROM todos t
+        FROM todo t
         JOIN team tm ON t.team_id = tm.team_id
         WHERE t.todo_id = #{todoId}
         AND t.user_id = #{userId}

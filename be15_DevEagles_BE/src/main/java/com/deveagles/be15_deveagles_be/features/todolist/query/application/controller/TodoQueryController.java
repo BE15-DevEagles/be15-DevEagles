@@ -6,6 +6,7 @@ import com.deveagles.be15_deveagles_be.features.auth.command.application.model.C
 import com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.*;
 import com.deveagles.be15_deveagles_be.features.todolist.query.application.service.TodoCalendarQueryService;
 import com.deveagles.be15_deveagles_be.features.todolist.query.application.service.TodoDdayQueryService;
+import com.deveagles.be15_deveagles_be.features.todolist.query.application.service.TodoQueryService;
 import com.deveagles.be15_deveagles_be.features.todolist.query.application.service.TodoTeamQueryService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class TodoQueryController {
   private final TodoCalendarQueryService calendarQueryService;
   private final TodoDdayQueryService ddayQueryService;
   private final TodoTeamQueryService teamQueryService;
+  private final TodoQueryService todoQueryService;
 
   // 1️⃣ 내 캘린더용 일정 조회
   @GetMapping("/calendar/my")
@@ -78,5 +80,14 @@ public class TodoQueryController {
         teamQueryService.getTeamTodosByCondition(teamId, userIds, status, page, size);
 
     return ResponseEntity.ok(ApiResponse.success(response));
+  }
+
+  // 6. todo 상세 조회
+  @GetMapping("/{todoId}")
+  public ResponseEntity<TodoDetailResponse> getMyTodoDetail(
+      @PathVariable Long todoId, @AuthenticationPrincipal CustomUser user) {
+    Long userId = user.getUserId();
+    TodoDetailResponse response = todoQueryService.getMyTodoDetail(userId, todoId);
+    return ResponseEntity.ok(response);
   }
 }
