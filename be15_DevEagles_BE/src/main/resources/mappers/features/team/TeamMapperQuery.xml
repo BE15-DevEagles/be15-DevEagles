@@ -36,6 +36,7 @@
             team_id AS teamId,
             team_name AS teamName,
             introduction,
+            user_id,
             url AS teamThumbnailUrl
         FROM team
         WHERE team_id = #{teamId}
