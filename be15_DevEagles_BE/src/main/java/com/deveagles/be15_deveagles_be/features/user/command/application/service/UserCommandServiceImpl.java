@@ -55,7 +55,7 @@ public class UserCommandServiceImpl implements UserCommandService {
 
     user.setEncodedPassword(passwordEncoder.encode(request.password()));
 
-    if (!profile.isEmpty()) {
+    if (profile != null && !profile.isEmpty()) {
       String profileUrl = saveProfile(profile);
       user.setProfile(profileUrl);
     }
@@ -79,7 +79,7 @@ public class UserCommandServiceImpl implements UserCommandService {
 
     user.modifyUserInfo(request.userName(), request.phoneNumber());
 
-    if (!profile.isEmpty()) {
+    if (profile != null && !profile.isEmpty()) {
       String profileUrl = saveProfile(profile);
       user.setProfile(profileUrl);
     }
