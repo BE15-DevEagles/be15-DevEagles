@@ -24,10 +24,10 @@
           <h2 class="text-xl font-bold">{{ teamName || '팀 이름 없음' }}</h2>
         </div>
         <div class="flex gap-3">
-          <BaseButton v-if="isTeamLeader" class="text-black hover:text-[#dc2626]" size="sm"
+          <BaseButton v-if="isTeamLeader" type="" class="text-black hover:text-[#dc2626]" size="sm"
             >팀 삭제</BaseButton
           >
-          <BaseButton class="text-black hover:text-[#dc2626]" size="sm">팀 탈퇴</BaseButton>
+          <BaseButton type="" class="text-black hover:text-[#dc2626]" size="sm">팀 탈퇴</BaseButton>
         </div>
       </div>
 
@@ -90,11 +90,9 @@
   <!-- 모달들 -->
   <TeamMemberInviteModal v-model="isInviteModalOpen" @submit="handleInvite" />
   <UpdateTeamThumbnailModal
-    v-if="isThumbnailModalOpen"
-    :current-url="teamThumbnailUrl"
-    :loading="isUploading"
-    @close="isThumbnailModalOpen = false"
-    @submit="updateThumbnail"
+    v-model="isThumbnailModalOpen"
+    :current-url="teamThumbnail"
+    @submit="handleThumbnailSubmit"
   />
 </template>
 
