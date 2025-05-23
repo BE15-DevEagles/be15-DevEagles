@@ -168,7 +168,12 @@ public class MessageQueryServiceImplTest {
         messageQueryService.getMessageReadStatus(USER_ID, CHATROOM_ID, MESSAGE_ID);
 
     // then
-    assertThat(response).isNull();
+    assertThat(response).isNotNull();
+    assertThat(response.getTotalParticipants()).isEqualTo(0);
+    assertThat(response.getReadCount()).isEqualTo(0);
+    assertThat(response.getUnreadCount()).isEqualTo(0);
+    assertThat(response.getReadBy()).isEmpty();
+    assertThat(response.getNotReadBy()).isEmpty();
 
     verify(messageQueryRepository).getMessageReadStatus(eq(CHATROOM_ID), eq(MESSAGE_ID));
   }
@@ -185,7 +190,12 @@ public class MessageQueryServiceImplTest {
         messageQueryService.getMessageReadStatus(USER_ID, CHATROOM_ID, MESSAGE_ID);
 
     // then
-    assertThat(response).isNull();
+    assertThat(response).isNotNull();
+    assertThat(response.getTotalParticipants()).isEqualTo(0);
+    assertThat(response.getReadCount()).isEqualTo(0);
+    assertThat(response.getUnreadCount()).isEqualTo(0);
+    assertThat(response.getReadBy()).isEmpty();
+    assertThat(response.getNotReadBy()).isEmpty();
 
     verify(messageQueryRepository).getMessageReadStatus(eq(CHATROOM_ID), eq(MESSAGE_ID));
   }
