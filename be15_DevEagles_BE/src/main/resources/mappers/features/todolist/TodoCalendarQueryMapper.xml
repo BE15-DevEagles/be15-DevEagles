@@ -8,6 +8,7 @@
     <select id="selectMyCalendarTodos" parameterType="long"
             resultType="com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.MyCalendarTodoResponse">
         SELECT
+            todo_id AS todoId,
             content,
             start_date AS startDate,
             due_date AS dueDate,

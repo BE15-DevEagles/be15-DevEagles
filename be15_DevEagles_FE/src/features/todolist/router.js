@@ -1,5 +1,4 @@
 import MyCalendarView from '@/features/todolist/views/MyCalendarView.vue';
-import TeamCalendarView from '@/features/todolist/views/TeamCalendarView.vue';
 
 export const calendarRoutes = [
   {
@@ -10,13 +9,13 @@ export const calendarRoutes = [
       layout: 'default',
       requiresAuth: true,
       title: '나의 캘린더',
-      description: '내의 모든 할 일을 확인할 수 있어요.',
+      description: '나의 모든 할 일을 확인할 수 있어요.',
     },
   },
   {
     path: '/calendar/team',
     name: 'TeamCalendar',
-    component: () => TeamCalendarView,
+    component: () => import('@/features/todolist/views/TeamCalendarView.vue'),
     meta: {
       layout: 'default',
       requiresAuth: true,

@@ -16,6 +16,7 @@ const routes = [
         component: () => import('@/views/Home.vue'),
       },
       // 여기 Layout 하위 라우트 계속 추가 가능
+      ...calendarRoutes,
     ],
   },
   {
@@ -28,8 +29,6 @@ const routes = [
       errorMessage: '요청하신 페이지가 존재하지 않습니다. URL을 확인해 주세요.',
     },
   },
-
-  ...calendarRoutes,
 ];
 
 const router = createRouter({

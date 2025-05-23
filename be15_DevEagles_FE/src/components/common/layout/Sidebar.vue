@@ -23,6 +23,7 @@
                 ? 'bg-[var(--color-primary-300)] text-white'
                 : 'text-[var(--color-gray-300)] hover:bg-[var(--color-gray-600)] hover:text-white'
             "
+            @click="handleWorkspaceClick(item)"
           >
             <span class="w-5 h-5 mr-3 flex-shrink-0" v-html="item.icon"></span>
             <span class="font-one-liner truncate">{{ item.name }}</span>
@@ -35,21 +36,20 @@
         <div class="flex items-center px-2 mb-2">
           <h2 class="text-[var(--color-gray-400)] font-small-semibold uppercase">팀 채널</h2>
         </div>
-        <ul>
-          <li
-            v-for="(channel, index) in channels"
-            :key="index"
-            class="flex items-center px-3 py-2 rounded-md mb-1 cursor-pointer transition-all duration-200"
-            :class="
-              channel.active
-                ? 'bg-[var(--color-primary-300)] text-white'
-                : 'text-[var(--color-gray-300)] hover:bg-[var(--color-gray-600)] hover:text-white'
-            "
-          >
-            <span class="mr-3 font-one-liner">#</span>
-            <span class="font-one-liner truncate">{{ channel.name }}</span>
-          </li>
-        </ul>
+        <li
+          v-for="(channel, index) in channels"
+          :key="index"
+          class="flex items-center px-3 py-2 rounded-md mb-1 cursor-pointer transition-all duration-200"
+          :class="
+            channel.active
+              ? 'bg-[var(--color-primary-300)] text-white'
+              : 'text-[var(--color-gray-300)] hover:bg-[var(--color-gray-600)] hover:text-white'
+          "
+          @click="handleChannelClick(channel)"
+        >
+          <span class="mr-3 font-one-liner">#</span>
+          <span class="font-one-liner truncate">{{ channel.name }}</span>
+        </li>
       </div>
     </div>
   </aside>
@@ -57,6 +57,9 @@
 
 <script setup>
   import { ref } from 'vue';
+  import { useRouter } from 'vue-router';
+
+  const router = useRouter();
 
   // 아이콘 SVG 문자열
   const homeIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -72,7 +75,40 @@
   </svg>`;
 
   // Mock 데이터
-  const workspaceItems = ref([{ name: '홈', icon: homeIcon, active: false }]);
+  const workspaceItems = ref([
+    { name: '홈', icon: homeIcon, route: '/calendar/my', active: false },
+  ]);
+
+  function handleWorkspaceClick(item) {
+    if (item.route) {
+      router.push(item.route);
+    }
+  }
+
+  function handleChannelClick(channel) {
+    switch (channel.name) {
+      case '팀 정보':
+        router.push('/team/info');
+        break;
+      case '캘린더':
+        router.push('/calendar/team');
+        break;
+      case '업무일지':
+        router.push('/worklog');
+        break;
+      case 'Todo 목록':
+        router.push('/todos');
+        break;
+      case '타임캡슐':
+        router.push('/timecapsule');
+        break;
+      case '룰렛':
+        router.push('/roulette');
+        break;
+      default:
+        console.warn('❓ 알 수 없는 채널:', channel.name);
+    }
+  }
 
   const channels = ref([
     { name: '팀 정보', icon: projectIcon, active: false },

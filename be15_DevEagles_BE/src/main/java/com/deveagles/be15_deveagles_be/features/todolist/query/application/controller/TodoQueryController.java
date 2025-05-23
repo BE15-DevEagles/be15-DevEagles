@@ -90,4 +90,11 @@ public class TodoQueryController {
     TodoDetailResponse response = todoQueryService.getMyTodoDetail(userId, todoId);
     return ResponseEntity.ok(response);
   }
+
+  // 7. team todo 상세조회
+  @GetMapping("/team/detail/{todoId}")
+  public ApiResponse<TodoDetailResponse> getTeamTodoDetail(@PathVariable Long todoId) {
+    TodoDetailResponse response = todoQueryService.getTeamTodoDetail(todoId);
+    return ApiResponse.success(response);
+  }
 }

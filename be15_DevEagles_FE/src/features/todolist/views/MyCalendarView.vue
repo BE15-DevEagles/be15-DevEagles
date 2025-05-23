@@ -1,6 +1,8 @@
 <script setup>
   import { ref, onMounted, watch } from 'vue';
   import TodoCalendar from '@/features/todolist/components/TodoCalendar.vue';
+  import { fetchMyCalendarEvents } from '@/features/todolist/api/api.js';
+  import dayjs from 'dayjs';
 
   const myEvents = ref([]);
 
@@ -16,34 +18,26 @@
     { immediate: true }
   );
 
-  onMounted(() => {
-    // 더미 일정 데이터
-    myEvents.value = [
-      {
-        id: 1,
-        title: '팀 회의',
-        start: '2025-05-20',
-        end: '2025-05-23',
-      },
-      {
-        id: 2,
-        title: '기획서 제출 마감',
-        start: '2025-05-21',
-        end: '2025-05-27',
-      },
-      {
-        id: 3,
-        title: '디자인 리뷰',
-        start: '2025-04-15',
-        end: '2025-04-18',
-      },
-      {
-        id: 4,
-        title: '디자인 리뷰',
-        start: '2025-05-21',
-        end: '2025-05-22',
-      },
-    ];
+  onMounted(async () => {
+    try {
+      const response = await fetchMyCalendarEvents();
+
+      console.log('📥 원본 일정 데이터:', response.data.data);
+
+      myEvents.value = response.data.data.map(todo => ({
+        id: todo.todoId,
+        title: todo.content,
+        start: todo.startDate,
+        end: dayjs(todo.dueDate).add(1, 'day').format('YYYY-MM-DD'),
+        extendedProps: {
+          teamId: todo.teamId,
+        },
+      }));
+
+      console.log('📅 최종 변환된 일정:', myEvents.value);
+    } catch (error) {
+      console.error('❌ 일정 데이터 불러오기 실패:', error);
+    }
   });
 </script>
 
@@ -52,7 +46,7 @@
     <div class="calendar-page">
       <div :class="['calendar-section', props.isSidebarCollapsed ? 'wide' : 'narrow']">
         <div class="box">
-          <TodoCalendar :events="myEvents" />
+          <TodoCalendar :events="myEvents" type="my" />
         </div>
       </div>
 
@@ -223,14 +217,6 @@
   }
 
   /* FullCalendar 내부 스타일 */
-  ::v-deep(.fc-event) {
-    background-color: #afdee8 !important;
-    color: white !important;
-    border-radius: 4px;
-    padding: 2px 6px;
-    font-size: 13px;
-  }
-
   ::v-deep(.fc-day-today) {
     background-color: #fff3cd !important;
     font-weight: bold;

@@ -20,4 +20,8 @@ public class TodoQueryService {
     }
     return result;
   }
+
+  public TodoDetailResponse getTeamTodoDetail(Long todoId) {
+    return todoQueryRepository.selectTeamTodoDetail(todoId);
+  }
 }
