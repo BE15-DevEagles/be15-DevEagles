@@ -1,15 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { ErrorPage } from '@/components/common/layout';
+import { Layout, ErrorPage } from '@/components/common/layout';
+import timecapsuleRoutes from '@/features/timecapsule/router.js';
 
-// 라우트 정의
 const routes = [
   {
     path: '/',
-    name: 'Home',
-    component: () => import('@/views/Home.vue'),
+    component: Layout,
+    children: [{ path: '', name: 'Home', component: () => import('@/views/Home.vue') }],
   },
-
-  // 404 페이지
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -22,7 +20,6 @@ const routes = [
   },
 ];
 
-// 라우터 생성
 const router = createRouter({
   history: createWebHistory(),
   routes,
