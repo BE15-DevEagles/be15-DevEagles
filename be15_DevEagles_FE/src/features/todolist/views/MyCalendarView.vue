@@ -46,7 +46,7 @@
     <div class="calendar-page">
       <div :class="['calendar-section', props.isSidebarCollapsed ? 'wide' : 'narrow']">
         <div class="box">
-          <TodoCalendar :events="myEvents" />
+          <TodoCalendar :events="myEvents" type="my" />
         </div>
       </div>
 

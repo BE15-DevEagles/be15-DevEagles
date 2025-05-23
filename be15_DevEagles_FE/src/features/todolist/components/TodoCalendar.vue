@@ -1,5 +1,6 @@
+<!-- file: TodoCalendar.vue -->
 <script setup>
-  import { onMounted, ref, watch } from 'vue';
+  import { inject, onMounted, ref, watch } from 'vue';
   import { Calendar } from '@fullcalendar/core';
   import dayGridPlugin from '@fullcalendar/daygrid';
   import timeGridPlugin from '@fullcalendar/timegrid';
@@ -7,8 +8,34 @@
   import tippy from 'tippy.js';
   import 'tippy.js/dist/tippy.css';
 
-  import { fetchTodoDetail } from '@/features/todolist/api/api.js';
+  import { fetchTodoDetail, fetchTeamTodoDetail } from '@/features/todolist/api/api.js';
 
+  const currentUserId = inject('currentUserId');
+
+  // 유저별 색상 맵
+  const userColorMap = {};
+  const userColors = [
+    '#DA5D77',
+    '#E89056',
+    '#AF7AC5',
+    '#F3C146',
+    '#FFAA5C',
+    '#B9A26D',
+    '#5C87C5',
+    '#6AA6AC',
+    '#8F8FBF',
+    '#62B292',
+  ];
+
+  function getColorForUser(userName) {
+    if (!userColorMap[userName]) {
+      const nextColor = userColors[Object.keys(userColorMap).length % userColors.length];
+      userColorMap[userName] = nextColor;
+    }
+    return userColorMap[userName];
+  }
+
+  // 팀별 색상 맵
   const teamColorMap = {
     1: { bg: '#DA5D77', fg: '#000' },
     2: { bg: '#E89056', fg: '#000' },
@@ -24,6 +51,11 @@
 
   const props = defineProps({
     events: Array,
+    type: {
+      type: String,
+      default: 'my',
+      validator: value => ['my', 'team'].includes(value),
+    },
   });
 
   const calendarRef = ref(null);
@@ -54,30 +86,47 @@
         center: 'title',
         right: 'dayGridMonth,timeGridWeek,timeGridDay',
       },
-
       eventDidMount: async info => {
-        const todoId = info.event.id;
-        const teamId = info.event.extendedProps.teamId;
-        const color = teamColorMap[teamId];
-
-        if (color) {
-          info.el.style.backgroundColor = color.bg;
-          info.el.style.color = color.fg;
-        }
+        const todoId = Number(info.event.id);
+        const fetchFn = props.type === 'team' ? fetchTeamTodoDetail : fetchTodoDetail;
 
         try {
-          const res = await fetchTodoDetail(todoId);
-          const todo = res.data;
+          const res = await fetchFn(todoId);
+          const todo = props.type === 'team' ? res.data.data : res.data;
 
+          if (!todo) {
+            console.warn('❗ 상세조회 실패 또는 응답 없음:', res);
+            return;
+          }
+
+          // ✅ 배경 색상 처리
+          if (props.type === 'team') {
+            // 팀 캘린더 → 유저별 색상
+            const userColor = getColorForUser(todo.userName);
+            info.el.style.backgroundColor = userColor;
+            info.el.style.color = '#fff';
+          } else {
+            // 내 캘린더 → 팀별 색상
+            const teamColor = teamColorMap[todo.teamId];
+            if (teamColor) {
+              info.el.style.backgroundColor = teamColor.bg;
+              info.el.style.color = teamColor.fg;
+            } else {
+              info.el.style.backgroundColor = '#257180';
+              info.el.style.color = '#fff';
+            }
+          }
+
+          // ✅ 툴팁 렌더링
           const content = `
-      <div style="font-size: 13px; line-height: 1.5;">
-        <div><strong>${todo.isCompleted ? '✅ 완료' : '🕓 진행 중'}</strong></div>
-        <div>${todo.startDate.slice(0, 10)} ~ ${todo.dueDate.slice(0, 10)}</div>
-        <div>작성자: ${todo.userName}</div>
-        <div>팀명: ${todo.teamName}</div>
-        <div style="margin-top: 4px;">${todo.content}</div>
-      </div>
-    `;
+          <div style="font-size: 13px; line-height: 1.5;">
+            <div><strong>${todo.isCompleted ? '✅ 완료' : '🕓 진행 중'}</strong></div>
+            <div>${todo.startDate.slice(0, 10)} ~ ${todo.dueDate.slice(0, 10)}</div>
+            <div>작성자: ${todo.userName}</div>
+            <div>팀명: ${todo.teamName}</div>
+            <div style="margin-top: 4px;">${todo.content}</div>
+          </div>
+        `;
 
           tippy(info.el, {
             content,
@@ -102,8 +151,8 @@
     <div ref="calendarRef"></div>
   </div>
 </template>
+
 <style>
-  /* light-border 테마의 tippy 툴팁을 info 스타일로 오버라이드 */
   .tippy-box[data-theme~='light-border'] {
     background-color: var(--color-info-50);
     color: var(--color-neutral-dark);

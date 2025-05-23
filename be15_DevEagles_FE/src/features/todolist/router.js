@@ -1,5 +1,4 @@
 import MyCalendarView from '@/features/todolist/views/MyCalendarView.vue';
-import TeamCalendarView from '@/features/todolist/views/TeamCalendarView.vue';
 
 export const calendarRoutes = [
   {
@@ -16,7 +15,7 @@ export const calendarRoutes = [
   {
     path: '/calendar/team',
     name: 'TeamCalendar',
-    component: () => TeamCalendarView,
+    component: () => import('@/features/todolist/views/TeamCalendarView.vue'),
     meta: {
       layout: 'default',
       requiresAuth: true,

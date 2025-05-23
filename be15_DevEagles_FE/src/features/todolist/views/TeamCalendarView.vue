@@ -1,50 +1,49 @@
 <script setup>
-  import { ref, onMounted, watch } from 'vue';
+  import { ref, watch, inject } from 'vue';
+  import { useTeamStore } from '@/store/team';
+  import { storeToRefs } from 'pinia';
+  import { fetchTeamCalendarEvents } from '@/features/todolist/api/api';
+  import dayjs from 'dayjs';
   import TodoCalendar from '@/features/todolist/components/TodoCalendar.vue';
-
-  const myEvents = ref([]);
 
   const props = defineProps({
     isSidebarCollapsed: Boolean,
   });
 
+  const teamEvents = ref([]);
+  const currentUserId = inject('currentUserId');
+
+  const teamStore = useTeamStore();
+  const { currentTeamId } = storeToRefs(teamStore);
+
   watch(
-    () => props.isSidebarCollapsed,
-    newVal => {
-      console.log('[Sidebar 상태] isSidebarCollapsed:', newVal);
+    currentTeamId,
+    async newTeamId => {
+      if (!newTeamId) return;
+
+      try {
+        const response = await fetchTeamCalendarEvents(newTeamId);
+        teamEvents.value = response.data.data.map(todo => {
+          console.log('✅ todo 응답 데이터:', todo); //
+          return {
+            id: todo.todoId,
+            title: todo.content,
+            start: todo.startDate,
+            end: dayjs(todo.dueDate).add(1, 'day').format('YYYY-MM-DD'),
+            extendedProps: {
+              userId: todo.userId,
+              teamId: todo.teamId,
+            },
+            backgroundColor: todo.userId === currentUserId ? '#257180' : '#B5C9EA',
+            textColor: '#fff',
+          };
+        });
+      } catch (err) {
+        console.error('❌ 팀 일정 로딩 실패:', err);
+      }
     },
     { immediate: true }
   );
-
-  onMounted(() => {
-    // 더미 일정 데이터
-    myEvents.value = [
-      {
-        id: 1,
-        title: '팀 회의',
-        start: '2025-05-20',
-        end: '2025-05-23',
-      },
-      {
-        id: 2,
-        title: '기획서 제출 마감',
-        start: '2025-05-21',
-        end: '2025-05-27',
-      },
-      {
-        id: 3,
-        title: '디자인 리뷰',
-        start: '2025-04-15',
-        end: '2025-04-18',
-      },
-      {
-        id: 4,
-        title: '디자인 리뷰',
-        start: '2025-05-21',
-        end: '2025-05-22',
-      },
-    ];
-  });
 </script>
 
 <template>
@@ -52,10 +51,9 @@
     <div class="calendar-page">
       <div :class="['calendar-section', props.isSidebarCollapsed ? 'wide' : 'narrow']">
         <div class="box">
-          <TodoCalendar :events="myEvents" />
+          <TodoCalendar :events="teamEvents" type="team" />
         </div>
       </div>
-
       <div :class="['todolist-section', props.isSidebarCollapsed ? 'compact' : 'expanded']">
         <div class="box">
           <p class="todo-title">todoList</p>
@@ -223,14 +221,6 @@
   }
 
   /* FullCalendar 내부 스타일 */
-  ::v-deep(.fc-event) {
-    background-color: #afdee8 !important;
-    color: white !important;
-    border-radius: 4px;
-    padding: 2px 6px;
-    font-size: 13px;
-  }
-
   ::v-deep(.fc-day-today) {
     background-color: #fff3cd !important;
     font-weight: bold;

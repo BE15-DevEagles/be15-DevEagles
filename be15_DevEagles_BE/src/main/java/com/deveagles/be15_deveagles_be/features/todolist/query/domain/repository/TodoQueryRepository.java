@@ -6,5 +6,7 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface TodoQueryRepository {
+  TodoDetailResponse selectTeamTodoDetail(@Param("todoId") Long todoId);
+
   TodoDetailResponse selectTodoDetail(@Param("todoId") Long todoId, @Param("userId") Long userId);
 }
