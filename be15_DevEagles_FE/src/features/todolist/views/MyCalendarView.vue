@@ -1,6 +1,7 @@
 <script setup>
   import { ref, onMounted, watch } from 'vue';
   import TodoCalendar from '@/features/todolist/components/TodoCalendar.vue';
+  import { fetchMyCalendarEvents } from '@/features/todolist/api/api.js';
 
   const myEvents = ref([]);
 
@@ -16,34 +17,26 @@
     { immediate: true }
   );
 
-  onMounted(() => {
-    // 더미 일정 데이터
-    myEvents.value = [
-      {
-        id: 1,
-        title: '팀 회의',
-        start: '2025-05-20',
-        end: '2025-05-23',
-      },
-      {
-        id: 2,
-        title: '기획서 제출 마감',
-        start: '2025-05-21',
-        end: '2025-05-27',
-      },
-      {
-        id: 3,
-        title: '디자인 리뷰',
-        start: '2025-04-15',
-        end: '2025-04-18',
-      },
-      {
-        id: 4,
-        title: '디자인 리뷰',
-        start: '2025-05-21',
-        end: '2025-05-22',
-      },
-    ];
+  onMounted(async () => {
+    try {
+      const response = await fetchMyCalendarEvents();
+
+      console.log('📥 원본 일정 데이터:', response.data.data);
+
+      myEvents.value = response.data.data.map(todo => {
+        console.log('✅ todoId 확인:', todo.todoId, '| title:', todo.content);
+        return {
+          id: todo.todoId,
+          title: todo.content,
+          start: todo.startDate,
+          end: todo.dueDate,
+        };
+      });
+
+      console.log('📅 최종 변환된 일정:', myEvents.value);
+    } catch (error) {
+      console.error('❌ 일정 데이터 불러오기 실패:', error);
+    }
   });
 </script>
 

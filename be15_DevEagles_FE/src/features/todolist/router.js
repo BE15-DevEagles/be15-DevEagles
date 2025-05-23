@@ -10,7 +10,7 @@ export const calendarRoutes = [
       layout: 'default',
       requiresAuth: true,
       title: '나의 캘린더',
-      description: '내의 모든 할 일을 확인할 수 있어요.',
+      description: '나의 모든 할 일을 확인할 수 있어요.',
     },
   },
   {
