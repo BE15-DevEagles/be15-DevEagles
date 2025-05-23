@@ -45,6 +45,16 @@ export async function markAsRead(chatRoomId) {
   }
 }
 
+export async function getMessageReadStatus(chatroomId, messageId) {
+  try {
+    const response = await api.get(`/chatrooms/${chatroomId}/messages/${messageId}/read-status`);
+    return response.data.data;
+  } catch (error) {
+    console.error('메시지 읽음 상태 조회 실패:', error);
+    throw error;
+  }
+}
+
 export function initializeChat() {
   let authStore;
   try {

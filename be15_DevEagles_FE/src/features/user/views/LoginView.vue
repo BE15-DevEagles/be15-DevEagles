@@ -8,6 +8,7 @@
         label="아이디"
         type="text"
         placeholder="아이디를 입력해주세요."
+        @focus="errorMessage = ''"
       />
       <BaseInput
         v-model="params.password"
@@ -15,6 +16,7 @@
         type="password"
         placeholder="비밀번호를 입력해주세요."
         :error="errorMessage"
+        @focus="errorMessage = ''"
       />
 
       <div class="login-links">
@@ -24,7 +26,7 @@
       </div>
 
       <div class="login-buttons">
-        <BaseButton type="primary" outline @click="goToSignup">회원가입</BaseButton>
+        <BaseButton @click="goToSignup">회원가입</BaseButton>
         <BaseButton type="primary" @click="fetchUser">로그인</BaseButton>
       </div>
     </div>
@@ -53,6 +55,7 @@
   import { login, validUserStatus } from '@/features/user/api/user.js';
   import Logo from '/assets/image/logo-goody-with-text.png';
   import BaseModal from '@/components/common/components/BaseModal.vue';
+  import { setupChat } from '@/features/chat/config/chatConfig.js';
 
   const router = useRouter();
   const authStore = useAuthStore();
@@ -80,6 +83,11 @@
         showVerifyModal.value = true;
         return;
       }
+
+      // 로그인 성공 후 채팅 초기화
+      setTimeout(() => {
+        setupChat();
+      }, 500);
 
       await router.push('/');
     } catch (error) {

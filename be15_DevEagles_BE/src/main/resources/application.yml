@@ -64,7 +64,7 @@ spring:
   elasticsearch:
     uris: http://localhost:9200
 
- # mail
+  # mail
   mail:
     host: smtp.gmail.com
     port: 587
@@ -98,6 +98,8 @@ logging:
     org.springframework.data.mongodb.core.MongoTemplate: debug
     org.springframework.data.elasticsearch.client.WIRE: trace
     org.springframework.kafka: info
+    org.springframework.web.socket: debug
+    org.springframework.messaging: debug
     com.deveagles.be15_deveagles_be: debug
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
@@ -130,7 +132,7 @@ cloud:
 # 웹소켓 설정
 websocket:
   allowed-origins: "*"
-  endpoint: /ws
+  endpoint: /api/v1/ws
   application-destination-prefix: /app
   user-destination-prefix: /user
   broker-prefix: /topic
@@ -141,8 +143,6 @@ gemini:
     key: ${GEMINI_API_KEY}
     summary: ${SUMMARY_API_KEY}
     url: ${GEMINI_API_URL}
-
-
 
 # HuggingFace API 설정
 huggingface:

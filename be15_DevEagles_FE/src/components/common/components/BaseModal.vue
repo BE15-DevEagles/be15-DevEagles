@@ -22,8 +22,11 @@
 </template>
 
 <script>
+  import BaseButton from '@/components/common/components/BaseButton.vue';
+
   export default {
     name: 'BaseModal',
+    components: { BaseButton },
     props: {
       modelValue: {
         type: Boolean,

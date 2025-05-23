@@ -1,5 +1,8 @@
 package com.deveagles.be15_deveagles_be.features.chat.config.websocket;
 
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -9,12 +12,12 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-  @Value("${websocket.allowed-origins:*}")
-  private String allowedOrigins;
+  private static final Logger log = LoggerFactory.getLogger(WebSocketConfig.class);
 
-  @Value("${websocket.endpoint:/ws}")
+  @Value("${websocket.endpoint}")
   private String endpoint;
 
   @Value("${websocket.application-destination-prefix:/app}")
@@ -23,18 +26,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   @Value("${websocket.broker-prefix:/topic}")
   private String brokerPrefix;
 
-  @Value("${websocket.user-destination-prefix:/user}")
-  private String userDestinationPrefix;
-
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
-    registry.addEndpoint(endpoint).setAllowedOrigins(allowedOrigins).withSockJS();
+    registry.addEndpoint(endpoint).setAllowedOriginPatterns("*").withSockJS();
   }
 
   @Override
   public void configureMessageBroker(MessageBrokerRegistry registry) {
-    registry.setUserDestinationPrefix(userDestinationPrefix);
-    registry.setApplicationDestinationPrefixes(applicationDestinationPrefix);
     registry.enableSimpleBroker(brokerPrefix);
+    registry.setApplicationDestinationPrefixes(applicationDestinationPrefix);
   }
 }

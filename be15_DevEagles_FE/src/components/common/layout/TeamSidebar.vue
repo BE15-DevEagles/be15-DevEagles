@@ -102,7 +102,7 @@
     newTeamId => {
       if (newTeamId) {
         try {
-          chatStore.fetchTeamChats();
+          chatStore.loadChatRooms();
           console.log(`팀 변경: ${newTeamId}, 팀원 수: ${teamStore.teamMembers.length}`);
         } catch (err) {
           console.error('팀 관련 데이터 갱신 실패:', err);
