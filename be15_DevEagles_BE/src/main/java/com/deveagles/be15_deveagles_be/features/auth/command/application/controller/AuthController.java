@@ -60,7 +60,7 @@ public class AuthController {
         .body(ApiResponse.success(null));
   }
 
-  @PostMapping("/findId")
+  @PostMapping("/findid")
   public ResponseEntity<ApiResponse<UserFindIdResponse>> findId(
       @RequestBody @Valid UserFindIdRequest request) {
 
@@ -69,7 +69,7 @@ public class AuthController {
     return ResponseEntity.ok().body(ApiResponse.success(response));
   }
 
-  @PostMapping("/findPwd")
+  @PostMapping("/findpwd")
   public ResponseEntity<ApiResponse<Void>> findPwd(@RequestBody @Valid UserFindPwdRequest request) {
 
     String authCode = authService.sendFindPwdEmail(request);
@@ -91,7 +91,7 @@ public class AuthController {
     return ResponseEntity.ok().body(ApiResponse.success(is_valid));
   }
 
-  @PostMapping("/sendAuth")
+  @PostMapping("/sendauth")
   public ResponseEntity<ApiResponse<Void>> sendAuthEmail(
       @RequestBody @Valid SendAuthEmailRequest request) {
 

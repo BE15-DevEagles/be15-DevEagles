@@ -1,7 +1,7 @@
 <template>
   <main class="bg-[var(--color-gray-50)] flex-1 overflow-auto">
     <div class="p-4 h-full">
-      <div class="bg-[var(--color-neutral-white)] rounded-lg shadow-drop h-full p-4">
+      <div class="bg-[var(--color-neutral-white)] rounded-lg shadow-drop h-full p-4 overflow-auto">
         <div class="border-b border-[var(--color-gray-200)] pb-3 mb-4">
           <div class="flex items-center justify-between">
             <h1 class="font-section-title">

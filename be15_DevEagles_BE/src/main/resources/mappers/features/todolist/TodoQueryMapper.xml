@@ -8,16 +8,38 @@
         SELECT
         t.todo_id AS todoId,
         t.user_id AS userId,
+        u.user_name AS userName,
         t.team_id AS teamId,
         tm.team_name AS teamName,
         t.content,
         t.start_date AS startDate,
         t.due_date AS dueDate,
         t.completed_at IS NOT NULL AS isCompleted
-        FROM todos t
+        FROM todo t
+        JOIN user u ON t.user_id = u.user_id
         JOIN team tm ON t.team_id = tm.team_id
         WHERE t.todo_id = #{todoId}
         AND t.user_id = #{userId}
     </select>
+
+    <select id="selectTeamTodoDetail"
+            resultType="com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.TodoDetailResponse">
+        SELECT
+        t.todo_id AS todoId,
+        t.user_id AS userId,
+        t.team_id AS teamId,
+        tm.team_name AS teamName,
+        u.user_name AS userName,
+        t.content,
+        t.start_date AS startDate,
+        t.due_date AS dueDate,
+        t.completed_at IS NOT NULL AS isCompleted
+        FROM todo t
+        JOIN team tm ON t.team_id = tm.team_id
+        JOIN user u ON t.user_id = u.user_id
+        WHERE t.todo_id = #{todoId}
+    </select>
+
+
 
 </mapper>

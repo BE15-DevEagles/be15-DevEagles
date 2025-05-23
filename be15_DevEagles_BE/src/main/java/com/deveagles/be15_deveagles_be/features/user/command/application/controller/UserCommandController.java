@@ -3,11 +3,15 @@ package com.deveagles.be15_deveagles_be.features.user.command.application.contro
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserCreateRequest;
+import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserDuplRequest;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserPasswordRequest;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.request.UserUpdateRequest;
 import com.deveagles.be15_deveagles_be.features.user.command.application.dto.response.UserDetailResponse;
 import com.deveagles.be15_deveagles_be.features.user.command.application.service.UserCommandService;
+import com.deveagles.be15_deveagles_be.features.user.command.domain.aggregate.User;
+import com.deveagles.be15_deveagles_be.features.user.command.repository.UserRepository;
 import jakarta.validation.Valid;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,14 +25,32 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserCommandController {
 
   private final UserCommandService userCommandService;
+  private final UserRepository userRepository;
 
   @PostMapping("/users")
   public ResponseEntity<ApiResponse<Void>> userRegister(
-      @RequestPart @Valid UserCreateRequest request, @RequestPart MultipartFile profile) {
+      @RequestPart @Valid UserCreateRequest request,
+      @RequestPart(required = false) MultipartFile profile) {
 
     userCommandService.userRegister(request, profile);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
+  }
+
+  @PostMapping("/users/duplcheck")
+  public ResponseEntity<ApiResponse<Boolean>> checkEmail(@RequestBody UserDuplRequest request) {
+
+    Optional<User> user = Optional.empty();
+    if (request.email() != null) user = userRepository.findUserByEmail(request.email());
+    else if (request.phoneNumber() != null)
+      user = userRepository.findUserByPhoneNumber(request.phoneNumber());
+
+    Boolean checked;
+
+    if (user.isEmpty()) checked = Boolean.TRUE;
+    else checked = Boolean.FALSE;
+
+    return ResponseEntity.ok().body(ApiResponse.success(checked));
   }
 
   @GetMapping("/users/me")

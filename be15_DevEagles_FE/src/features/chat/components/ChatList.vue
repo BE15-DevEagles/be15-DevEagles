@@ -7,43 +7,100 @@
     </div>
 
     <div class="flex-grow overflow-y-auto h-full" style="height: calc(100% - 49px)">
-      <div
-        v-for="(chat, idx) in chats"
-        :key="idx"
-        class="p-3 border-b border-[var(--color-gray-200)] hover:bg-[var(--color-gray-100)] cursor-pointer transition-colors"
-        @click="$emit('select-chat', chat)"
-      >
-        <div class="flex items-start">
-          <div class="relative mr-3 flex-shrink-0">
-            <div
-              class="w-10 h-10 rounded-md overflow-hidden bg-[var(--color-primary-300)] flex items-center justify-center text-white font-one-liner-semibold"
-            >
-              {{ chat.name.charAt(0) }}
-            </div>
-            <div
-              v-if="chat.isOnline !== undefined"
-              class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white"
-              :class="
-                chat.isOnline ? 'bg-[var(--color-success-300)]' : 'bg-[var(--color-gray-400)]'
-              "
-            ></div>
-          </div>
+      <!-- 로딩 상태 -->
+      <div v-if="isLoading" class="p-3 text-center">
+        <p class="text-[var(--color-gray-500)] font-small">채팅 목록을 불러오는 중...</p>
+      </div>
 
-          <div class="flex-grow overflow-hidden">
-            <div class="flex items-center justify-between">
-              <h3 class="font-one-liner-semibold truncate">{{ chat.name }}</h3>
-              <span class="text-xs text-[var(--color-gray-500)]">{{ chat.lastMessageTime }}</span>
-            </div>
-            <p class="text-[var(--color-gray-500)] font-small truncate">
-              {{ chat.lastMessage }}
-            </p>
-          </div>
+      <!-- 에러 상태 -->
+      <div v-else-if="error" class="p-3 text-center">
+        <p class="text-[var(--color-error-300)] font-small">{{ error }}</p>
+        <button
+          class="mt-2 text-[var(--color-primary-300)] hover:text-[var(--color-primary-400)] text-sm"
+          @click="$emit('retry-load')"
+        >
+          다시 시도
+        </button>
+      </div>
 
-          <div v-if="chat.unreadCount" class="ml-2 flex-shrink-0">
-            <div
-              class="bg-[var(--color-error-300)] text-white rounded-full text-xs w-5 h-5 flex items-center justify-center font-xs-semibold"
-            >
-              {{ chat.unreadCount > 99 ? '99+' : chat.unreadCount }}
+      <!-- 채팅 목록이 비어있는 경우 -->
+      <div v-else-if="chats.length === 0" class="p-3 text-center">
+        <p class="text-[var(--color-gray-500)] font-small">아직 채팅이 없습니다.</p>
+      </div>
+
+      <!-- 채팅 목록 -->
+      <div v-else>
+        <div
+          v-for="chat in chats"
+          :key="chat.id"
+          class="p-3 border-b border-[var(--color-gray-200)] hover:bg-[var(--color-gray-100)] cursor-pointer transition-colors"
+          @click="handleChatSelect(chat)"
+        >
+          <div class="flex items-start">
+            <div class="relative mr-3 flex-shrink-0">
+              <!-- 썸네일 이미지 또는 기본 아바타 -->
+              <div class="w-10 h-10 rounded-md overflow-hidden">
+                <img
+                  v-if="chat.thumbnail"
+                  :src="chat.thumbnail"
+                  :alt="chat.name"
+                  class="w-full h-full object-cover"
+                />
+                <div
+                  v-else
+                  class="w-full h-full bg-[var(--color-primary-300)] flex items-center justify-center text-white font-one-liner-semibold"
+                  :class="getChatTypeClass(chat.type)"
+                >
+                  {{ getChatDisplayChar(chat) }}
+                </div>
+              </div>
+
+              <!-- 온라인 상태 표시 -->
+              <div
+                v-if="chat.type === 'DIRECT' && chat.isOnline !== undefined"
+                class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white"
+                :class="
+                  chat.isOnline ? 'bg-[var(--color-success-300)]' : 'bg-[var(--color-gray-400)]'
+                "
+              ></div>
+
+              <!-- AI 채팅 표시 -->
+              <div
+                v-else-if="chat.type === 'AI'"
+                class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white bg-[var(--color-primary-400)]"
+              >
+                <span class="text-white text-xs leading-none">🤖</span>
+              </div>
+            </div>
+
+            <div class="flex-grow overflow-hidden">
+              <div class="flex items-center justify-between">
+                <h3 class="font-one-liner-semibold truncate flex items-center">
+                  {{ chat.name }}
+                  <!-- 채팅방 타입 표시 -->
+                  <span
+                    v-if="chat.type === 'GROUP'"
+                    class="ml-1 text-xs text-[var(--color-gray-400)]"
+                  >
+                    ({{ chat.participants?.length || 0 }}명)
+                  </span>
+                </h3>
+                <span class="text-xs text-[var(--color-gray-500)] whitespace-nowrap">
+                  {{ chat.lastMessageTime }}
+                </span>
+              </div>
+              <p class="text-[var(--color-gray-500)] font-small truncate">
+                {{ getLastMessageDisplay(chat) }}
+              </p>
+            </div>
+
+            <!-- 읽지 않은 메시지 카운트 -->
+            <div v-if="chat.unreadCount && chat.unreadCount > 0" class="ml-2 flex-shrink-0">
+              <div
+                class="bg-[var(--color-error-300)] text-white rounded-full text-xs min-w-[20px] h-5 flex items-center justify-center font-xs-semibold px-1"
+              >
+                {{ chat.unreadCount > 99 ? '99+' : chat.unreadCount }}
+              </div>
             </div>
           </div>
         </div>
@@ -58,6 +115,8 @@
   /**
    * Props:
    * chats - 채팅 목록 배열
+   * isLoading - 로딩 상태
+   * error - 에러 메시지
    *
    * 예시:
    * [
@@ -77,19 +136,65 @@
    *   ...
    * ]
    */
-  defineProps({
+  const props = defineProps({
     chats: {
       type: Array,
       required: true,
+    },
+    isLoading: {
+      type: Boolean,
+      default: false,
+    },
+    error: {
+      type: String,
+      default: null,
     },
   });
 
   /**
    * Emits:
    * select-chat - 채팅을 클릭했을 때 발생, 인자로 선택한 채팅 객체 전달
+   * retry-load - 다시 로드 버튼을 클릭했을 때 발생
    *
    * 예시:
    * this.$emit('select-chat', { id: 1, name: '김경록', ... })
    */
-  defineEmits(['select-chat']);
+  const emit = defineEmits(['select-chat', 'retry-load']);
+
+  // 채팅 타입에 따른 CSS 클래스
+  function getChatTypeClass(type) {
+    switch (type) {
+      case 'AI':
+        return 'bg-gradient-to-br from-blue-400 to-purple-500';
+      case 'GROUP':
+        return 'bg-[var(--color-secondary-300)]';
+      case 'DIRECT':
+      default:
+        return 'bg-[var(--color-primary-300)]';
+    }
+  }
+
+  // 채팅 표시 문자
+  function getChatDisplayChar(chat) {
+    if (chat.type === 'AI') {
+      return '🤖';
+    }
+    return chat.name?.charAt(0)?.toUpperCase() || '?';
+  }
+
+  // 마지막 메시지 표시
+  function getLastMessageDisplay(chat) {
+    if (!chat.lastMessage) {
+      if (chat.type === 'AI') {
+        return 'AI와 대화를 시작해보세요!';
+      }
+      return '메시지가 없습니다.';
+    }
+    return chat.lastMessage;
+  }
+
+  // 채팅 선택 처리
+  function handleChatSelect(chat) {
+    emit('select-chat', chat);
+  }
 </script>

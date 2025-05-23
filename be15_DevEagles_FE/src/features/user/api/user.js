@@ -6,7 +6,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-const exceptToken = ['/auth/login'];
+const exceptToken = ['/auth/login', '/users', '/users/duplcheck', '/auth/sendauth', '/auth/verify'];
 
 api.interceptors.request.use(
   config => {
@@ -28,4 +28,19 @@ api.interceptors.request.use(
 
 export const login = params => api.post(`/auth/login`, params);
 
+export const logout = () => api.post(`/auth/logout`);
+
 export const validUserStatus = () => api.post(`/auth/valid`);
+
+export const signUp = formData =>
+  api.post(`/users`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+export const checkDuplicate = params => api.post(`/users/duplcheck`, params);
+
+export const sendAuth = params => api.post(`/auth/sendauth`, params);
+
+export const verifyEmailCode = params => api.post(`/auth/verify`, params);

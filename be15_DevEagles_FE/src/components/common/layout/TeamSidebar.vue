@@ -1,31 +1,32 @@
 <template>
   <aside class="bg-[var(--color-gray-800)] h-full w-16 flex flex-col items-center py-4">
-    <!-- 로고 영역 -->
-
     <!-- 팀 썸네일 목록 -->
     <div class="flex flex-col items-center space-y-4 overflow-y-auto flex-grow">
       <div
         v-for="team in teamStore.teams"
-        :key="team.id"
+        :key="team.teamId"
         class="w-10 h-10 rounded-md flex items-center justify-center cursor-pointer relative overflow-hidden group transition-all duration-200 shadow-drop"
         :class="[
-          team.id === teamStore.currentTeamId
+          team.teamId === teamStore.currentTeamId
             ? 'bg-[var(--color-primary-300)]'
             : 'bg-[var(--color-gray-600)] hover:bg-[var(--color-gray-500)]',
         ]"
-        @click="switchTeam(team.id)"
+        @click="switchTeam(team.teamId)"
       >
+        <!-- 썸네일 이미지 or 팀 이름 첫 글자 -->
         <img
-          v-if="team.thumbnail"
-          :src="team.thumbnail"
-          :alt="team.name"
+          v-if="team.teamThumbnailUrl"
+          :src="team.teamThumbnailUrl"
+          :alt="team.teamName"
           class="w-full h-full object-cover"
         />
-        <span v-else class="text-white font-xs-semibold">{{ team.name.charAt(0) }}</span>
+        <span v-else class="text-white font-xs-semibold">
+          {{ team.teamName?.charAt(0) || '?' }}
+        </span>
 
-        <!-- 활성 표시기 -->
+        <!-- 활성 팀 표시기 -->
         <div
-          v-if="team.id === teamStore.currentTeamId"
+          v-if="team.teamId === teamStore.currentTeamId"
           class="absolute -left-1 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-[var(--color-info-500)] rounded-r-full"
         ></div>
 
@@ -33,7 +34,7 @@
         <div
           class="absolute left-14 z-10 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-200 bg-[var(--color-gray-800)] text-white px-3 py-2 rounded font-small shadow-drop"
         >
-          {{ team.name }}
+          {{ team.teamName || '팀 이름 없음' }}
         </div>
       </div>
     </div>
@@ -69,15 +70,21 @@
       </div>
     </div>
   </aside>
+
+  <!-- 팀 생성 모달 -->
+  <CreateTeamModal v-model="showModal" @submit="handleTeamCreate" />
 </template>
 
 <script setup>
-  import { onMounted, watch } from 'vue';
+  import { ref, onMounted, watch } from 'vue';
   import { useTeamStore } from '@/store/team';
   import { useChatStore } from '@/store/chat';
+  import CreateTeamModal from '@/features/team/components/CreateTeamModal.vue';
 
   const teamStore = useTeamStore();
   const chatStore = useChatStore();
+
+  const showModal = ref(false);
 
   // 팀 데이터 로드
   onMounted(async () => {
@@ -95,10 +102,7 @@
     newTeamId => {
       if (newTeamId) {
         try {
-          // 팀 변경 시 관련 데이터 갱신
-          chatStore.fetchTeamChats();
-
-          // 필요하다면 여기에 추가 데이터 갱신 로직 추가
+          chatStore.loadChatRooms();
           console.log(`팀 변경: ${newTeamId}, 팀원 수: ${teamStore.teamMembers.length}`);
         } catch (err) {
           console.error('팀 관련 데이터 갱신 실패:', err);
@@ -108,9 +112,17 @@
     { immediate: true }
   );
 
-  // 팀 생성 함수
+  // 팀 생성 모달 제출
+  const handleTeamCreate = async ({ teamName, description }) => {
+    try {
+      await teamStore.createTeam({ teamName, description });
+      await teamStore.fetchTeams();
+    } catch (e) {
+      console.error('팀 생성 실패:', e);
+    }
+  };
+
   const createTeam = () => {
-    // 팀 생성 모달이나 페이지로 이동하는 로직 구현
-    alert('팀 생성 기능은 아직 구현되지 않았습니다.');
+    showModal.value = true;
   };
 </script>

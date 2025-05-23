@@ -112,8 +112,9 @@ public class AuthServiceImpl implements AuthService {
       throw new UserBusinessException(UserErrorCode.DUPLICATE_SEND_AUTH_EXCEPTION);
     }
 
-    String authCode = UUID.randomUUID().toString().substring(0, 6);
-
+    String authCode = String.valueOf((int) (Math.random() * 900000) + 100000);
+    // 최신화를 위해 삭제
+    authCodeService.deleteAuthCode(email);
     authCodeService.saveAuthCode(email, authCode);
     try {
       mailService.sendAuthMail(email, authCode);

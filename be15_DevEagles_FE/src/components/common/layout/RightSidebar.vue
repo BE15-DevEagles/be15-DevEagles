@@ -17,7 +17,7 @@
     <!-- 펼친 상태일 때 -->
     <div v-if="!isCollapsed && shouldRenderContent" class="flex flex-col h-full relative min-w-0">
       <!-- 상단 헤더 -->
-      <SidebarHeader class="flex-shrink-0" @toggle-collapse="toggleCollapse" />
+      <SidebarHeader class="flex-shrink-0" is-collapsed @toggle-collapse="toggleCollapse" />
 
       <!-- 채팅창이 열려 있을 때 - 사이드바 위에 오버레이 -->
       <transition name="fade">
@@ -51,9 +51,12 @@
           <!-- 채팅 목록 (하단) -->
           <ChatList
             :chats="chatStore.chats"
+            :is-loading="chatStore.isLoading"
+            :error="chatStore.error"
             class="flex-grow"
             :style="{ height: `${100 - teamListHeight}%` }"
             @select-chat="selectChat"
+            @retry-load="chatStore.loadChatRooms"
           />
         </div>
       </div>
@@ -131,17 +134,20 @@
     stopResize();
     cleanup();
   });
+  const props = defineProps({
+    isCollapsed: {
+      type: Boolean,
+      required: true,
+    },
+  });
+  const emit = defineEmits(['update:isCollapsed']);
+
+  const toggleCollapse = () => {
+    emit('update:isCollapsed', !props.isCollapsed);
+  };
 
   // 사이드바 상태 관리
-  const {
-    isCollapsed,
-    shouldRenderContent,
-    currentMode,
-    selectedChat,
-    toggleCollapse,
-    toggleMode,
-    cleanup,
-  } = useSidebar();
+  const { shouldRenderContent, currentMode, selectedChat, toggleMode, cleanup } = useSidebar();
 
   // 현재 팀이 변경될 때마다 데이터 갱신
   watch(
@@ -160,40 +166,36 @@
   };
 
   // 채팅 선택
-  const selectChat = chat => {
+  const selectChat = async chat => {
     selectedChat.value = chat;
-    chatStore.markChatAsRead(chat.id);
+    await chatStore.selectChat(chat.id);
   };
 
   // 팀원과 채팅 시작
-  const startChatWithMember = member => {
-    // 실제 구현에서는 회원 ID로 채팅방을 찾거나 생성
-    // 테스트 목적으로 임시 로직 사용
-    const existingChat = chatStore.chats.find(c => c.name === member.name);
-    if (existingChat) {
-      selectChat(existingChat);
-    } else {
-      const chatId = `chat-${Date.now()}`;
-      const newChat = {
-        id: chatId,
-        name: member.name,
-        isOnline: member.isOnline,
-        userThumbnail: member.thumbnail,
-        lastMessage: '',
-        lastMessageTime: '방금',
-        unreadCount: 0,
-        messages: [],
-      };
+  const startChatWithMember = async member => {
+    // 기존 1:1 채팅이 있는지 확인
+    const existingChat = chatStore.chats.find(
+      c => c.type === 'DIRECT' && c.participants?.some(p => p.userId === member.id)
+    );
 
-      // 실제로는 API를 통해 채팅방을 생성하고 결과를 받아야 함
-      chatStore.chats.unshift(newChat);
-      selectChat(newChat);
+    if (existingChat) {
+      await selectChat(existingChat);
+    } else {
+      // 새로운 1:1 채팅방 생성 요청
+      try {
+        const newChat = await chatStore.startDirectChat(member.id, member.name, member.thumbnail);
+        if (newChat) {
+          await selectChat(newChat);
+        }
+      } catch (error) {
+        console.error('채팅방 생성 실패:', error);
+      }
     }
   };
 
   // 메시지 전송 처리
-  const handleSendMessage = ({ text, chatId }) => {
-    chatStore.sendMessage(chatId, text);
+  const handleSendMessage = async ({ message, chatId }) => {
+    await chatStore.sendMessage(chatId, message);
   };
 
   // 일지보기 버튼 클릭 처리

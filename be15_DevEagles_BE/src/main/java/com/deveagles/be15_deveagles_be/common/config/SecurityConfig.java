@@ -55,9 +55,10 @@ public class SecurityConfig {
                         HttpMethod.POST,
                         "/api/v1/users",
                         "/api/v1/auth/login",
-                        "/api/v1/auth/findId",
-                        "/api/v1/auth/findPwd",
-                        "/api/v1/auth/sendAuth",
+                        "/api/v1/auth/findid",
+                        "/api/v1/auth/findpwd",
+                        "/api/v1/auth/sendauth",
+                        "/api/v1/users/duplcheck",
                         "/api/v1/auth/verify",
                         "/api/v1/summary",
                         "api/v1/timecapsules")

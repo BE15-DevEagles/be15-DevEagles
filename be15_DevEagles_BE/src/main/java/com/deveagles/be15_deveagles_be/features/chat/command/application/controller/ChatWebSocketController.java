@@ -2,7 +2,6 @@ package com.deveagles.be15_deveagles_be.features.chat.command.application.contro
 
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.request.ChatMessageRequest;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.ChatMessageResponse;
-import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.ChatRoomResponse;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.AiChatService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatMessageService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatRoomService;
@@ -13,6 +12,7 @@ import java.security.Principal;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -28,18 +28,21 @@ public class ChatWebSocketController {
   private final AiChatService aiChatService;
   private final ChatRoomRepository chatRoomRepository;
   private final WebSocketMessageService webSocketMessageService;
+  private final RedisTemplate<String, String> redisTemplate;
 
   public ChatWebSocketController(
       ChatMessageService chatMessageService,
       ChatRoomService chatRoomService,
       AiChatService aiChatService,
       ChatRoomRepository chatRoomRepository,
-      WebSocketMessageService webSocketMessageService) {
+      WebSocketMessageService webSocketMessageService,
+      RedisTemplate<String, String> redisTemplate) {
     this.chatMessageService = chatMessageService;
     this.chatRoomService = chatRoomService;
     this.aiChatService = aiChatService;
     this.chatRoomRepository = chatRoomRepository;
     this.webSocketMessageService = webSocketMessageService;
+    this.redisTemplate = redisTemplate;
   }
 
   @MessageMapping("/chat.send")
@@ -64,7 +67,7 @@ public class ChatWebSocketController {
 
     ChatMessageResponse userMessageResponse = chatMessageService.sendMessage(finalRequest);
 
-    final ChatMessageRequest aiRequest = finalRequest; // 람다에서 사용할 final 변수
+    final ChatMessageRequest aiRequest = finalRequest;
     chatRoomRepository
         .findById(finalRequest.getChatroomId())
         .ifPresent(
@@ -88,19 +91,56 @@ public class ChatWebSocketController {
 
   @MessageMapping("/chat.read")
   public void markAsRead(@Payload ReadMessageRequest request, Principal principal) {
-    if (principal == null) {
+    if (principal == null || request.getChatroomId() == null || request.getMessageId() == null) {
+      log.warn("Invalid markAsRead request: principal or chatroomId or messageId is null");
       return;
     }
 
-    ChatRoomResponse chatRoom =
-        chatRoomService.updateLastReadMessage(
-            request.getChatroomId(), principal.getName(), request.getMessageId());
+    String userId = principal.getName();
+    String chatroomId = request.getChatroomId();
+    String messageId = request.getMessageId();
 
-    ReadStatusResponse readStatusResponse =
-        new ReadStatusResponse(
-            request.getChatroomId(), principal.getName(), request.getMessageId());
+    boolean redisSuccess = false;
+    try {
+      String redisKey = "chat:last_read_message:" + chatroomId;
+      redisTemplate.opsForHash().put(redisKey, userId, messageId);
+      log.info(
+          "User {} marked message {} as read in chatroom {} (Redis)",
+          userId,
+          messageId,
+          chatroomId);
+      redisSuccess = true;
+    } catch (Exception e) {
+      log.error(
+          "Failed to update read status in Redis for user {} in chatroom {}: {}",
+          userId,
+          chatroomId,
+          e.getMessage(),
+          e);
+    }
 
-    webSocketMessageService.sendReadStatusEvent(request.getChatroomId(), readStatusResponse);
+    // Redis 실패 시 MongoDB에 직접 저장 (폴백 메커니즘)
+    if (!redisSuccess) {
+      try {
+        chatRoomService.updateLastReadMessage(chatroomId, userId, messageId);
+        log.info(
+            "User {} marked message {} as read in chatroom {} (MongoDB fallback)",
+            userId,
+            messageId,
+            chatroomId);
+      } catch (Exception e) {
+        log.error(
+            "Failed to update read status in MongoDB for user {} in chatroom {}: {}",
+            userId,
+            chatroomId,
+            e.getMessage(),
+            e);
+        return; //  TODO : 두 방식 모두 실패하면 처리 중단 추후 카프카 연결결
+      }
+    }
+
+    ReadStatusResponse readStatusResponse = new ReadStatusResponse(chatroomId, userId, messageId);
+    webSocketMessageService.sendReadStatusEvent(chatroomId, readStatusResponse);
   }
 
   @MessageMapping("/chat.ai.init")
