@@ -46,13 +46,34 @@ public class MessageQueryServiceImpl implements MessageQueryService {
         limit);
 
     List<MessageResponse> messagesFromRedis = new ArrayList<>();
+    boolean redisSuccess = false;
 
-    // Redis 조회는 redisTemplate이 null이 아닐 때만 시도
     if (redisTemplate != null) {
       String redisKey = REDIS_CHAT_MESSAGES_KEY_PREFIX + chatroomId;
       long longBeforeTimestamp = Long.MAX_VALUE;
 
       try {
+        // before 파라미터가 있으면 해당 메시지의 타임스탬프를 기준으로 조회
+        if (before != null && !before.isEmpty()) {
+          try {
+            ChatMessage beforeMessage =
+                messageQueryRepository.findMessages(chatroomId, before, 1).stream()
+                    .findFirst()
+                    .orElse(null);
+            if (beforeMessage != null) {
+              longBeforeTimestamp =
+                  beforeMessage
+                      .getCreatedAt()
+                      .atZone(java.time.ZoneId.systemDefault())
+                      .toInstant()
+                      .toEpochMilli();
+            }
+          } catch (Exception e) {
+            log.warn("이전 메시지 ID로 메시지를 찾을 수 없습니다: {}", before);
+          }
+        }
+
+        // Redis에서 시간 역순으로 메시지 조회
         Set<ZSetOperations.TypedTuple<String>> typedTuples =
             redisTemplate
                 .opsForZSet()
@@ -63,7 +84,7 @@ public class MessageQueryServiceImpl implements MessageQueryService {
                     0,
                     limit > 0 ? limit : DEFAULT_REDIS_LOOKUP_LIMIT);
 
-        if (typedTuples != null) {
+        if (typedTuples != null && !typedTuples.isEmpty()) {
           for (ZSetOperations.TypedTuple<String> tuple : typedTuples) {
             if (tuple.getValue() != null) {
               try {
@@ -76,60 +97,61 @@ public class MessageQueryServiceImpl implements MessageQueryService {
               }
             }
           }
+          redisSuccess = !messagesFromRedis.isEmpty();
+          log.debug("Redis에서 {}개의 메시지를 조회했습니다.", messagesFromRedis.size());
         }
       } catch (Exception e) {
         log.error("Redis에서 메시지 조회 중 오류 발생: chatroomId={}, error={}", chatroomId, e.getMessage());
       }
-    }
-    // Redis가 null인 경우 로그만 남김
-    else {
+    } else {
       log.info("Redis 연결이 구성되지 않았습니다. MongoDB에서만 데이터를 조회합니다.");
     }
 
     List<MessageResponse> finalMessages;
 
-    if (messagesFromRedis.size() < limit || (before != null && !before.isEmpty())) {
-      String mongoCursor = before;
-      int mongoLimit = limit - messagesFromRedis.size();
-
-      if (mongoLimit <= 0
-          && messagesFromRedis.size() >= limit
-          && (before == null || before.isEmpty())) {
-        finalMessages = messagesFromRedis.stream().limit(limit).collect(Collectors.toList());
-      } else {
-        int actualMongoLimit =
-            (before != null || messagesFromRedis.size() < limit)
-                ? (mongoLimit > 0 ? mongoLimit : limit)
-                : 0;
-
-        if (actualMongoLimit == 0 && messagesFromRedis.size() >= limit) {
-          finalMessages = messagesFromRedis.stream().limit(limit).collect(Collectors.toList());
-        } else {
-          if (actualMongoLimit == 0 && messagesFromRedis.size() < limit)
-            actualMongoLimit = limit - messagesFromRedis.size();
-          if (actualMongoLimit < 0) actualMongoLimit = limit;
-
-          List<ChatMessage> messagesFromDb = Collections.emptyList();
-          if (actualMongoLimit > 0) {
-            messagesFromDb =
-                messageQueryRepository.findMessages(chatroomId, mongoCursor, actualMongoLimit);
-          }
-
-          List<MessageResponse> messagesFromDbResponse =
-              messagesFromDb.stream()
-                  .map(this::convertChatMessageToMessageResponse)
-                  .collect(Collectors.toList());
-
-          finalMessages =
-              Stream.concat(messagesFromRedis.stream(), messagesFromDbResponse.stream())
-                  .distinct()
-                  .sorted(Comparator.comparing(MessageResponse::getCreatedAt).reversed())
-                  .limit(limit)
-                  .collect(Collectors.toList());
-        }
-      }
-    } else {
+    // Redis 조회 결과로 충분하면 그대로 반환, 아니면 MongoDB 조회 결과와 병합
+    if (redisSuccess && messagesFromRedis.size() >= limit && (before == null || before.isEmpty())) {
       finalMessages = messagesFromRedis.stream().limit(limit).collect(Collectors.toList());
+      log.debug("Redis 캐시에서 충분한 데이터를 찾아 반환합니다.");
+    } else {
+      // Redis에서 충분한 데이터를 가져오지 못했거나 특정 시점(before) 이전 메시지를 요청한 경우
+      // MongoDB에서 추가 조회
+      int mongoLimit = limit - messagesFromRedis.size();
+      if (mongoLimit <= 0) mongoLimit = limit;
+
+      log.debug("MongoDB에서 추가로 {}개의 메시지를 조회합니다.", mongoLimit);
+      List<ChatMessage> messagesFromDb =
+          messageQueryRepository.findMessages(chatroomId, before, mongoLimit);
+      List<MessageResponse> messagesFromDbResponse =
+          messagesFromDb.stream()
+              .map(this::convertChatMessageToMessageResponse)
+              .collect(Collectors.toList());
+
+      // Redis와 MongoDB 결과 병합
+      finalMessages =
+          Stream.concat(messagesFromRedis.stream(), messagesFromDbResponse.stream())
+              .distinct()
+              .sorted(Comparator.comparing(MessageResponse::getCreatedAt).reversed())
+              .limit(limit)
+              .collect(Collectors.toList());
+
+      log.debug("최종적으로 Redis와 MongoDB에서 총 {}개의 메시지를 병합하여 반환합니다.", finalMessages.size());
+    }
+
+    // 메시지 읽음 상태 표시를 위해 사용자가 지금 메시지를 읽었다는 것을 Redis에 기록
+    if (!finalMessages.isEmpty() && userId != null) {
+      try {
+        String lastMessageId = finalMessages.get(0).getId();
+        String redisKey = "chat:last_read_message:" + chatroomId;
+        redisTemplate.opsForHash().put(redisKey, userId.toString(), lastMessageId);
+        log.debug(
+            "사용자 {}의 마지막 읽은 메시지를 Redis에 업데이트: chatroomId={}, messageId={}",
+            userId,
+            chatroomId,
+            lastMessageId);
+      } catch (Exception e) {
+        log.error("메시지 읽음 상태 Redis 업데이트 실패: {}", e.getMessage());
+      }
     }
 
     return MessageListResponse.of(finalMessages);

@@ -67,7 +67,7 @@ public class ChatWebSocketController {
 
     ChatMessageResponse userMessageResponse = chatMessageService.sendMessage(finalRequest);
 
-    final ChatMessageRequest aiRequest = finalRequest; // 람다에서 사용할 final 변수
+    final ChatMessageRequest aiRequest = finalRequest;
     chatRoomRepository
         .findById(finalRequest.getChatroomId())
         .ifPresent(
@@ -100,6 +100,7 @@ public class ChatWebSocketController {
     String chatroomId = request.getChatroomId();
     String messageId = request.getMessageId();
 
+    boolean redisSuccess = false;
     try {
       String redisKey = "chat:last_read_message:" + chatroomId;
       redisTemplate.opsForHash().put(redisKey, userId, messageId);
@@ -108,6 +109,7 @@ public class ChatWebSocketController {
           userId,
           messageId,
           chatroomId);
+      redisSuccess = true;
     } catch (Exception e) {
       log.error(
           "Failed to update read status in Redis for user {} in chatroom {}: {}",
@@ -115,23 +117,29 @@ public class ChatWebSocketController {
           chatroomId,
           e.getMessage(),
           e);
-      // Redis 실패 시에도 기존 로직은 계속 진행되도록 할 수 있음
     }
 
-    // 기존 로직 호출 (MongoDB 업데이트 및 이벤트 전송 등)
-    // ChatRoomResponse chatRoom = chatRoomService.updateLastReadMessage(chatroomId, userId,
-    // messageId);
-    // 이 호출의 원래 목적과 Redis 도입 후의 역할을 명확히 하여 중복/누락 없도록 조정 필요.
-    // 예를 들어, 이 서비스가 ReadReceipt 엔티티를 MongoDB에 저장하고 있었다면,
-    // 해당 로직은 유지하되, Redis 업데이트 실패 시 fallback으로 동작하거나, 별도의 배치 작업으로 옮기는 것을 고려.
-    // 우선은 기존 호출을 그대로 두되, 그 내용을 파악하여 추후 리팩토링.
+    // Redis 실패 시 MongoDB에 직접 저장 (폴백 메커니즘)
+    if (!redisSuccess) {
+      try {
+        chatRoomService.updateLastReadMessage(chatroomId, userId, messageId);
+        log.info(
+            "User {} marked message {} as read in chatroom {} (MongoDB fallback)",
+            userId,
+            messageId,
+            chatroomId);
+      } catch (Exception e) {
+        log.error(
+            "Failed to update read status in MongoDB for user {} in chatroom {}: {}",
+            userId,
+            chatroomId,
+            e.getMessage(),
+            e);
+        return; //  TODO : 두 방식 모두 실패하면 처리 중단 추후 카프카 연결결
+      }
+    }
 
-    // chatRoomService.updateLastReadMessage(chatroomId, userId, messageId); // 임시 주석 처리 또는 역할 재정의
-    // 필요
-
-    // 읽음 상태 응답 생성 및 WebSocket 이벤트 전송 (이 부분은 기존 로직을 활용)
     ReadStatusResponse readStatusResponse = new ReadStatusResponse(chatroomId, userId, messageId);
-
     webSocketMessageService.sendReadStatusEvent(chatroomId, readStatusResponse);
   }
 

@@ -83,27 +83,29 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             .createdAt(LocalDateTime.now())
             .build();
 
+    // MongoDB에 메시지 저장 (Primary Storage)
     ChatMessage savedMessage = chatMessageRepository.save(message);
 
+    // 채팅방 마지막 메시지 정보 업데이트
     updateChatRoomLastMessage(chatRoom, savedMessage);
 
     ChatMessageResponse response = ChatMessageResponse.from(savedMessage);
+
     webSocketMessageService.sendChatroomMessage(request.getChatroomId(), response);
 
-    // Redis에 메시지 저장
     try {
       String messageJson = objectMapper.writeValueAsString(response);
       String redisKey = "chat:messages:" + request.getChatroomId();
-      // 메시지 생성 시간을 score로 사용 (epoch milliseconds)
       double score = savedMessage.getCreatedAt().toInstant(ZoneOffset.UTC).toEpochMilli();
       redisTemplate.opsForZSet().add(redisKey, messageJson, score);
-      // 특정 개수 이상의 메시지만 유지 (예: 최근 100개)
-      // redisTemplate.opsForZSet().removeRange(redisKey, 0, -101); // 오래된 메시지 삭제 (옵션)
+
+      Long size = redisTemplate.opsForZSet().size(redisKey);
+      if (size != null && size > 100) {
+        redisTemplate.opsForZSet().removeRange(redisKey, 0, 0);
+      }
     } catch (Exception e) {
-      // Redis 저장 실패 시 로깅. 메시지 전송 자체는 실패하지 않도록 처리
-      // 필요시, 실패 처리 전략 수립 (e.g., DLQ로 보내거나, 주기적으로 재시도)
-      // TODO: प्रॉडक्शन के लिए यहा पे logger use करना है
-      System.err.println("Failed to save message to Redis: " + e.getMessage());
+
+      System.err.println("Failed to cache message in Redis: " + e.getMessage());
     }
 
     return response;
