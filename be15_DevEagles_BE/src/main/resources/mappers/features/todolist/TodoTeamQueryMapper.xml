@@ -18,39 +18,33 @@
         FROM todo t
         JOIN user u ON t.user_id = u.user_id
         <where>
-            t.team_id = #{cond.teamId}
-            <if test="cond.userIds != null and cond.userIds.size() > 0">
-                AND t.user_id IN
-                <foreach collection="cond.userIds" item="uid" open="(" separator="," close=")">
-                    #{uid}
-                </foreach>
+            t.team_id = #{teamId}
+            <if test="userId != null">
+                AND t.user_id = #{userId}
             </if>
-            <if test="cond.status == 'completed'">
+            <if test="status == 'completed'">
                 AND t.completed_at IS NOT NULL
             </if>
-            <if test="cond.status == 'incomplete'">
+            <if test="status == 'incomplete'">
                 AND t.completed_at IS NULL
             </if>
         </where>
         ORDER BY t.due_date ASC
-        LIMIT #{cond.size} OFFSET #{cond.offset}
+        LIMIT #{size} OFFSET #{offset}
     </select>
 
     <select id="countTeamTodosByCondition" resultType="int">
         SELECT COUNT(*)
         FROM todo
         <where>
-            team_id = #{cond.teamId}
-            <if test="cond.userIds != null and cond.userIds.size() > 0">
-                AND user_id IN
-                <foreach collection="cond.userIds" item="uid" open="(" separator="," close=")">
-                    #{uid}
-                </foreach>
+            team_id = #{teamId}
+            <if test="userId != null">
+                AND user_id = #{userId}
             </if>
-            <if test="cond.status == 'completed'">
+            <if test="status == 'completed'">
                 AND completed_at IS NOT NULL
             </if>
-            <if test="cond.status == 'incomplete'">
+            <if test="status == 'incomplete'">
                 AND completed_at IS NULL
             </if>
         </where>

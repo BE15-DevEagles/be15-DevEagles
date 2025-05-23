@@ -23,4 +23,15 @@ export const calendarRoutes = [
       description: '내가 속한 팀의 모든 할 일을 확인할 수 있어요.',
     },
   },
+  {
+    path: '/todos',
+    name: 'TeamTodoList',
+    component: () => import('@/features/todolist/views/TeamTodoListView.vue'),
+    meta: {
+      layout: 'default',
+      requiresAuth: true,
+      title: '팀 TodoList',
+      description: '내가 속한 팀의 모든 TodoList를 확인할 수 있어요.',
+    },
+  },
 ];

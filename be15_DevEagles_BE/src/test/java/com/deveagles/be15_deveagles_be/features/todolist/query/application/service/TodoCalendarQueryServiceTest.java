@@ -7,7 +7,6 @@ import com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.r
 import com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.TeamCalendarTodoResponse;
 import com.deveagles.be15_deveagles_be.features.todolist.query.application.mapper.TodoCalendarQueryMapper;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,18 +28,19 @@ class TodoCalendarQueryServiceTest {
     // given
     Long userId = 1L;
     List<MyCalendarTodoResponse> mockResponse =
-        Arrays.asList(
+        List.of(
             new MyCalendarTodoResponse(
-                "할 일 1", LocalDate.of(2025, 5, 21), LocalDate.of(2025, 5, 22), 10L),
+                1L, "할 일 1", LocalDate.of(2025, 5, 21), LocalDate.of(2025, 5, 22), 10L),
             new MyCalendarTodoResponse(
-                "할 일 2", LocalDate.of(2025, 5, 23), LocalDate.of(2025, 5, 24), 11L));
-
+                2L, "할 일 2", LocalDate.of(2025, 5, 23), LocalDate.of(2025, 5, 24), 11L));
     when(todoCalendarQueryMapper.selectMyCalendarTodos(userId)).thenReturn(mockResponse);
 
+    // when
     List<MyCalendarTodoResponse> result = todoCalendarQueryService.getMyCalendarTodos(userId);
 
+    // then
     assertThat(result).hasSize(2);
-    assertThat(result.get(0).getContent()).isEqualTo("할 일 1");
+    assertThat(result.get(0).getTodoId()).isEqualTo(1L);
     assertThat(result.get(1).getTeamId()).isEqualTo(11L);
   }
 
