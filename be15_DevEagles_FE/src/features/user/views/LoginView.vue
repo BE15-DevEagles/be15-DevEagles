@@ -53,6 +53,7 @@
   import { login, validUserStatus } from '@/features/user/api/user.js';
   import Logo from '/assets/image/logo-goody-with-text.png';
   import BaseModal from '@/components/common/components/BaseModal.vue';
+  import { setupChat } from '@/features/chat/config/chatConfig.js';
 
   const router = useRouter();
   const authStore = useAuthStore();
@@ -80,6 +81,11 @@
         showVerifyModal.value = true;
         return;
       }
+
+      // 로그인 성공 후 채팅 초기화
+      setTimeout(() => {
+        setupChat();
+      }, 500);
 
       await router.push('/');
     } catch (error) {
