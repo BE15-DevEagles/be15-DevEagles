@@ -2,6 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { Layout, ErrorPage } from '@/components/common/layout';
 import { userRoutes } from '@/features/user/router.js';
 import { useAuthStore } from '@/store/auth';
+import { ErrorPage } from '@/components/common/layout';
+import { calendarRoutes } from '@/features/todolist/router.js';
+
 
 const routes = [
   ...userRoutes,
@@ -27,6 +30,8 @@ const routes = [
       errorMessage: '요청하신 페이지가 존재하지 않습니다. URL을 확인해 주세요.',
     },
   },
+
+  ...calendarRoutes,
 ];
 
 const router = createRouter({

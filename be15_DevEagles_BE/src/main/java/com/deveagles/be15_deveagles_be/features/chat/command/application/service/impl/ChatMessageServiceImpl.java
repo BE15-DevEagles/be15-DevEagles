@@ -10,10 +10,13 @@ import com.deveagles.be15_deveagles_be.features.chat.command.domain.exception.Ch
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.exception.ChatErrorCode;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.ChatMessageRepository;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.ChatRoomRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -25,14 +28,20 @@ public class ChatMessageServiceImpl implements ChatMessageService {
   private final ChatMessageRepository chatMessageRepository;
   private final ChatRoomRepository chatRoomRepository;
   private final WebSocketMessageService webSocketMessageService;
+  private final RedisTemplate<String, String> redisTemplate;
+  private final ObjectMapper objectMapper;
 
   public ChatMessageServiceImpl(
       ChatMessageRepository chatMessageRepository,
       ChatRoomRepository chatRoomRepository,
-      WebSocketMessageService webSocketMessageService) {
+      WebSocketMessageService webSocketMessageService,
+      RedisTemplate<String, String> redisTemplate,
+      ObjectMapper objectMapper) {
     this.chatMessageRepository = chatMessageRepository;
     this.chatRoomRepository = chatRoomRepository;
     this.webSocketMessageService = webSocketMessageService;
+    this.redisTemplate = redisTemplate;
+    this.objectMapper = objectMapper;
   }
 
   @Override
@@ -74,12 +83,30 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             .createdAt(LocalDateTime.now())
             .build();
 
+    // MongoDB에 메시지 저장 (Primary Storage)
     ChatMessage savedMessage = chatMessageRepository.save(message);
 
+    // 채팅방 마지막 메시지 정보 업데이트
     updateChatRoomLastMessage(chatRoom, savedMessage);
 
     ChatMessageResponse response = ChatMessageResponse.from(savedMessage);
+
     webSocketMessageService.sendChatroomMessage(request.getChatroomId(), response);
+
+    try {
+      String messageJson = objectMapper.writeValueAsString(response);
+      String redisKey = "chat:messages:" + request.getChatroomId();
+      double score = savedMessage.getCreatedAt().toInstant(ZoneOffset.UTC).toEpochMilli();
+      redisTemplate.opsForZSet().add(redisKey, messageJson, score);
+
+      Long size = redisTemplate.opsForZSet().size(redisKey);
+      if (size != null && size > 100) {
+        redisTemplate.opsForZSet().removeRange(redisKey, 0, 0);
+      }
+    } catch (Exception e) {
+
+      System.err.println("Failed to cache message in Redis: " + e.getMessage());
+    }
 
     return response;
   }

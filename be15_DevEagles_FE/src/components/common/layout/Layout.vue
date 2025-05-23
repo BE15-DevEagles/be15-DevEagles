@@ -8,7 +8,10 @@
         :current-page="teamStore.currentTeam?.name || '일반'"
         :page-description="teamStore.currentTeam?.description || '팀 채널 소통 공간'"
       />
-      <RightSidebar />
+      <RightSidebar
+        :is-collapsed="isSidebarCollapsed"
+        @update:is-collapsed="handleSidebarCollapse"
+      />
     </div>
     <Footer />
   </div>
@@ -25,6 +28,11 @@
   import Footer from './Footer.vue';
 
   const teamStore = useTeamStore();
+  const isSidebarCollapsed = ref(false);
+  const handleSidebarCollapse = val => {
+    console.log('[Sidebar 상태] isSidebarCollapsed 변경됨 →', val);
+    isSidebarCollapsed.value = val;
+  };
 </script>
 
 <style>
