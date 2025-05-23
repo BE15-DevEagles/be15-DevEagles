@@ -2,9 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { Layout, ErrorPage } from '@/components/common/layout';
 import { userRoutes } from '@/features/user/router.js';
 import { useAuthStore } from '@/store/auth';
-import { ErrorPage } from '@/components/common/layout';
 import { calendarRoutes } from '@/features/todolist/router.js';
-
 
 const routes = [
   ...userRoutes,
