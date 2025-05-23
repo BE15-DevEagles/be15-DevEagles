@@ -22,9 +22,10 @@ export function useNotifications() {
       const result = await toggleChatNotification(chatId);
 
       // 백엔드에서 반환된 설정값으로 업데이트
-      notificationSettings.value.set(chatId, result.notificationEnabled);
+      const notificationEnabled = result.notificationEnabled;
+      notificationSettings.value.set(chatId, notificationEnabled);
 
-      return result.notificationEnabled;
+      return notificationEnabled;
     } catch (error) {
       console.error('알림 설정 변경 실패:', error);
       toast.error('알림 설정 변경에 실패했습니다.');
