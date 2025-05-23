@@ -28,6 +28,8 @@ api.interceptors.request.use(
 
 export const login = params => api.post(`/auth/login`, params);
 
+export const logout = () => api.post(`/auth/logout`);
+
 export const validUserStatus = () => api.post(`/auth/valid`);
 
 export const signUp = formData =>
