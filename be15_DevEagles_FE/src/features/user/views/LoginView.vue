@@ -8,6 +8,7 @@
         label="아이디"
         type="text"
         placeholder="아이디를 입력해주세요."
+        @focus="errorMessage = ''"
       />
       <BaseInput
         v-model="params.password"
@@ -15,6 +16,7 @@
         type="password"
         placeholder="비밀번호를 입력해주세요."
         :error="errorMessage"
+        @focus="errorMessage = ''"
       />
 
       <div class="login-links">
@@ -24,7 +26,7 @@
       </div>
 
       <div class="login-buttons">
-        <BaseButton type="primary" outline @click="goToSignup">회원가입</BaseButton>
+        <BaseButton @click="goToSignup">회원가입</BaseButton>
         <BaseButton type="primary" @click="fetchUser">로그인</BaseButton>
       </div>
     </div>

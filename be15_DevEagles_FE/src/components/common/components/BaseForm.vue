@@ -12,6 +12,7 @@
       class="input"
       :class="{ 'input-error': error }"
       :value="modelValue"
+      :placeholder="placeholder"
       v-bind="$attrs"
       @input="$emit('update:modelValue', $event.target.value)"
     />

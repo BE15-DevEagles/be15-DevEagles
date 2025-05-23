@@ -1,16 +1,25 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { Layout, ErrorPage } from '@/components/common/layout';
+import { userRoutes } from '@/features/user/router.js';
+import { useAuthStore } from '@/store/auth';
 import { ErrorPage } from '@/components/common/layout';
 import { calendarRoutes } from '@/features/todolist/router.js';
 
-// 라우트 정의
+
 const routes = [
+  ...userRoutes,
   {
     path: '/',
-    name: 'Home',
-    component: () => import('@/views/Home.vue'),
+    component: Layout,
+    children: [
+      {
+        path: '',
+        name: 'Home',
+        component: () => import('@/views/Home.vue'),
+      },
+      // 여기 Layout 하위 라우트 계속 추가 가능
+    ],
   },
-
-  // 404 페이지
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -25,10 +34,23 @@ const routes = [
   ...calendarRoutes,
 ];
 
-// 라우터 생성
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore();
+
+  const publicPages = ['/login', '/signup', '/email-verify']; // 인증 없이 접근 가능한 경로들
+  const authRequired = !publicPages.includes(to.path);
+
+  // 인증이 필요한 페이지인데 로그인 안 했으면 로그인으로 이동
+  if (authRequired && !authStore.isAuthenticated) {
+    return next('/login');
+  }
+
+  next();
 });
 
 export default router;
