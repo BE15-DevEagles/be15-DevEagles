@@ -54,7 +54,7 @@
                 {{ user.name ? user.name.charAt(0) : '?' }}
               </div>
             </div>
-            <span class="font-one-liner-semibold">사용자</span>
+            <span class="font-one-liner-semibold">{{ user.name }}</span>
           </button>
 
           <!-- 드롭다운 메뉴 -->
@@ -72,6 +72,7 @@
               <a
                 href="#"
                 class="block px-4 py-2 text-[var(--color-error-300)] hover:bg-[var(--color-gray-100)] font-one-liner"
+                @click.prevent="handleLogout"
                 >로그아웃</a
               >
             </div>
@@ -84,11 +85,25 @@
 
 <script setup>
   import { ref } from 'vue';
+  import { logout } from '@/features/user/api/user.js';
+  import { useRouter } from 'vue-router';
+  import { useAuthStore } from '@/store/auth.js';
 
-  // 예시 사용자 데이터 (실제로는 props 또는 store에서 가져와야 함)
+  const router = useRouter();
+  const authStore = useAuthStore();
+
   const user = ref({
-    name: '사용자', // 예시 이름
-    userThumbnail: null, // 예시 (null이면 첫 글자 표시)
-    // userThumbnail: 'https://via.placeholder.com/40', // 이미지 URL 예시
+    name: authStore.name, // 예시 이름
+    userThumbnail: authStore.userThumbnailUrl, // 예시 (null이면 첫 글자 표시)
   });
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      authStore.clearAuth();
+      router.push('/login');
+    } catch (error) {
+      console.error('로그아웃 실패:', error);
+    }
+  };
 </script>
