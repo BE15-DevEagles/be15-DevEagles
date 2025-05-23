@@ -1,7 +1,9 @@
-export const TeamRoutes = [
+import TeamInformationView from '@/features/team/views/TeamInformationView.vue';
+
+export const teamRoutes = [
   {
-    path: '/worklog',
-    name: 'worklog',
-    component: () => import('@/features/team/views/CreateTeamModal.vue'),
+    path: '/team/info/:teamId',
+    name: 'TeamInfo',
+    component: TeamInformationView,
   },
 ];
