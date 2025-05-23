@@ -1,94 +1,78 @@
 import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
-import { useAuthStore } from '@/store/auth.js';
 
 let stompClient = null;
 let subscriptions = {};
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 
-export function initializeWebSocket(store = null) {
+export function initializeWebSocket() {
   if (stompClient !== null && stompClient.connected) {
     console.log('웹소켓이 이미 연결되어 있습니다.');
     return;
   }
 
   reconnectAttempts = 0;
-  connectWebSocket(store);
+  connectWebSocket();
 }
 
-function connectWebSocket(providedStore = null) {
+function connectWebSocket() {
   if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
     console.error('최대 재연결 시도 횟수를 초과했습니다.');
     return;
   }
 
-  // 스토어 접근을 함수 내부로 이동
-  let authStore = providedStore;
-  try {
-    if (!authStore) {
-      authStore = useAuthStore();
-    }
-  } catch (error) {
-    console.error('Auth 스토어 접근 실패. 인증 정보 없이 연결합니다.', error);
-    authStore = { accessToken: null };
-  }
+  // 기본 API URL 설정
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+  const wsUrl = `${apiBaseUrl}/ws`;
 
-  const socket = new SockJS(`${import.meta.env.VITE_API_BASE_URL}/ws`);
+  const socket = new SockJS(wsUrl);
   stompClient = Stomp.over(socket);
 
-  stompClient.debug = true;
+  // 디버그 모드 활성화
+  stompClient.debug = function (str) {
+    console.log('STOMP: ' + str);
+  };
 
-  const headers = {};
-  if (authStore.accessToken) {
-    headers['Authorization'] = `Bearer ${authStore.accessToken}`;
-  }
+  console.log('웹소켓 연결 시도...', { url: wsUrl });
 
   stompClient.connect(
-    headers,
+    {}, // 헤더 없이 연결
     () => {
       console.log('웹소켓 연결 성공');
       reconnectAttempts = 0;
+
       // 기존 구독 복원
       const currentSubscriptions = { ...subscriptions };
       subscriptions = {};
       Object.keys(currentSubscriptions).forEach(destination => {
         const callback = currentSubscriptions[destination].callback;
-        subscribeToChatRoom(destination.split('.')[1], callback, authStore);
+        subscribeToChatRoom(destination.split('.')[1], callback);
       });
     },
     error => {
       console.error('웹소켓 연결 실패:', error?.message || '알 수 없는 오류');
       reconnectAttempts++;
-      const delay = Math.min(1000 * (reconnectAttempts + 1), 10000); // 최대 10초까지 지수적 대기
+
+      const delay = Math.min(1000 * (reconnectAttempts + 1), 10000);
+      console.log(`${delay}ms 후 재연결 시도... (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
       setTimeout(() => {
-        connectWebSocket(authStore);
+        connectWebSocket();
       }, delay);
     }
   );
-
-  socket.onclose = () => {
-    console.log('웹소켓 연결이 종료되었습니다. 재연결 시도...');
-    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-      const delay = Math.min(1000 * (reconnectAttempts + 1), 10000);
-      setTimeout(() => {
-        connectWebSocket(authStore);
-      }, delay);
-    }
-  };
 }
 
-export function subscribeToChatRoom(chatRoomId, callback, providedStore = null) {
+export function subscribeToChatRoom(chatRoomId, callback) {
   if (!stompClient || !stompClient.connected) {
     console.log('웹소켓 연결이 없습니다. 연결을 시도합니다.');
-    initializeWebSocket(providedStore);
+    initializeWebSocket();
     // 웹소켓 연결이 완료될 때까지 구독 정보 저장
     subscriptions[`chatroom.${chatRoomId}`] = { callback };
-    setTimeout(() => subscribeToChatRoom(chatRoomId, callback, providedStore), 1000);
+    setTimeout(() => subscribeToChatRoom(chatRoomId, callback), 1000);
     return;
   }
 
-  // 백엔드 경로 형식에 맞춰 변경 (/topic/chatroom.{chatRoomId})
   const destination = `/topic/chatroom.${chatRoomId}`;
 
   if (subscriptions[destination]) {
@@ -108,38 +92,11 @@ export function subscribeToChatRoom(chatRoomId, callback, providedStore = null) 
   };
 
   console.log(`채팅방 ${chatRoomId} 구독 완료`);
-
-  // 읽음 상태 이벤트도 구독
-  const readStatusDestination = `/topic/chatroom.${chatRoomId}.read`;
-  subscriptions[readStatusDestination] = {
-    subscription: stompClient.subscribe(readStatusDestination, message => {
-      try {
-        const readStatus = JSON.parse(message.body);
-        console.log(`읽음 상태 업데이트:`, readStatus);
-        // 필요한 경우 읽음 상태 이벤트 처리
-      } catch (error) {
-        console.error('읽음 상태 이벤트 처리 중 오류 발생:', error);
-      }
-    }),
-    callback: null,
-  };
 }
 
-export function sendWebSocketMessage(chatRoomId, message, providedStore = null) {
+export function sendWebSocketMessage(chatRoomId, message, userId, userName) {
   if (!stompClient || !stompClient.connected) {
     console.error('웹소켓 연결이 없습니다. 메시지를 보낼 수 없습니다.');
-    initializeWebSocket(providedStore); // 연결 재시도
-    return false;
-  }
-
-  // 스토어 접근을 함수 내부로 이동
-  let authStore = providedStore;
-  try {
-    if (!authStore) {
-      authStore = useAuthStore();
-    }
-  } catch (error) {
-    console.error('Auth 스토어 접근 실패. 인증 정보 없이 메시지를 보낼 수 없습니다.', error);
     return false;
   }
 
@@ -150,8 +107,8 @@ export function sendWebSocketMessage(chatRoomId, message, providedStore = null) 
       JSON.stringify({
         chatroomId: chatRoomId,
         content: message,
-        senderId: authStore.userId,
-        senderName: authStore.userName,
+        senderId: userId,
+        senderName: userName,
         messageType: 'TEXT',
       })
     );
@@ -183,4 +140,27 @@ export function disconnectWebSocket() {
     stompClient = null;
     console.log('웹소켓 연결 종료');
   }
+}
+
+export function getWebSocketStatus() {
+  if (!stompClient) {
+    return 'NOT_INITIALIZED';
+  }
+  if (stompClient.connected) {
+    return 'CONNECTED';
+  }
+  return 'DISCONNECTED';
+}
+
+export function isWebSocketConnected() {
+  return stompClient && stompClient.connected;
+}
+
+export function forceReconnect() {
+  console.log('강제 재연결 시도...');
+  disconnectWebSocket();
+  reconnectAttempts = 0;
+  setTimeout(() => {
+    initializeWebSocket();
+  }, 1000);
 }
