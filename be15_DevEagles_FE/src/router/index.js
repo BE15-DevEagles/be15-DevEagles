@@ -4,6 +4,7 @@ import { userRoutes } from '@/features/user/router.js';
 import { useAuthStore } from '@/store/auth';
 import { calendarRoutes } from '@/features/todolist/router.js';
 import { teamRoutes } from '@/features/team/router.js';
+import { workRoutes } from '@/features/worklog/router.js';
 
 const routes = [
   ...userRoutes,
@@ -19,6 +20,7 @@ const routes = [
       // 여기 Layout 하위 라우트 계속 추가 가능
       ...calendarRoutes,
       ...teamRoutes,
+      ...workRoutes,
     ],
   },
   {

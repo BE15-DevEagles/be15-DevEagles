@@ -13,5 +13,15 @@ public interface WorklogMapper {
       @Param("searchType") String searchType,
       @Param("keyword") String keyword,
       @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate,
+      @Param("offset") int offset,
+      @Param("size") int size);
+
+  // 전체 개수 조회 (페이징용)
+  int countWorklogs(
+      @Param("teamId") Long teamId,
+      @Param("searchType") String searchType,
+      @Param("keyword") String keyword,
+      @Param("startDate") LocalDateTime startDate,
       @Param("endDate") LocalDateTime endDate);
 }
