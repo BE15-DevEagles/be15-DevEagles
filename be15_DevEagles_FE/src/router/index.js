@@ -1,12 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { Layout, ErrorPage } from '@/components/common/layout';
-import timecapsuleRoutes from '@/features/timecapsule/router.js';
+import { userRoutes } from '@/features/user/router.js';
+import { useAuthStore } from '@/store/auth';
+import { calendarRoutes } from '@/features/todolist/router.js';
 
 const routes = [
+  ...userRoutes,
   {
     path: '/',
     component: Layout,
-    children: [{ path: '', name: 'Home', component: () => import('@/views/Home.vue') }],
+    children: [
+      {
+        path: '',
+        name: 'Home',
+        component: () => import('@/views/Home.vue'),
+      },
+      // 여기 Layout 하위 라우트 계속 추가 가능
+      ...calendarRoutes,
+    ],
   },
   {
     path: '/:pathMatch(.*)*',
@@ -23,6 +34,20 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore();
+
+  const publicPages = ['/login', '/signup', '/email-verify']; // 인증 없이 접근 가능한 경로들
+  const authRequired = !publicPages.includes(to.path);
+
+  // 인증이 필요한 페이지인데 로그인 안 했으면 로그인으로 이동
+  if (authRequired && !authStore.isAuthenticated) {
+    return next('/login');
+  }
+
+  next();
 });
 
 export default router;
