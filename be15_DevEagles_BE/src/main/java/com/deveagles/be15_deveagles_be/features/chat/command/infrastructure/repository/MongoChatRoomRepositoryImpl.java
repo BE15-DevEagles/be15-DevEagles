@@ -75,6 +75,11 @@ public class MongoChatRoomRepositoryImpl implements ChatRoomRepository {
   }
 
   @Override
+  public List<ChatRoom> findByParticipantsUserIdAndDeletedAtIsNull(String userId) {
+    return repository.findByParticipantsUserIdAndDeletedAtIsNull(userId);
+  }
+
+  @Override
   public void delete(ChatRoom chatRoom) {
     repository.delete(chatRoom);
   }

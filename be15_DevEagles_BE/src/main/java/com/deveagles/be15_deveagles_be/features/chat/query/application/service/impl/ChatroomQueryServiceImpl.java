@@ -30,8 +30,9 @@ public class ChatroomQueryServiceImpl implements ChatroomQueryService {
   public ChatroomListResponse getChatrooms(Long userId, String teamId, int page, int size) {
     log.info("채팅방 목록 조회 서비스 -> 사용자ID: {}, 팀ID: {}, 페이지: {}, 크기: {}", userId, teamId, page, size);
 
-    List<ChatRoom> chatrooms = chatroomQueryRepository.findChatrooms(teamId, page, size);
-    int totalCount = chatroomQueryRepository.countChatrooms(teamId);
+    List<ChatRoom> chatrooms =
+        chatroomQueryRepository.findChatroomsByUserIdAndTeamId(userId, teamId, page, size);
+    int totalCount = chatroomQueryRepository.countChatroomsByUserIdAndTeamId(userId, teamId);
 
     List<ChatroomResponse> chatroomResponses =
         chatrooms.stream().map(this::convertToChatroomResponse).collect(Collectors.toList());
