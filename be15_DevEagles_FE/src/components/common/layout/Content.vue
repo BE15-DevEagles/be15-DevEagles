@@ -16,7 +16,7 @@
 
         <div class="flex-grow overflow-y-auto space-y-4 mb-4">
           <!-- 라우터 뷰를 통해 동적으로 내용을 표시 -->
-          <router-view></router-view>
+          <router-view :key="routeKey"></router-view>
         </div>
       </div>
     </div>
@@ -24,6 +24,17 @@
 </template>
 
 <script setup>
+  import { useRoute } from 'vue-router';
+  import { useTeamStore } from '@/store/team';
+  import { computed } from 'vue';
+
+  const route = useRoute();
+  const teamStore = useTeamStore();
+
+  const routeKey = computed(() => {
+    return `${route.name}-${teamStore.currentTeamId}`;
+  });
+
   // Props
   const props = defineProps({
     currentPage: {
