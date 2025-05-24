@@ -9,7 +9,12 @@
       @change-password="handleChangePassword"
       @withdraw="handleWithdraw"
     />
-    <PasswordCheckModal v-model="showPasswordCheck" @success="router.push(routeUrl)" />
+    <PasswordCheckModal
+      v-if="showPasswordCheck && routeUrl"
+      v-model="showPasswordCheck"
+      @success="router.push(routeUrl)"
+    />
+    <UserWithdrawModal v-model="showWithDrawCheck" />
   </div>
 </template>
 
@@ -17,8 +22,9 @@
   import { useRouter } from 'vue-router';
   import UserProfileCard from '@/features/user/components/UserProfileCard.vue';
   import { onMounted, ref } from 'vue';
-  import { mypage } from '@/features/user/api/user.js';
   import PasswordCheckModal from '@/features/user/components/PasswordCheckModal.vue';
+  import UserWithdrawModal from '@/features/user/components/UserWithdrawModal.vue';
+  import { mypage } from '@/features/user/api/user.js';
 
   const router = useRouter();
 
@@ -56,8 +62,9 @@
     showPasswordCheck.value = true;
   };
 
+  const showWithDrawCheck = ref(false);
   function handleWithdraw() {
-    // 탈퇴 모달 또는 경고 띄우기
+    showWithDrawCheck.value = true;
   }
 </script>
 

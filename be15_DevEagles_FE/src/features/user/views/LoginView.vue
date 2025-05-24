@@ -44,6 +44,13 @@
       </div>
     </template>
   </BaseModal>
+
+  <BaseModal v-model="showRecoverModal" title="Welcome back🎉">
+    <div class="modal-body center-content">계정이 복구되었습니다.</div>
+    <template #footer>
+      <BaseButton type="primary" @click="router.push('/')">확인</BaseButton>
+    </template>
+  </BaseModal>
 </template>
 
 <script setup>
@@ -67,13 +74,13 @@
   const errorMessage = ref('');
   const shake = ref(false); // 🔥 shake 트리거
   const showVerifyModal = ref(false);
+  const showRecoverModal = ref(false);
 
   const fetchUser = async () => {
     try {
       const res = await login(params.value);
 
       authStore.setAuth(res.data.data.accessToken);
-
       localStorage.setItem('refreshToken', res.data.data.refreshToken);
 
       const res_valid = await validUserStatus();
@@ -83,6 +90,8 @@
         showVerifyModal.value = true;
         return;
       }
+
+      if (authStore.returnUser === 'true') showRecoverModal.value(true);
 
       // 로그인 성공 후 채팅 초기화
       setTimeout(() => {
