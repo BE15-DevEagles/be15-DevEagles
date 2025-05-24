@@ -2,6 +2,8 @@ package com.deveagles.be15_deveagles_be.features.chat.command.application.servic
 
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.request.CreateChatRoomRequest;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.ChatRoomResponse;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.NotificationSettingResponse;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.NotificationToggleResponse;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatRoomService;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom.ChatRoomType;
@@ -10,7 +12,9 @@ import com.deveagles.be15_deveagles_be.features.chat.command.domain.exception.Ch
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.factory.ChatRoomFactory;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.ChatRoomRepository;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -175,6 +179,82 @@ public class ChatRoomServiceImpl implements ChatRoomService {
       throw new ChatBusinessException(
           ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED, e.getMessage());
     }
+  }
+
+  @Override
+  @Transactional
+  public void markChatRoomAsRead(String chatroomId, String userId) {
+    ChatRoom chatRoom = getChatRoomById(chatroomId);
+
+    ChatRoom.Participant participant = chatRoom.getParticipant(userId);
+    if (participant == null) {
+      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND);
+    }
+
+    try {
+      // 채팅방의 마지막 메시지를 읽음 처리
+      if (chatRoom.getLastMessage() != null) {
+        participant.updateLastReadMessage(chatRoom.getLastMessage().getId());
+        chatRoomRepository.save(chatRoom);
+      }
+    } catch (Exception e) {
+      throw new ChatBusinessException(
+          ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED, e.getMessage());
+    }
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Boolean getChatNotificationSetting(String chatroomId, String userId) {
+    ChatRoom chatRoom = getChatRoomById(chatroomId);
+
+    ChatRoom.Participant participant = chatRoom.getParticipant(userId);
+    if (participant == null) {
+      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND);
+    }
+
+    return participant.isNotificationEnabled();
+  }
+
+  @Override
+  @Transactional
+  public NotificationToggleResponse toggleCurrentUserNotification(
+      String chatroomId, String userId) {
+    ChatRoom chatRoom = getChatRoomById(chatroomId);
+
+    ChatRoom.Participant participant = chatRoom.getParticipant(userId);
+    if (participant == null) {
+      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND);
+    }
+
+    try {
+      participant.toggleNotification();
+      chatRoomRepository.save(chatRoom);
+      return NotificationToggleResponse.of(participant.isNotificationEnabled());
+    } catch (Exception e) {
+      throw new ChatBusinessException(
+          ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED, e.getMessage());
+    }
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<NotificationSettingResponse> getAllNotificationSettings(String userId) {
+    List<ChatRoom> chatRooms =
+        chatRoomRepository.findByParticipantsUserIdAndDeletedAtIsNull(userId);
+
+    return chatRooms.stream()
+        .map(
+            chatRoom -> {
+              ChatRoom.Participant participant = chatRoom.getParticipant(userId);
+              if (participant != null && !participant.isDeleted()) {
+                return NotificationSettingResponse.of(
+                    chatRoom.getId(), participant.isNotificationEnabled());
+              }
+              return null;
+            })
+        .filter(response -> response != null)
+        .collect(Collectors.toList());
   }
 
   private ChatRoom getChatRoomById(String chatroomId) {

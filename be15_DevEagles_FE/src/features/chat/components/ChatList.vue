@@ -84,6 +84,23 @@
                   >
                     ({{ chat.participants?.length || 0 }}명)
                   </span>
+                  <!-- 알림 끔 상태 표시 -->
+                  <svg
+                    v-if="!isNotificationEnabled(chat.id)"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-3 w-3 ml-1 text-[var(--color-gray-400)]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    title="알림 꺼짐"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5.586 15H4l1.405-1.405A2.032 2.032 0 006 12.158V11a6.002 6.002 0 014-5.659V5a2 2 0 114 0v.341C16.67 6.165 18 8.388 18 11v1.159c0 .538.214 1.055.595 1.436L20 15h-1.586M9 18v-1a3 3 0 116 0v1M9 18H6m9-3l-6-6"
+                    />
+                  </svg>
                 </h3>
                 <span class="text-xs text-[var(--color-gray-500)] whitespace-nowrap">
                   {{ chat.lastMessageTime }}
@@ -111,6 +128,14 @@
 
 <script setup>
   import { defineProps, defineEmits } from 'vue';
+  import { useNotifications } from '@/features/chat/composables/useNotifications';
+  import {
+    getChatTypeClass,
+    getChatDisplayChar,
+    getLastMessageDisplay,
+  } from '@/features/chat/utils/chatUtils';
+
+  const { isNotificationEnabled } = useNotifications();
 
   /**
    * Props:
@@ -160,38 +185,6 @@
    * this.$emit('select-chat', { id: 1, name: '김경록', ... })
    */
   const emit = defineEmits(['select-chat', 'retry-load']);
-
-  // 채팅 타입에 따른 CSS 클래스
-  function getChatTypeClass(type) {
-    switch (type) {
-      case 'AI':
-        return 'bg-gradient-to-br from-blue-400 to-purple-500';
-      case 'GROUP':
-        return 'bg-[var(--color-secondary-300)]';
-      case 'DIRECT':
-      default:
-        return 'bg-[var(--color-primary-300)]';
-    }
-  }
-
-  // 채팅 표시 문자
-  function getChatDisplayChar(chat) {
-    if (chat.type === 'AI') {
-      return '🤖';
-    }
-    return chat.name?.charAt(0)?.toUpperCase() || '?';
-  }
-
-  // 마지막 메시지 표시
-  function getLastMessageDisplay(chat) {
-    if (!chat.lastMessage) {
-      if (chat.type === 'AI') {
-        return 'AI와 대화를 시작해보세요!';
-      }
-      return '메시지가 없습니다.';
-    }
-    return chat.lastMessage;
-  }
 
   // 채팅 선택 처리
   function handleChatSelect(chat) {

@@ -19,3 +19,10 @@ export function fetchTeamCalendarEvents(teamId) {
 export function fetchTeamTodoDetail(todoId) {
   return api.get(`/todos/team/detail/${todoId}`);
 }
+
+/* 5. 팀 Todo 목록 조회 */
+export function fetchTeamTodos({ teamId, userId = [], status = 'all', page = 1, size = 10 }) {
+  return api.get(`/todos/team/${teamId}`, {
+    params: { userId, status, page, size },
+  });
+}

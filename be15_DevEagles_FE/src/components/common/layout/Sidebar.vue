@@ -100,7 +100,7 @@
         router.push('/worklog');
         break;
       case 'Todo 목록':
-        router.push('/todos');
+        router.push({ path: '/todos', query: { status: 'all' } });
         break;
       case '타임캡슐':
         router.push('/timecapsule');

@@ -4,7 +4,7 @@ import {
   getChatNotificationSetting,
   toggleChatNotification,
   getAllNotificationSettings,
-} from '@/features/chat/api/chatService';
+} from '@/features/chat/api/chatService.js';
 
 const notificationSettings = ref(new Map());
 const isLoading = ref(false);
