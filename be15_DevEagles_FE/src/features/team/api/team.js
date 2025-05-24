@@ -57,3 +57,9 @@ export const updateTeamThumbnail = async (teamId, file) => {
 
   return res.data.data; // 썸네일 URL 혹은 성공 메시지
 };
+
+// 9. 팀 상세 조회
+export const getTeamDetail = async teamId => {
+  const res = await api.get(`/teams/teams/${teamId}`);
+  return res.data.data;
+};
