@@ -94,9 +94,11 @@ public class ChatroomQueryServiceImplTest {
     int page = 0;
     int size = 10;
 
-    when(chatroomQueryRepository.findChatrooms(eq(TEAM_ID), eq(page), eq(size)))
+    when(chatroomQueryRepository.findChatroomsByUserIdAndTeamId(
+            eq(USER_ID), eq(TEAM_ID), eq(page), eq(size)))
         .thenReturn(chatRooms);
-    when(chatroomQueryRepository.countChatrooms(eq(TEAM_ID))).thenReturn(1);
+    when(chatroomQueryRepository.countChatroomsByUserIdAndTeamId(eq(USER_ID), eq(TEAM_ID)))
+        .thenReturn(1);
 
     // when
     ChatroomListResponse response = chatroomQueryService.getChatrooms(USER_ID, TEAM_ID, page, size);
@@ -109,8 +111,9 @@ public class ChatroomQueryServiceImplTest {
     assertThat(response.getChatrooms().get(0).getTeamId()).isEqualTo(TEAM_ID);
     assertThat(response.getChatrooms().get(0).getParticipants()).hasSize(2);
 
-    verify(chatroomQueryRepository).findChatrooms(eq(TEAM_ID), eq(page), eq(size));
-    verify(chatroomQueryRepository).countChatrooms(eq(TEAM_ID));
+    verify(chatroomQueryRepository)
+        .findChatroomsByUserIdAndTeamId(eq(USER_ID), eq(TEAM_ID), eq(page), eq(size));
+    verify(chatroomQueryRepository).countChatroomsByUserIdAndTeamId(eq(USER_ID), eq(TEAM_ID));
   }
 
   @Test
@@ -121,9 +124,11 @@ public class ChatroomQueryServiceImplTest {
     int page = 0;
     int size = 10;
 
-    when(chatroomQueryRepository.findChatrooms(eq(TEAM_ID), eq(page), eq(size)))
+    when(chatroomQueryRepository.findChatroomsByUserIdAndTeamId(
+            eq(USER_ID), eq(TEAM_ID), eq(page), eq(size)))
         .thenReturn(chatRooms);
-    when(chatroomQueryRepository.countChatrooms(eq(TEAM_ID))).thenReturn(0);
+    when(chatroomQueryRepository.countChatroomsByUserIdAndTeamId(eq(USER_ID), eq(TEAM_ID)))
+        .thenReturn(0);
 
     // when
     ChatroomListResponse response = chatroomQueryService.getChatrooms(USER_ID, TEAM_ID, page, size);
@@ -133,8 +138,9 @@ public class ChatroomQueryServiceImplTest {
     assertThat(response.getTotalCount()).isEqualTo(0);
     assertThat(response.getChatrooms()).isEmpty();
 
-    verify(chatroomQueryRepository).findChatrooms(eq(TEAM_ID), eq(page), eq(size));
-    verify(chatroomQueryRepository).countChatrooms(eq(TEAM_ID));
+    verify(chatroomQueryRepository)
+        .findChatroomsByUserIdAndTeamId(eq(USER_ID), eq(TEAM_ID), eq(page), eq(size));
+    verify(chatroomQueryRepository).countChatroomsByUserIdAndTeamId(eq(USER_ID), eq(TEAM_ID));
   }
 
   @Test
