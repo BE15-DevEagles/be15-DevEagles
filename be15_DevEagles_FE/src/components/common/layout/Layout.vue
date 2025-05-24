@@ -33,7 +33,7 @@
   };
 
   const route = useRoute();
-  const isMyPage = computed(() => route.path === '/mypage');
+  const isMyPage = computed(() => route.path.startsWith('/mypage'));
   const currentPage = computed(() =>
     isMyPage.value ? '마이페이지' : teamStore.currentTeam?.name || '일반'
   );

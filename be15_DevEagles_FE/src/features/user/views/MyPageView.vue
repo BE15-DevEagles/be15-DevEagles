@@ -9,6 +9,7 @@
       @change-password="handleChangePassword"
       @withdraw="handleWithdraw"
     />
+    <PasswordCheckModal v-model="showPasswordCheck" @success="router.push('/mypage/edit')" />
   </div>
 </template>
 
@@ -17,21 +18,24 @@
   import UserProfileCard from '@/features/user/components/UserProfileCard.vue';
   import { onMounted, ref } from 'vue';
   import { mypage } from '@/features/user/api/user.js';
-  import { useAuthStore } from '@/store/auth.js';
+  import PasswordCheckModal from '@/features/user/components/PasswordCheckModal.vue';
 
   const router = useRouter();
-  const authStore = useAuthStore();
 
-  const userId = ref(authStore.userId);
-  const user = ref(null);
   const isLoading = ref(true);
+  const user = ref({
+    userName: '',
+    phoneNumber: '',
+    thumbnailUrl: '',
+    email: '',
+  });
 
   onMounted(async () => {
     try {
-      console.log('회원 정보 불러오기 중');
       const res = await mypage();
       if (res.data.success) {
         user.value = res.data.data;
+        console.log(user.value.thumbnailUrl);
       }
     } catch (e) {
       console.error('회원 정보 불러오기 실패:', e);
@@ -40,9 +44,10 @@
     }
   });
 
-  function handleEditUser() {
-    router.push('/user/edit'); // 회원정보 수정 라우트
-  }
+  const showPasswordCheck = ref(false);
+  const handleEditUser = () => {
+    showPasswordCheck.value = true;
+  };
 
   function handleChangePassword() {
     router.push('/user/password'); // 비밀번호 변경 라우트

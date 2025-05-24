@@ -19,7 +19,7 @@ api.interceptors.request.use(
     const authStore = useAuthStore();
     const token = authStore.accessToken;
 
-    const shouldSkipToken = exceptToken.some(url => config.url?.includes(url));
+    const shouldSkipToken = exceptToken.some(pattern => new RegExp(pattern).test(config.url));
 
     if (token && !shouldSkipToken) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -52,3 +52,12 @@ export const sendAuth = params => api.post(`/auth/sendauth`, params);
 export const verifyEmailCode = params => api.post(`/auth/verify`, params);
 
 export const mypage = () => api.get(`/users/me`);
+
+export const updateUserInfo = formData =>
+  api.patch(`/users/mod`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+export const verifyPassword = password => api.post(`/users/valid`, password);
