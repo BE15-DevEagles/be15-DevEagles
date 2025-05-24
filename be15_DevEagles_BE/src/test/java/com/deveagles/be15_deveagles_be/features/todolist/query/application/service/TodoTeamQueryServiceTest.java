@@ -25,8 +25,9 @@ class TodoTeamQueryServiceTest {
   @Test
   @DisplayName("특정 팀 todo 리스트를 필터링 조건으로 조회 성공")
   void getTeamTodosByCondition_success() {
+    // given
     Long teamId = 1L;
-    List<Long> userIds = List.of(2L, 3L);
+    Long userId = 2L;
     String status = "incomplete";
     int page = 1;
     int size = 5;
@@ -44,26 +45,14 @@ class TodoTeamQueryServiceTest {
                 .userThumbnailUrl("https://example.com/profile.jpg")
                 .build());
 
-    when(todoTeamQueryMapper.selectTeamTodosByCondition(
-            org.mockito.ArgumentMatchers.argThat(
-                cond ->
-                    cond.getTeamId().equals(teamId)
-                        && cond.getUserIds().equals(userIds)
-                        && cond.getStatus().equals(status)
-                        && cond.getOffset() == offset
-                        && cond.getSize() == size)))
+    // when
+    when(todoTeamQueryMapper.selectTeamTodosByCondition(teamId, userId, status, offset, size))
         .thenReturn(mockList);
+    when(todoTeamQueryMapper.countTeamTodosByCondition(teamId, userId, status)).thenReturn(1);
 
-    when(todoTeamQueryMapper.countTeamTodosByCondition(
-            org.mockito.ArgumentMatchers.argThat(
-                cond ->
-                    cond.getTeamId().equals(teamId)
-                        && cond.getUserIds().equals(userIds)
-                        && cond.getStatus().equals(status))))
-        .thenReturn(1);
-
+    // then
     PagedResponse<TeamFilteredTodoResponse> result =
-        todoTeamQueryService.getTeamTodosByCondition(teamId, userIds, status, page, size);
+        todoTeamQueryService.getTeamTodosByCondition(teamId, userId, status, page, size);
 
     assertThat(result.getContent()).hasSize(1);
     assertThat(result.getContent().get(0).getTodoId()).isEqualTo(100L);

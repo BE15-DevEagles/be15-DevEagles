@@ -10,5 +10,6 @@ public class TeamInformationResponse {
   private Long teamId;
   private String teamName;
   private String introduction;
+  private Long userId;
   private String url;
 }

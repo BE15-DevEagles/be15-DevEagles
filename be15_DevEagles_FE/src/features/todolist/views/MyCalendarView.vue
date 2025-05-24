@@ -1,44 +1,75 @@
 <script setup>
   import { ref, onMounted, watch } from 'vue';
   import TodoCalendar from '@/features/todolist/components/TodoCalendar.vue';
-  import { fetchMyCalendarEvents } from '@/features/todolist/api/api.js';
+  import {
+    fetchMyCalendarEvents,
+    fetchMyDdayTodos,
+    fetchWorklogWrittenStatus,
+  } from '@/features/todolist/api/api.js';
   import dayjs from 'dayjs';
+  import BasePagination from '@/components/common/components/Pagaination.vue';
+  import { useTeamStore } from '@/store/team.js';
+  import { useRouter } from 'vue-router';
+  import BaseButton from '@/components/common/components/BaseButton.vue';
 
   const myEvents = ref([]);
+  const ddayTodoList = ref([]);
+  const currentPage = ref(1);
+  const totalPages = ref(1);
+  const pageSize = 10;
+
+  const worklogWritten = ref(null); // null | true | false
 
   const props = defineProps({
     isSidebarCollapsed: Boolean,
   });
 
-  watch(
-    () => props.isSidebarCollapsed,
-    newVal => {
-      console.log('[Sidebar 상태] isSidebarCollapsed:', newVal);
-    },
-    { immediate: true }
-  );
+  const router = useRouter();
+  const teamStore = useTeamStore();
+
+  function formatDday(dday) {
+    if (dday > 0) return `D - ${dday}`;
+    if (dday === 0) return 'D - DAY';
+    return `D + ${Math.abs(dday)}`;
+  }
+
+  const fetchDdayTodos = async () => {
+    try {
+      const res = await fetchMyDdayTodos({ page: currentPage.value, size: pageSize });
+      ddayTodoList.value = res.data.data.content;
+      totalPages.value = res.data.data.pagination.totalPages;
+    } catch (err) {
+      console.error('❌ D-day 목록 불러오기 실패:', err);
+    }
+  };
+  console.log('📌 현재 팀 ID:', teamStore.currentTeamId);
+  const fetchWorklogStatus = async () => {
+    try {
+      const teamId = teamStore.currentTeamId;
+      if (!teamId) return;
+      const res = await fetchWorklogWrittenStatus(teamId);
+      worklogWritten.value = res.data.data.written;
+      console.log('📘 작성 여부:', res.data.data.written);
+    } catch (err) {
+      console.error('❌ 워크로그 상태 조회 실패:', err);
+    }
+  };
 
   onMounted(async () => {
-    try {
-      const response = await fetchMyCalendarEvents();
+    const calendarRes = await fetchMyCalendarEvents();
+    myEvents.value = calendarRes.data.data.map(todo => ({
+      id: todo.todoId,
+      title: todo.content,
+      start: todo.startDate,
+      end: dayjs(todo.dueDate).add(1, 'day').format('YYYY-MM-DD'),
+      extendedProps: { teamId: todo.teamId },
+    }));
 
-      console.log('📥 원본 일정 데이터:', response.data.data);
-
-      myEvents.value = response.data.data.map(todo => ({
-        id: todo.todoId,
-        title: todo.content,
-        start: todo.startDate,
-        end: dayjs(todo.dueDate).add(1, 'day').format('YYYY-MM-DD'),
-        extendedProps: {
-          teamId: todo.teamId,
-        },
-      }));
-
-      console.log('📅 최종 변환된 일정:', myEvents.value);
-    } catch (error) {
-      console.error('❌ 일정 데이터 불러오기 실패:', error);
-    }
+    await fetchDdayTodos();
+    await fetchWorklogStatus();
   });
+
+  watch(currentPage, fetchDdayTodos);
 </script>
 
 <template>
@@ -52,32 +83,35 @@
 
       <div :class="['todolist-section', props.isSidebarCollapsed ? 'compact' : 'expanded']">
         <div class="box">
-          <p class="todo-title">todoList</p>
-          <p class="todo-subtitle">업무일지 미완료</p>
-
+          <p class="todo-title">TodoList</p>
+          <p class="todo-subtitle" :class="{ unwritten: worklogWritten === false }">
+            {{ worklogWritten === false ? '업무일지 미작성' : '업무일지 작성 완료' }}
+          </p>
           <div class="todolist-header-row">
             <span>완료</span>
-            <span>내용</span>
-            <span>D-day</span>
+            <span>할 일</span>
+            <span>디데이</span>
           </div>
 
           <ul class="todolist-list">
-            <li class="todolist-item">
-              <input type="checkbox" />
-              <span>요구사항...</span>
-              <span>D - 1</span>
-            </li>
-            <li class="todolist-item">
-              <input type="checkbox" />
-              <span>도메인...</span>
-              <span>D - 1</span>
-            </li>
-            <li class="todolist-item">
-              <input type="checkbox" />
-              <span>스타일...</span>
-              <span>D - 2</span>
+            <li v-for="todo in ddayTodoList" :key="todo.todoId" class="todolist-item">
+              <span><input type="checkbox" /></span>
+              <span>{{ todo.content }}</span>
+              <span>{{ formatDday(todo.dday) }}</span>
             </li>
           </ul>
+          <div class="pagination-wrapper">
+            <BasePagination
+              :current-page="currentPage"
+              :total-pages="totalPages"
+              @update:current-page="page => (currentPage = page)"
+            />
+          </div>
+          <div v-if="worklogWritten === false" class="write-worklog-wrapper">
+            <BaseButton type="info" size="sm" @click="router.push('/worklog/write')">
+              업무일지 작성하러 가기
+            </BaseButton>
+          </div>
         </div>
       </div>
     </div>
@@ -85,6 +119,12 @@
 </template>
 
 <style scoped>
+  .pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
   .todolist-section.expanded {
     flex: 1;
     min-width: 220px;
@@ -162,12 +202,25 @@
 
   .todolist-header-row {
     display: grid;
-    grid-template-columns: 1.5fr 1.8fr 1.8fr;
-    text-align: center;
+    grid-template-columns: 1fr 2fr 1.1fr;
     font-weight: bold;
     margin-bottom: 0.5rem;
     border-bottom: 1px solid var(--color-gray-300);
     padding-bottom: 4px;
+    align-items: center;
+    text-align: center;
+  }
+  .todolist-header-row span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .todolist-item span:nth-child(2) {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: block;
+    padding: 0 4px;
   }
 
   .todolist-list {
@@ -178,20 +231,37 @@
   }
 
   .todolist-item {
-    display: grid;
-    grid-template-columns: 1.5fr 1.8fr 1.8fr;
-    align-items: center;
-    text-align: center;
-    font-size: 14px;
+    composes: todo-grid;
+    font-size: 13px;
+    padding: 10px 0;
+    min-height: 44px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
   }
 
   /* ✅ 소제목 (업무일지 미완료) 강조 */
+
   .todo-subtitle {
     text-align: center;
-    font-size: 1rem; /* 기존보다 큼 */
+    font-size: 1rem;
     font-weight: 600;
-    color: red;
     margin-bottom: 1.5rem;
+    color: var(--color-success-400);
+  }
+
+  /* 업무일지 미작성일 때 */
+  .todo-subtitle.unwritten {
+    color: var(--color-error-300);
+    font-weight: 700;
+    font-size: 16px;
+    text-align: center;
+    line-height: 20.8px;
+  }
+
+  .write-worklog-wrapper {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 1rem;
   }
 
   .todo-title {
@@ -202,7 +272,7 @@
 
   .todolist-item {
     display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-columns: 1fr 2fr 1.1fr;
     align-items: center;
     text-align: center;
     font-size: 13px;
@@ -210,6 +280,13 @@
     min-height: 44px;
     border-radius: 6px;
     transition: background-color 0.2s ease;
+  }
+
+  .todo-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    align-items: center;
+    text-align: center;
   }
 
   .todolist-item:hover {

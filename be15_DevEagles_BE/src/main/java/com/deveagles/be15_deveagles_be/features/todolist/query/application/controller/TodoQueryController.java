@@ -71,13 +71,13 @@ public class TodoQueryController {
   public ResponseEntity<ApiResponse<PagedResponse<TeamFilteredTodoResponse>>>
       getTeamTodosByCondition(
           @PathVariable Long teamId,
-          @RequestParam(required = false) List<Long> userIds,
+          @RequestParam(required = false) Long userId,
           @RequestParam(defaultValue = "all") String status,
           @RequestParam int page,
           @RequestParam int size) {
 
     PagedResponse<TeamFilteredTodoResponse> response =
-        teamQueryService.getTeamTodosByCondition(teamId, userIds, status, page, size);
+        teamQueryService.getTeamTodosByCondition(teamId, userId, status, page, size);
 
     return ResponseEntity.ok(ApiResponse.success(response));
   }

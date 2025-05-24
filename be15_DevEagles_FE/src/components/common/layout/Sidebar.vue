@@ -56,10 +56,13 @@
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { ref, computed } from 'vue';
   import { useRouter } from 'vue-router';
+  import { useTeamStore } from '@/store/team.js';
 
   const router = useRouter();
+  const teamStore = useTeamStore();
+  const teamId = computed(() => teamStore.currentTeamId);
 
   // 아이콘 SVG 문자열
   const homeIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -88,7 +91,7 @@
   function handleChannelClick(channel) {
     switch (channel.name) {
       case '팀 정보':
-        router.push('/team/info');
+        router.push(`/team/info/${teamId.value}`);
         break;
       case '캘린더':
         router.push('/calendar/team');
@@ -97,7 +100,7 @@
         router.push('/worklog');
         break;
       case 'Todo 목록':
-        router.push('/todos');
+        router.push({ path: '/todos', query: { status: 'all' } });
         break;
       case '타임캡슐':
         router.push('/timecapsule');

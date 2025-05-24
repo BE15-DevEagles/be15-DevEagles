@@ -2,7 +2,6 @@ package com.deveagles.be15_deveagles_be.features.todolist.query.application.serv
 
 import com.deveagles.be15_deveagles_be.common.dto.PagedResponse;
 import com.deveagles.be15_deveagles_be.common.dto.Pagination;
-import com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.request.TeamTodoSearchRequest;
 import com.deveagles.be15_deveagles_be.features.todolist.query.application.dto.response.TeamFilteredTodoResponse;
 import com.deveagles.be15_deveagles_be.features.todolist.query.application.mapper.TodoTeamQueryMapper;
 import java.util.List;
@@ -18,21 +17,15 @@ public class TodoTeamQueryService {
   }
 
   public PagedResponse<TeamFilteredTodoResponse> getTeamTodosByCondition(
-      Long teamId, List<Long> userIds, String status, int page, int size) {
+      Long teamId, Long userId, String status, int page, int size) {
 
     int offset = (page - 1) * size;
 
-    TeamTodoSearchRequest cond =
-        TeamTodoSearchRequest.builder()
-            .teamId(teamId)
-            .userIds(userIds)
-            .status(status)
-            .offset(offset)
-            .size(size)
-            .build();
+    List<TeamFilteredTodoResponse> content =
+        todoTeamQueryMapper.selectTeamTodosByCondition(teamId, userId, status, offset, size);
 
-    List<TeamFilteredTodoResponse> content = todoTeamQueryMapper.selectTeamTodosByCondition(cond);
-    int totalItems = todoTeamQueryMapper.countTeamTodosByCondition(cond);
+    int totalItems = todoTeamQueryMapper.countTeamTodosByCondition(teamId, userId, status);
+
     int totalPages = (int) Math.ceil((double) totalItems / size);
 
     Pagination pagination =

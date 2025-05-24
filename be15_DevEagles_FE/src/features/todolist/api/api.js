@@ -19,3 +19,31 @@ export function fetchTeamCalendarEvents(teamId) {
 export function fetchTeamTodoDetail(todoId) {
   return api.get(`/todos/team/detail/${todoId}`);
 }
+
+/* 5. 팀 Todo 목록 조회 */
+export function fetchTeamTodos({ teamId, userId = [], status = 'all', page = 1, size = 10 }) {
+  return api.get(`/todos/team/${teamId}`, {
+    params: { userId, status, page, size },
+  });
+}
+
+/* 6. 내 미완료 Todo 리스트 (D-Day 포함) */
+export function fetchMyDdayTodos({ page = 1, size = 10 }) {
+  return api.get('/todos/dday/my', {
+    params: { page, size },
+  });
+}
+
+/* 7. 업무일지 작성 여부 조회 */
+export function fetchWorklogWrittenStatus(teamId) {
+  return api.get('/todos/worklog/written', {
+    params: { teamId },
+  });
+}
+
+// 8. 특정 팀의 내 미완료 Todo 리스트 (D-day 포함)
+export function fetchMyTeamDdayTodos({ teamId, page = 1, size = 10 }) {
+  return api.get(`/todos/dday/team/${teamId}`, {
+    params: { page, size },
+  });
+}
