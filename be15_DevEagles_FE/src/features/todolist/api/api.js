@@ -47,3 +47,18 @@ export function fetchMyTeamDdayTodos({ teamId, page = 1, size = 10 }) {
     params: { page, size },
   });
 }
+
+/* 9. 할 일 수정 */
+export function updateTodo(todoId, payload) {
+  return api.put(`/todos/${todoId}`, payload);
+}
+
+/* 10. 할 일 삭제 */
+export function deleteTodo(todoId) {
+  return api.delete(`/todos/${todoId}`);
+}
+
+/* 11. 할 일 완료 처리 */
+export function completeTodo(todoId) {
+  return api.put(`/todos/${todoId}/complete`);
+}
