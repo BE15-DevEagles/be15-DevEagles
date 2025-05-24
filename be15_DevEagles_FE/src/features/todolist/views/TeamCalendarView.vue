@@ -6,12 +6,23 @@
     fetchTeamCalendarEvents,
     fetchMyTeamDdayTodos,
     fetchWorklogWrittenStatus,
+    completeTodo,
   } from '@/features/todolist/api/api';
+  import TodoDetailModal from '@/features/todolist/components/TodoDetailModal.vue';
   import dayjs from 'dayjs';
   import TodoCalendar from '@/features/todolist/components/TodoCalendar.vue';
   import BasePagination from '@/components/common/components/Pagaination.vue';
   import BaseButton from '@/components/common/components/BaseButton.vue';
   import router from '@/router/index.js';
+  import { useToast } from 'vue-toastification';
+
+  const selectedTodoId = ref(null);
+  const isDetailModalOpen = ref(false);
+  const toast = useToast();
+  const openDetailModal = todoId => {
+    selectedTodoId.value = todoId;
+    isDetailModalOpen.value = true;
+  };
 
   const props = defineProps({
     isSidebarCollapsed: Boolean,
@@ -44,6 +55,19 @@
     if (dday === 0) return 'D - DAY';
     return `D + ${Math.abs(dday)}`;
   }
+
+  const handleComplete = async todoId => {
+    console.log('✅ 체크박스 클릭됨 todoId:', todoId);
+
+    try {
+      await completeTodo(todoId);
+      toast.success('할 일이 완료되었습니다.');
+      location.reload();
+    } catch (err) {
+      toast.error('완료 처리에 실패했습니다.');
+      console.error('❌ 완료 처리 실패:', err);
+    }
+  };
 
   const fetchTeamTodos = async teamId => {
     try {
@@ -113,12 +137,23 @@
           <div class="todolist-header-row">
             <span>완료</span>
             <span>할 일</span>
-            <span>D-day</span>
+            <span>디데이</span>
           </div>
 
           <ul class="todolist-list">
-            <li v-for="todo in ddayTodoList" :key="todo.todoId" class="todolist-item">
-              <span><input type="checkbox" /></span>
+            <li
+              v-for="todo in ddayTodoList"
+              :key="todo.todoId"
+              class="todolist-item"
+              @click="openDetailModal(todo.todoId)"
+            >
+              <span
+                ><input
+                  type="checkbox"
+                  :checked="false"
+                  @change.stop="handleComplete(todo.todoId)"
+                />
+              </span>
               <span>{{ todo.content }}</span>
               <span>{{ formatDday(todo.dday) }}</span>
             </li>
@@ -131,10 +166,16 @@
             />
           </div>
           <div v-if="worklogWritten === false" class="write-worklog-wrapper">
-            <BaseButton type="info" size="sm" @click="router.push('/worklog/write')">
+            <BaseButton type="info" size="sm" @click="router.push('/worklog/create')">
               업무일지 작성하러 가기
             </BaseButton>
           </div>
+          <TodoDetailModal
+            v-model="isDetailModalOpen"
+            :todo-id="selectedTodoId"
+            @edit="id => console.log('수정 처리', id)"
+            @delete="id => console.log('삭제 처리', id)"
+          />
         </div>
       </div>
     </div>

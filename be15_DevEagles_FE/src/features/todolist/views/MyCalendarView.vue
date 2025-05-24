@@ -1,7 +1,9 @@
 <script setup>
   import { ref, onMounted, watch } from 'vue';
   import TodoCalendar from '@/features/todolist/components/TodoCalendar.vue';
+  import TodoDetailModal from '@/features/todolist/components/TodoDetailModal.vue';
   import {
+    completeTodo,
     fetchMyCalendarEvents,
     fetchMyDdayTodos,
     fetchWorklogWrittenStatus,
@@ -11,14 +13,32 @@
   import { useTeamStore } from '@/store/team.js';
   import { useRouter } from 'vue-router';
   import BaseButton from '@/components/common/components/BaseButton.vue';
+  import { useToast } from 'vue-toastification';
 
   const myEvents = ref([]);
   const ddayTodoList = ref([]);
   const currentPage = ref(1);
   const totalPages = ref(1);
   const pageSize = 10;
+  const worklogWritten = ref(null);
+  const selectedTodoId = ref(null);
+  const isDetailModalOpen = ref(false);
+  const toast = useToast();
 
-  const worklogWritten = ref(null); // null | true | false
+  const openDetailModal = todoId => {
+    selectedTodoId.value = todoId;
+    isDetailModalOpen.value = true;
+  };
+
+  const onEditTodo = () => {
+    isDetailModalOpen.value = false;
+    fetchDdayTodos();
+  };
+
+  const onDeleteTodo = () => {
+    isDetailModalOpen.value = false;
+    fetchDdayTodos();
+  };
 
   const props = defineProps({
     isSidebarCollapsed: Boolean,
@@ -26,6 +46,17 @@
 
   const router = useRouter();
   const teamStore = useTeamStore();
+
+  const handleComplete = async todoId => {
+    try {
+      await completeTodo(todoId);
+      toast.success('할 일이 완료되었습니다.');
+      location.reload();
+    } catch (err) {
+      toast.error('완료 처리에 실패했습니다.');
+      console.error('❌ 완료 처리 실패:', err);
+    }
+  };
 
   function formatDday(dday) {
     if (dday > 0) return `D - ${dday}`;
@@ -42,14 +73,13 @@
       console.error('❌ D-day 목록 불러오기 실패:', err);
     }
   };
-  console.log('📌 현재 팀 ID:', teamStore.currentTeamId);
+
   const fetchWorklogStatus = async () => {
     try {
       const teamId = teamStore.currentTeamId;
       if (!teamId) return;
       const res = await fetchWorklogWrittenStatus(teamId);
       worklogWritten.value = res.data.data.written;
-      console.log('📘 작성 여부:', res.data.data.written);
     } catch (err) {
       console.error('❌ 워크로그 상태 조회 실패:', err);
     }
@@ -94,12 +124,24 @@
           </div>
 
           <ul class="todolist-list">
-            <li v-for="todo in ddayTodoList" :key="todo.todoId" class="todolist-item">
-              <span><input type="checkbox" /></span>
+            <li
+              v-for="todo in ddayTodoList"
+              :key="todo.todoId"
+              class="todolist-item"
+              @click="openDetailModal(todo.todoId)"
+            >
+              <span
+                ><input
+                  type="checkbox"
+                  :checked="false"
+                  @change.stop="handleComplete(todo.todoId)"
+                />
+              </span>
               <span>{{ todo.content }}</span>
               <span>{{ formatDday(todo.dday) }}</span>
             </li>
           </ul>
+
           <div class="pagination-wrapper">
             <BasePagination
               :current-page="currentPage"
@@ -107,11 +149,24 @@
               @update:current-page="page => (currentPage = page)"
             />
           </div>
+
           <div v-if="worklogWritten === false" class="write-worklog-wrapper">
-            <BaseButton type="info" size="sm" @click="router.push('/worklog/write')">
+            <BaseButton
+              type="info"
+              size="sm"
+              html-type="button"
+              @click="router.push('/worklog/create')"
+            >
               업무일지 작성하러 가기
             </BaseButton>
           </div>
+
+          <TodoDetailModal
+            v-model="isDetailModalOpen"
+            :todo-id="selectedTodoId"
+            @edit="onEditTodo"
+            @delete="onDeleteTodo"
+          />
         </div>
       </div>
     </div>

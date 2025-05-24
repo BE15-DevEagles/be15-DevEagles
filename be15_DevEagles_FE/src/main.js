@@ -8,6 +8,8 @@ import App from './App.vue';
 import './assets/css/index.css';
 import { useAuthStore } from '@/store/auth.js';
 import { setupChat } from './features/chat/config/chatConfig';
+import { setupCalendar, Calendar, DatePicker } from 'v-calendar';
+import 'v-calendar/style.css';
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -27,6 +29,11 @@ const toastOptions = {
   rtl: false,
 };
 
+setupCalendar(app, {
+  componentPrefix: 'V',
+});
+app.component('VCalendar', Calendar);
+app.component('VDatePicker', DatePicker);
 app.use(pinia);
 app.use(router);
 app.use(Toast, toastOptions);

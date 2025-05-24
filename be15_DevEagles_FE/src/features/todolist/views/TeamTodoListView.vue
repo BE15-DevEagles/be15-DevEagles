@@ -33,6 +33,7 @@
         <template v-else>
           <div
             class="w-full h-full bg-gray-400 text-white flex items-center justify-center rounded-full font-bold"
+            style="background: var(--color-primary-main)"
           >
             {{ member.userName?.charAt(0) || '?' }}
           </div>
