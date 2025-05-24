@@ -61,3 +61,14 @@ export const updateUserInfo = formData =>
   });
 
 export const verifyPassword = password => api.post(`/users/valid`, password);
+
+export const editPassword = password =>
+  api.patch(
+    '/users/mod/pwd',
+    { password },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
