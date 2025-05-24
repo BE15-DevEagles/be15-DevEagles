@@ -10,4 +10,10 @@ export const workRoutes = [
       description: '나의 모든 업무일지를 확이할 수 있어요.',
     },
   },
+  {
+    path: '/worklog/:id',
+    name: 'WorklogDetail',
+    component: () => import('@/features/worklog/views/WorklogDetailView.vue'),
+    props: true,
+  },
 ];
