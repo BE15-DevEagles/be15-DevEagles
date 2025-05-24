@@ -39,3 +39,9 @@ export const withdrawTeam = async teamId => {
   const res = await api.post(`/team/members/withdraw`, { teamId });
   return res.data.data; // "팀 탈퇴가 완료되었습니다."
 };
+
+// 7. 팀 삭제
+export const deleteTeam = async teamId => {
+  const res = await api.delete(`/teams/${teamId}`);
+  return res.data.data; // "팀 삭제가 완료되었습니다."
+};

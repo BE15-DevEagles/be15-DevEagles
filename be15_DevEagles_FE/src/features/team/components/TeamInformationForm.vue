@@ -24,7 +24,13 @@
           <h2 class="text-xl font-bold">{{ teamName || '팀 이름 없음' }}</h2>
         </div>
         <div class="flex gap-3">
-          <BaseButton v-if="isTeamLeader" type="" class="text-black hover:text-[#dc2626]" size="sm">
+          <BaseButton
+            v-if="isTeamLeader"
+            type=""
+            class="text-black hover:text-[#dc2626]"
+            size="sm"
+            @click="handleDeleteTeam"
+          >
             팀 삭제
           </BaseButton>
           <BaseButton
@@ -116,6 +122,7 @@
     fireTeamMember,
     transferTeamLeader,
     withdrawTeam,
+    deleteTeam,
   } from '@/features/team/api/team';
 
   const route = useRoute();
@@ -247,6 +254,19 @@
       window.location.href = '/';
     } catch (err) {
       const message = err?.response?.data?.message || '팀 탈퇴 중 오류가 발생했습니다.';
+      alert(message);
+    }
+  }
+
+  async function handleDeleteTeam() {
+    if (!confirm('정말로 이 팀을 삭제하시겠습니까? (팀원이 없어야 삭제 가능합니다)')) return;
+
+    try {
+      await deleteTeam(teamId.value);
+      alert('팀 삭제가 완료되었습니다.');
+      window.location.href = '/';
+    } catch (err) {
+      const message = err?.response?.data?.message || '팀 삭제 중 오류가 발생했습니다.';
       alert(message);
     }
   }
