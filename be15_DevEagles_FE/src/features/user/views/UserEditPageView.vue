@@ -8,14 +8,27 @@
       @update:user="handleUserChange"
       @submit="handleSave"
     />
+
+    <BaseModal v-model="isSuccessModalOpen" title="">
+      <template #default>
+        <p style="text-align: center; font-weight: 600">회원 정보가 수정되었습니다.</p>
+      </template>
+      <template #footer>
+        <div style="display: flex; justify-content: center">
+          <BaseButton type="primary" @click="goToMyPage">확인</BaseButton>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
-  import { reactive, onMounted } from 'vue';
+  import { reactive, onMounted, ref } from 'vue';
   import { useRouter } from 'vue-router';
   import UserProfileCard from '@/features/user/components/UserProfileCard.vue';
   import { mypage, updateUserInfo } from '@/features/user/api/user.js';
+  import BaseButton from '@/components/common/components/BaseButton.vue';
+  import BaseModal from '@/components/common/components/BaseModal.vue';
 
   const router = useRouter();
 
@@ -52,6 +65,12 @@
       console.error(e);
     }
   });
+
+  const isSuccessModalOpen = ref(false);
+  const goToMyPage = () => {
+    isSuccessModalOpen.value = false;
+    router.push('/mypage');
+  };
 
   const handleUserChange = payload => {
     console.log('[변경된 사용자 정보]', payload);
@@ -126,7 +145,7 @@
         formData.append('profile', user.profileImage);
       }
       await updateUserInfo(formData);
-      router.push('/mypage');
+      isSuccessModalOpen.value = true;
     } catch (e) {
       console.error('[업데이트 오류]', e);
     }

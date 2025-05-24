@@ -9,4 +9,9 @@ export const myPageRoutes = [
     name: 'UserEdit',
     component: () => import('@/features/user/views/UserEditPageView.vue'),
   },
+  {
+    path: '/mypage/editpwd',
+    name: 'PwdEdit',
+    component: () => import('@/features/user/views/PwdEditPageView.vue'),
+  },
 ];

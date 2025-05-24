@@ -9,7 +9,7 @@
       @change-password="handleChangePassword"
       @withdraw="handleWithdraw"
     />
-    <PasswordCheckModal v-model="showPasswordCheck" @success="router.push('/mypage/edit')" />
+    <PasswordCheckModal v-model="showPasswordCheck" @success="router.push(routeUrl)" />
   </div>
 </template>
 
@@ -45,13 +45,16 @@
   });
 
   const showPasswordCheck = ref(false);
+  const routeUrl = ref(null);
   const handleEditUser = () => {
+    routeUrl.value = '/mypage/edit';
     showPasswordCheck.value = true;
   };
 
-  function handleChangePassword() {
-    router.push('/user/password'); // 비밀번호 변경 라우트
-  }
+  const handleChangePassword = () => {
+    routeUrl.value = '/mypage/editpwd';
+    showPasswordCheck.value = true;
+  };
 
   function handleWithdraw() {
     // 탈퇴 모달 또는 경고 띄우기
