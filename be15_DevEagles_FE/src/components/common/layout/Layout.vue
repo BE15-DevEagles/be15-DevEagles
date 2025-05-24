@@ -4,10 +4,7 @@
     <div class="flex flex-1 overflow-hidden min-w-0">
       <TeamSidebar />
       <Sidebar />
-      <Content
-        :current-page="teamStore.currentTeam?.name || '일반'"
-        :page-description="teamStore.currentTeam?.description || '팀 채널 소통 공간'"
-      />
+      <Content :current-page="currentPage" :page-description="pageDescription" />
       <RightSidebar
         :is-collapsed="isSidebarCollapsed"
         @update:is-collapsed="handleSidebarCollapse"
@@ -26,6 +23,7 @@
   import Content from './Content.vue';
   import RightSidebar from './RightSidebar.vue';
   import Footer from './Footer.vue';
+  import { useRoute } from 'vue-router';
 
   const teamStore = useTeamStore();
   const isSidebarCollapsed = ref(false);
@@ -33,6 +31,16 @@
     console.log('[Sidebar 상태] isSidebarCollapsed 변경됨 →', val);
     isSidebarCollapsed.value = val;
   };
+
+  const route = useRoute();
+  const isMyPage = computed(() => route.path === '/mypage');
+  const currentPage = computed(() =>
+    isMyPage.value ? '마이페이지' : teamStore.currentTeam?.name || '일반'
+  );
+
+  const pageDescription = computed(() =>
+    isMyPage.value ? '' : teamStore.currentTeam?.description || '팀 채널 소통 공간'
+  );
 </script>
 
 <style>

@@ -1,85 +1,64 @@
 <template>
-  <div class="profile-card">
-    <div class="profile-left">
-      <div class="profile-image-wrapper" @click="triggerFileInput">
-        <img :src="previewImage || defaultImage" alt="프로필 이미지" class="profile-img" />
-        <div class="upload-overlay">변경</div>
-        <input ref="fileInput" type="file" accept="image/*" hidden @change="handleImageUpload" />
-      </div>
+  <div class="profile-card-vertical">
+    <div class="profile-image-wrapper">
+      <img :src="profileImage || defaultImage" alt="프로필 이미지" class="profile-img" />
     </div>
 
-    <div class="profile-right">
-      <div class="user-name">{{ user.name }}</div>
-      <div class="user-phone">{{ user.phone }}</div>
-      <div class="user-email">
-        <a :href="`mailto:${user.email}`">{{ user.email }}</a>
-      </div>
+    <div class="user-name">{{ user.userName }}</div>
+    <div class="user-phone">{{ user.phoneNumber }}</div>
+    <div class="user-email">
+      <span>{{ user.email }}</span>
+    </div>
 
-      <div class="button-group">
-        <button class="btn btn-outline" @click="$emit('edit-user')">회원 정보 수정</button>
-        <button class="btn btn-outline" @click="$emit('change-password')">비밀번호 변경</button>
-      </div>
+    <div class="button-group">
+      <button class="btn btn-outline" @click="$emit('edit-user')">회원 정보 수정</button>
+      <button class="btn btn-outline" @click="$emit('change-password')">비밀번호 변경</button>
+    </div>
 
-      <div class="withdraw">
-        <button class="btn btn-link disabled" disabled>회원탈퇴</button>
-      </div>
+    <div class="withdraw">
+      <button class="btn-withdraw" @click="$emit('withdraw')">회원탈퇴</button>
     </div>
   </div>
 </template>
 
 <script setup>
-  import { ref, reactive } from 'vue';
+  import { ref } from 'vue';
+  import { useAuthStore } from '@/store/auth.js';
 
+  const authStore = useAuthStore();
   const defaultImage = '/assets/image/profile-default.png';
-  const previewImage = ref('');
-  const fileInput = ref(null);
+  const profileImage = ref(authStore.userThumbnailUrl);
 
-  const user = reactive({
-    name: '김이글',
-    phone: '010-1234-5678',
-    email: 'deveagles@email.com',
+  defineProps({
+    user: {
+      type: Object,
+      required: true,
+    },
   });
-
-  function triggerFileInput() {
-    fileInput.value.click();
-  }
-
-  function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = e => {
-      previewImage.value = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
 </script>
 
 <style scoped>
-  .profile-card {
+  .profile-card-vertical {
     display: flex;
-    gap: 24px;
-    padding: 24px;
-    border: 1px solid var(--color-gray-200);
-    border-radius: 12px;
-    background-color: #fff;
-    max-width: 700px;
-    margin: 0 auto;
+    flex-direction: column;
     align-items: center;
-  }
-
-  .profile-left {
-    flex-shrink: 0;
+    border: 1px solid var(--color-gray-200);
+    padding: 40px 24px;
+    border-radius: 16px;
+    background-color: #fff;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    font-family: 'Noto Sans KR', sans-serif;
+    color: var(--color-gray-800);
   }
 
   .profile-image-wrapper {
-    position: relative;
-    width: 96px;
-    height: 96px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
     overflow: hidden;
-    cursor: pointer;
+    margin-bottom: 24px;
     border: 1px solid var(--color-gray-300);
   }
 
@@ -89,49 +68,66 @@
     object-fit: cover;
   }
 
-  .upload-overlay {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    color: white;
-    font-size: 12px;
-    text-align: center;
-    padding: 4px 0;
-  }
-
-  .profile-right {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
   .user-name {
     font-size: 20px;
-    font-weight: bold;
+    font-weight: 600;
+    margin-bottom: 8px;
   }
 
   .user-phone {
-    color: var(--color-gray-600);
     font-size: 15px;
+    color: var(--color-gray-600);
+    margin-bottom: 4px;
   }
 
-  .user-email a {
-    color: var(--color-primary);
+  .user-email {
     font-size: 14px;
-    text-decoration: underline;
+    color: var(--color-gray-700);
+    margin-bottom: 32px;
   }
 
   .button-group {
     display: flex;
-    gap: 12px;
-    margin-top: 12px;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    align-items: center;
+    margin-bottom: 24px;
   }
 
-  .withdraw {
+  .button-group .btn {
+    width: 100%;
+    max-width: 240px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid var(--color-gray-300);
+    background-color: white;
+    color: var(--color-gray-800);
+    cursor: pointer;
+  }
+
+  /* ✅ hover 시 확실히 보이도록 강조 */
+  .button-group .btn:hover {
+    background-color: var(--color-primary-100);
+    border-color: var(--color-primary);
+    color: var(--color-primary-300);
+  }
+
+  .btn-withdraw {
     font-size: 13px;
     color: var(--color-gray-400);
-    margin-top: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 4px;
+  }
+
+  .btn-withdraw:hover {
+    color: var(--color-error-400);
+    cursor: pointer;
   }
 </style>

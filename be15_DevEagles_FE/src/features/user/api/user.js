@@ -6,7 +6,13 @@ const api = axios.create({
   withCredentials: true,
 });
 
-const exceptToken = ['/auth/login', '/users', '/users/duplcheck', '/auth/sendauth', '/auth/verify'];
+const exceptToken = [
+  '/auth/login',
+  '/users$',
+  '/users/duplcheck',
+  '/auth/sendauth',
+  '/auth/verify',
+];
 
 api.interceptors.request.use(
   config => {
@@ -45,4 +51,4 @@ export const sendAuth = params => api.post(`/auth/sendauth`, params);
 
 export const verifyEmailCode = params => api.post(`/auth/verify`, params);
 
-export const mypage = () => api.post(`/users/me`);
+export const mypage = () => api.get(`/users/me`);
