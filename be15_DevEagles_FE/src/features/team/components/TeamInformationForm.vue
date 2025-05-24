@@ -86,7 +86,7 @@
   </div>
 
   <!-- 모달들 -->
-  <TeamMemberInviteModal v-model="isInviteModalOpen" @submit="handleInvite" />
+  <TeamMemberInviteModal v-model="isInviteModalOpen" @success="fetchMembers" />
   <UpdateTeamThumbnailModal
     v-model="isThumbnailModalOpen"
     :current-url="teamThumbnail"
@@ -151,10 +151,6 @@
     } finally {
       isUploading.value = false;
     }
-  }
-
-  function handleInvite(email) {
-    console.log('✅ 초대 이메일:', email);
   }
 
   const selectedUserId = ref(null);
