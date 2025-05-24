@@ -1,10 +1,14 @@
 <script setup>
-  import { ref, onMounted } from 'vue';
+  import { ref, onMounted, watch } from 'vue';
   import { useRouter } from 'vue-router';
   import WorkLog from '@/features/worklog/components/WorkLog.vue';
   import Pagination from '@/components/common/components/Pagaination.vue';
   import { searchWorklogs, fetchMyWorklogs } from '@/features/worklog/api/worklog.js';
+  import BaseButton from '@/components/common/components/BaseButton.vue';
+  import { useAuthStore } from '@/store/auth.js';
+  import { useTeamStore } from '@/store/team.js';
 
+  const teamStore = useTeamStore();
   const worklogs = ref([]);
   const searchType = ref('all');
   const searchInput = ref('');
@@ -16,9 +20,19 @@
   const totalPages = ref(0);
   const worklogScope = ref('mine');
   const pageSize = 10;
-  const teamId = 1;
-
+  const teamId = teamStore.currentTeamId;
   const router = useRouter();
+  const authStore = useAuthStore();
+
+  function goToCreatePage() {
+    router.push({
+      name: 'WorklogCreate',
+      query: {
+        username: authStore.name,
+        teamId: teamStore.currentTeamId,
+      },
+    });
+  }
 
   function formatDateTime(date) {
     return date ? date + ' 00:00:00' : null;
@@ -63,15 +77,20 @@
 
   async function fetchWorklogs() {
     try {
+      const commonParams = {
+        teamId,
+        page: currentPage.value,
+        size: pageSize,
+        sort: sortType.value,
+      };
+
       if (isSearchMode()) {
         const request = {
-          teamId,
+          ...commonParams,
           searchType: searchType.value.toUpperCase(),
           keyword: searchInput.value,
           startDate: formatDateTime(startDate.value),
           endDate: formatDateTime(endDate.value),
-          page: currentPage.value,
-          size: pageSize,
         };
         const response = await searchWorklogs(request);
         const { content, pagination } = response.data.data;
@@ -79,11 +98,7 @@
         totalPages.value = Math.ceil(pagination.totalItems / pageSize);
       } else {
         const url = worklogScope.value === 'mine' ? '/myworklog' : '/team';
-        const response = await fetchMyWorklogs('/worklog' + url, {
-          teamId,
-          page: currentPage.value,
-          size: pageSize,
-        });
+        const response = await fetchMyWorklogs('/worklog' + url, commonParams);
         const { content, pagination } = response.data.data;
         worklogs.value = content;
         totalPages.value = Math.ceil(pagination.totalItems / pageSize);
@@ -94,26 +109,34 @@
   }
 
   onMounted(fetchWorklogs);
+
+  watch(sortType, () => {
+    currentPage.value = 1;
+    fetchWorklogs();
+  });
 </script>
 
 <template>
   <section class="p-4">
-    <!-- 탭 -->
-    <div class="d-flex gap-2 mb-3 justify-content-end">
-      <button
-        class="btn tab-toggle"
-        :class="{ selected: worklogScope === 'team' }"
-        @click="switchScope('team')"
-      >
-        팀별 업무일지
-      </button>
-      <button
-        class="btn tab-toggle"
-        :class="{ selected: worklogScope === 'mine' }"
-        @click="switchScope('mine')"
-      >
-        내 업무일지
-      </button>
+    <!-- 탭 및 작성 버튼 -->
+    <div class="d-flex gap-2 mb-3 justify-content-between align-items-center">
+      <BaseButton class="btn btn-accent" @click="goToCreatePage"> 업무일지 작성 </BaseButton>
+      <div class="d-flex gap-2">
+        <BaseButton
+          class="btn tab-toggle"
+          :class="{ selected: worklogScope === 'team' }"
+          @click="switchScope('team')"
+        >
+          팀별 업무일지
+        </BaseButton>
+        <BaseButton
+          class="btn tab-toggle"
+          :class="{ selected: worklogScope === 'mine' }"
+          @click="switchScope('mine')"
+        >
+          내 업무일지
+        </BaseButton>
+      </div>
     </div>
 
     <!-- 검색 필터 -->
@@ -180,13 +203,13 @@
           <option value="created">등록순</option>
         </select>
 
-        <button
+        <BaseButton
           class="btn btn-outline btn-primary"
           style="height: 100%; white-space: nowrap"
           @click="showDatePicker = !showDatePicker"
         >
           📅 날짜 선택
-        </button>
+        </BaseButton>
       </div>
     </div>
 
@@ -195,7 +218,7 @@
       <input v-model="startDate" type="date" class="input" />
       <span class="font-one-liner-semibold align-self-center">~</span>
       <input v-model="endDate" type="date" class="input" />
-      <button class="btn btn-sm btn-gray" @click="clearDates">초기화</button>
+      <BaseButton class="btn btn-sm btn-gray" @click="clearDates">초기화</BaseButton>
     </div>
 
     <!-- 테이블 -->
@@ -254,5 +277,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  .btn-accent {
+    background-color: var(--color-primary-500) !important;
+    color: var(--color-neutral-white) !important;
+    border: none;
+  }
+  .btn-accent:hover {
+    background-color: var(--color-primary-500) !important;
+    color: var(--color-neutral-white) !important;
   }
 </style>

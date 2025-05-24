@@ -13,4 +13,5 @@ public class SearchWorklogRequest {
   private Long teamId;
   private int page;
   private int size;
+  private String sort;
 }
