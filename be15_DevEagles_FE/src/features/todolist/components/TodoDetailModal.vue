@@ -260,7 +260,7 @@
     height: 34px;
   }
 
-  /* ✅ v-calendar 달력 내부 스타일 */
+  /* v-calendar 달력 내부 스타일 */
   :root {
     --vc-accent-500: var(--color-primary-main);
     --vc-accent-600: var(--color-primary-400);

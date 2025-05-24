@@ -57,7 +57,7 @@
   }
 
   const handleComplete = async todoId => {
-    console.log('✅ 체크박스 클릭됨! todoId:', todoId); // 이게 안 뜨면 이벤트 안 먹힘
+    console.log('✅ 체크박스 클릭됨 todoId:', todoId);
 
     try {
       await completeTodo(todoId);

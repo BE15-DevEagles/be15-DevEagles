@@ -30,9 +30,9 @@ const toastOptions = {
 };
 
 setupCalendar(app, {
-  componentPrefix: 'V', // 이 부분에서 VCalendar를 전역으로 등록합니다.
+  componentPrefix: 'V',
 });
-app.component('VCalendar', Calendar); // Calendar로 컴포넌트 등록
+app.component('VCalendar', Calendar);
 app.component('VDatePicker', DatePicker);
 app.use(pinia);
 app.use(router);
