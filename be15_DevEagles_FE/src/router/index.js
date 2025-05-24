@@ -6,6 +6,7 @@ import { calendarRoutes } from '@/features/todolist/router.js';
 import { myPageRoutes } from '@/features/user/mypageRouter.js';
 import { teamRoutes } from '@/features/team/router.js';
 import { workRoutes } from '@/features/worklog/router.js';
+import { timecapsuleRoute } from '@/features/timecapsule/router.js';
 
 const routes = [
   ...userRoutes,
@@ -23,6 +24,7 @@ const routes = [
       ...myPageRoutes,
       ...teamRoutes,
       ...workRoutes,
+      ...timecapsuleRoute,
     ],
   },
   {
