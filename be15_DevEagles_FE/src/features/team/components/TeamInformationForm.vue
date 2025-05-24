@@ -27,7 +27,12 @@
           <BaseButton v-if="isTeamLeader" type="" class="text-black hover:text-[#dc2626]" size="sm">
             팀 삭제
           </BaseButton>
-          <BaseButton type="" class="text-black hover:text-[#dc2626]" size="sm">
+          <BaseButton
+            type=""
+            class="text-black hover:text-[#dc2626]"
+            size="sm"
+            @click="handleWithdrawTeam"
+          >
             팀 탈퇴
           </BaseButton>
         </div>
@@ -106,7 +111,12 @@
   import BaseButton from '@/components/common/components/BaseButton.vue';
   import TeamMemberInviteModal from '@/features/team/components/TeamMemberInviteModal.vue';
   import UpdateTeamThumbnailModal from '@/features/team/components/UpdateTeamThumbnailModal.vue';
-  import { getTeamMembers, fireTeamMember, transferTeamLeader } from '@/features/team/api/team';
+  import {
+    getTeamMembers,
+    fireTeamMember,
+    transferTeamLeader,
+    withdrawTeam,
+  } from '@/features/team/api/team';
 
   const route = useRoute();
   const teamId = computed(() => Number(route.params.teamId));
@@ -224,6 +234,19 @@
       selectedUserId.value = null;
     } catch (err) {
       const message = err?.response?.data?.message || '팀장 양도 중 오류가 발생했습니다.';
+      alert(message);
+    }
+  }
+
+  async function handleWithdrawTeam() {
+    if (!confirm('정말로 이 팀에서 탈퇴하시겠습니까?')) return;
+
+    try {
+      await withdrawTeam(teamId.value);
+      alert('팀 탈퇴가 완료되었습니다.');
+      window.location.href = '/';
+    } catch (err) {
+      const message = err?.response?.data?.message || '팀 탈퇴 중 오류가 발생했습니다.';
       alert(message);
     }
   }
