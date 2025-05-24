@@ -45,3 +45,15 @@ export const deleteTeam = async teamId => {
   const res = await api.delete(`/teams/${teamId}`);
   return res.data.data; // "팀 삭제가 완료되었습니다."
 };
+
+// 8. 팀 썸네일 변경
+export const updateTeamThumbnail = async (teamId, file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await api.post(`/teams/teams/${teamId}/thumbnail`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+  return res.data.data; // 썸네일 URL 혹은 성공 메시지
+};
