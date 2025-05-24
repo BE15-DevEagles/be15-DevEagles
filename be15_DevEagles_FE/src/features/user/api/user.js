@@ -7,11 +7,11 @@ const api = axios.create({
 });
 
 const exceptToken = [
-  '/auth/login',
-  '/users$',
-  '/users/duplcheck',
-  '/auth/sendauth',
-  '/auth/verify',
+  { method: 'post', url: '/auth/login' },
+  { method: 'post', url: '/users$' },
+  { method: 'post', url: '/users/duplcheck' },
+  { method: 'post', url: '/auth/sendauth' },
+  { method: 'post', url: '/auth/verify' },
 ];
 
 api.interceptors.request.use(
@@ -19,7 +19,9 @@ api.interceptors.request.use(
     const authStore = useAuthStore();
     const token = authStore.accessToken;
 
-    const shouldSkipToken = exceptToken.some(pattern => new RegExp(pattern).test(config.url));
+    const shouldSkipToken = exceptToken.some(
+      pattern => pattern.method === config.method && new RegExp(pattern.url).test(config.url)
+    );
 
     if (token && !shouldSkipToken) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -60,7 +62,7 @@ export const updateUserInfo = formData =>
     },
   });
 
-export const verifyPassword = password => api.post(`/users/valid`, password);
+export const verifyPassword = password => api.post(`/users/valid`, { password });
 
 export const editPassword = password =>
   api.patch(
@@ -72,3 +74,5 @@ export const editPassword = password =>
       },
     }
   );
+
+export const withdrawUser = () => api.delete(`/users`);

@@ -180,8 +180,8 @@
     const formData = new FormData();
     formData.append('request', new Blob([JSON.stringify(jsonData)], { type: 'application/json' }));
 
-    if (selectedFile.value?.files[0]) {
-      formData.append('profile', selectedFile.value.files[0]);
+    if (selectedFile.value) {
+      formData.append('profile', selectedFile.value);
     }
 
     try {

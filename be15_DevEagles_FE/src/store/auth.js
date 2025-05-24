@@ -17,6 +17,7 @@ export const useAuthStore = defineStore('auth', () => {
   const name = ref(null);
   const userThumbnailUrl = ref(null);
   const userStatus = ref(null);
+  const returnUser = ref(null);
 
   const isAuthenticated = computed(
     () =>
@@ -35,6 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
       userThumbnailUrl.value = payload.userThumbnailUrl || null;
       expirationTime.value = payload.exp * 1000;
       userStatus.value = payload.userStatus;
+      returnUser.value = payload.returnUser;
 
       localStorage.setItem('accessToken', at);
     } catch (e) {
@@ -48,6 +50,7 @@ export const useAuthStore = defineStore('auth', () => {
     name.value = null;
     userThumbnailUrl.value = null;
     expirationTime.value = null;
+    returnUser.value = null;
 
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -67,6 +70,7 @@ export const useAuthStore = defineStore('auth', () => {
     userThumbnailUrl,
     expirationTime,
     isAuthenticated,
+    returnUser,
     setAuth,
     clearAuth,
     initAuth,
