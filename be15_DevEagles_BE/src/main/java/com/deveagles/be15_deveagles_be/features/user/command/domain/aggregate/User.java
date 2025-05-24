@@ -83,6 +83,10 @@ public class User {
     this.deletedAt = deletedAt;
   }
 
+  public void returnUser() {
+    this.deletedAt = null;
+  }
+
   public void setEnabledUser(UserStatus userStatus) {
     this.userStatus = userStatus;
   }

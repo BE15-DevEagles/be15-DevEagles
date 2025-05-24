@@ -12,11 +12,13 @@ import java.util.Map;
 import java.util.Optional;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
@@ -50,12 +52,21 @@ public class JwtTokenProvider {
     Optional<User> findUser = userRepository.findUserByEmail(username);
     User user = findUser.get();
 
+    log.info("deletedAt before: " + user.getDeletedAt());
+    boolean isReturnUser = false;
+    if (user.getDeletedAt() != null) {
+      user.returnUser();
+      userRepository.save(user);
+      isReturnUser = true;
+    }
+
     Map<String, String> map = new HashMap<>();
     map.put("type", "access");
     map.put("name", user.getUserName());
     map.put("userId", user.getUserId().toString());
     map.put("userThumbnailUrl", user.getUserThumbnailUrl());
     map.put("userStatus", user.getUserStatus().toString());
+    map.put("returnUser", String.valueOf(isReturnUser));
 
     return Jwts.builder()
         .subject(username)
