@@ -50,30 +50,28 @@
             + 팀원 초대
           </button>
         </div>
-        <div
-          ref="memberList"
-          class="max-h-[200px] overflow-y-auto pr-1 border rounded-md"
-          @scroll="handleScroll"
-        >
+        <div class="max-h-[200px] overflow-y-auto pr-1 border rounded-md">
           <ul class="space-y-2 p-2">
             <li
               v-for="member in members"
-              :key="member.id"
-              class="flex justify-between items-center border-b border-gray-200 pb-1"
+              :key="member.userId"
+              class="flex justify-between items-center border-b border-gray-200 pb-2"
             >
-              <span>{{ member.name }}</span>
+              <div class="flex items-center gap-6">
+                <span class="text-base font-semibold text-gray-800 w-24">{{
+                  member.userName
+                }}</span>
+                <span class="text-sm text-gray-500">{{ member.email }}</span>
+              </div>
               <input
                 v-if="isTeamLeader"
                 v-model="selectedUserId"
                 type="radio"
-                :value="member.id"
+                :value="member.userId"
                 class="accent-[#257180]"
               />
             </li>
           </ul>
-          <div v-if="loadingMore" class="text-center text-sm text-gray-400 py-2">
-            불러오는 중...
-          </div>
         </div>
       </div>
 
@@ -97,13 +95,14 @@
 </template>
 
 <script setup>
-  import { ref, computed, onMounted } from 'vue';
+  import { computed, onMounted, ref } from 'vue';
   import { useRoute } from 'vue-router';
   import { useAuthStore } from '@/store/auth';
   import api from '@/api/axios';
   import BaseButton from '@/components/common/components/BaseButton.vue';
   import TeamMemberInviteModal from '@/features/team/components/TeamMemberInviteModal.vue';
   import UpdateTeamThumbnailModal from '@/features/team/components/UpdateTeamThumbnailModal.vue';
+  import { getTeamMembers } from '@/features/team/api/team';
 
   const route = useRoute();
   const teamId = computed(() => Number(route.params.teamId));
@@ -156,36 +155,16 @@
 
   function handleInvite(email) {
     console.log('✅ 초대 이메일:', email);
-    // TODO: 이메일로 초대 API 호출 추가
   }
 
   const selectedUserId = ref(null);
   const members = ref([]);
-  const page = ref(1);
-  const loadingMore = ref(false);
-  const memberList = ref(null);
 
-  function generateFakeMembers(count = 10) {
-    const offset = (page.value - 1) * count;
-    return Array.from({ length: count }, (_, i) => ({
-      id: offset + i + 1,
-      name: `${offset + i + 1}번 팀원`,
-    }));
-  }
-
-  function fetchMoreMembers() {
-    loadingMore.value = true;
-    setTimeout(() => {
-      members.value.push(...generateFakeMembers(10));
-      page.value++;
-      loadingMore.value = false;
-    }, 500);
-  }
-
-  function handleScroll(e) {
-    const el = e.target;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10 && !loadingMore.value) {
-      fetchMoreMembers();
+  async function fetchMembers() {
+    try {
+      members.value = await getTeamMembers(teamId.value);
+    } catch (e) {
+      console.error('팀원 불러오기 실패:', e);
     }
   }
 
@@ -194,7 +173,7 @@
     currentUserId.value = authStore.userId;
     if (!isNaN(teamId.value) && teamId.value > 0) {
       fetchTeamInfo(teamId.value);
-      fetchMoreMembers();
+      fetchMembers();
     }
   });
 </script>
