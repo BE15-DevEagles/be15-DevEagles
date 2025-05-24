@@ -32,7 +32,6 @@
 
   onMounted(async () => {
     try {
-      console.log('회원 정보 불러오기 중');
       const res = await mypage();
       if (res.data.success) {
         user.value = res.data.data;
@@ -49,12 +48,6 @@
   const handleEditUser = () => {
     showPasswordCheck.value = true;
   };
-
-  /*function handleEditUser() {
-    router.push({
-      path: '/mypage/edit',
-    });
-  }*/
 
   function handleChangePassword() {
     router.push('/user/password'); // 비밀번호 변경 라우트

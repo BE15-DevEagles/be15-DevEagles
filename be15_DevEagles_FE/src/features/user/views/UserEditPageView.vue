@@ -49,7 +49,6 @@
         originalUser.phoneNumber = u.phoneNumber || '';
       }
     } catch (e) {
-      alert('회원 정보 불러오기에 실패했어요 🥲');
       console.error(e);
     }
   });
@@ -109,10 +108,6 @@
       user.userName === originalUser.userName &&
       removeHyphenPhone(user.phoneNumber) === originalUser.phoneNumber;
 
-    if (isUnchanged) {
-      console.log('⚠ 변경된 값 없음 → 그래도 API 호출 시도');
-    }
-
     try {
       const formData = new FormData();
       const requestPayload = {
@@ -130,15 +125,9 @@
       if (user.profileImage instanceof File) {
         formData.append('profile', user.profileImage);
       }
-
-      console.log('[업데이트 요청 시작]', requestPayload);
-      const response = await updateUserInfo(formData);
-      console.log('[업데이트 완료]', response);
-
-      alert('회원 정보가 수정되었습니다.');
+      await updateUserInfo(formData);
       router.push('/mypage');
     } catch (e) {
-      alert('수정에 실패했어요 🥲');
       console.error('[업데이트 오류]', e);
     }
   };
