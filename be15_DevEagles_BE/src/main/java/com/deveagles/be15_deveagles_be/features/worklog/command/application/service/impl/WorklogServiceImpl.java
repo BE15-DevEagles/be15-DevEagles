@@ -173,7 +173,8 @@ public class WorklogServiceImpl implements WorklogService {
     validateTeamExists(teamId);
     validateTeamMemberExists(teamId, userId);
 
-    Pageable pageable = PageRequestUtil.createPageRequest(request.getPage(), request.getSize());
+    Pageable pageable =
+        PageRequestUtil.createPageRequest(request.getPage(), request.getSize(), request.getSort());
 
     Page<Worklog> myWorklogPage = worklogRepository.findByUserIdAndTeamId(userId, teamId, pageable);
 
@@ -209,7 +210,8 @@ public class WorklogServiceImpl implements WorklogService {
     validateTeamExists(request.getTeamId());
     validateTeamMemberExists(request.getTeamId(), userId);
     String teamName = teamCommandService.getTeamDetail(request.getTeamId()).getTeamName();
-    Pageable pageable = PageRequestUtil.createPageRequest(request.getPage(), request.getSize());
+    Pageable pageable =
+        PageRequestUtil.createPageRequest(request.getPage(), request.getSize(), request.getSort());
     Page<Worklog> worklogPage = worklogRepository.findByTeamId(request.getTeamId(), pageable);
     List<WorklogResponse> contents =
         worklogPage.getContent().stream()

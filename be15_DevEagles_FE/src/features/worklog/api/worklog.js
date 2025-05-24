@@ -7,3 +7,7 @@ export const fetchMyWorklogs = (url, searchRequest) => {
 export const searchWorklogs = params => {
   return api.post('/search/info', params);
 };
+
+export const generateSummary = request => {
+  return api.post('/summary', request);
+};
