@@ -2,6 +2,8 @@ package com.deveagles.be15_deveagles_be.features.chat.command.application.dto.re
 
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatMessage;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatMessage.MessageType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -13,6 +15,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ChatMessageResponse {
   private String id;
   private String chatroomId;
@@ -23,6 +26,8 @@ public class ChatMessageResponse {
   private Map<String, Object> metadata;
   private LocalDateTime createdAt;
   private LocalDateTime timestamp;
+
+  @JsonProperty("deleted")
   private boolean isDeleted;
 
   public static ChatMessageResponse from(ChatMessage message) {

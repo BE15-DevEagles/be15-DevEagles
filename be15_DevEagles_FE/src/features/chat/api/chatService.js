@@ -135,3 +135,20 @@ export function initializeChat() {
     console.error('채팅 초기화 실패:', error);
   }
 }
+
+// AI 채팅방 생성 또는 가져오기
+export async function createOrGetAiChatRoom(userId, aiName = '수리AI') {
+  try {
+    const response = await api.post('/chatrooms/ai', null, {
+      params: {
+        teamId: null, // AI 채팅방은 팀과 무관
+        userId,
+        name: aiName,
+      },
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('AI 채팅방 생성 실패:', error);
+    throw error;
+  }
+}

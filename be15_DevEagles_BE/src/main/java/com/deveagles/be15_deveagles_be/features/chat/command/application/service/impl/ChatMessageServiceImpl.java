@@ -56,12 +56,19 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             .findById(request.getChatroomId())
             .orElseThrow(() -> new ChatBusinessException(ChatErrorCode.CHAT_ROOM_NOT_FOUND));
 
-    boolean isParticipant =
-        chatRoom.getActiveParticipants().stream()
-            .anyMatch(participant -> participant.getUserId().equals(request.getSenderId()));
+    // AI 사용자에 대한 특별 처리
+    boolean isAiUser = "ai-assistant".equals(request.getSenderId());
+    boolean isAiChatRoom = chatRoom.getType() == ChatRoom.ChatRoomType.AI;
 
-    if (!isParticipant) {
-      throw new ChatBusinessException(ChatErrorCode.CHAT_ROOM_ACCESS_DENIED);
+    // AI 사용자가 AI 채팅방에서 메시지를 보내는 경우 권한 검증 생략
+    if (!isAiUser || !isAiChatRoom) {
+      boolean isParticipant =
+          chatRoom.getActiveParticipants().stream()
+              .anyMatch(participant -> participant.getUserId().equals(request.getSenderId()));
+
+      if (!isParticipant) {
+        throw new ChatBusinessException(ChatErrorCode.CHAT_ROOM_ACCESS_DENIED);
+      }
     }
 
     // UTC로 현재 시간 생성 (시간대 문제 해결)

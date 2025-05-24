@@ -5,7 +5,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Converter;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -44,9 +47,11 @@ public class UserMoodHistory {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "mood_history_id")
   private Long id;
 
   @Column(name = "user_id", nullable = false)
+  @Convert(converter = StringToLongConverter.class)
   private String userId;
 
   @Enumerated(EnumType.STRING)
@@ -160,5 +165,26 @@ public class UserMoodHistory {
     }
 
     return new ArrayList<>();
+  }
+
+  @Converter
+  public static class StringToLongConverter implements AttributeConverter<String, Long> {
+    @Override
+    public Long convertToDatabaseColumn(String attribute) {
+      if (attribute == null || attribute.isEmpty()) {
+        return null;
+      }
+      try {
+        return Long.parseLong(attribute);
+      } catch (NumberFormatException e) {
+        log.error("String을 Long으로 변환 실패: {}", attribute, e);
+        return null;
+      }
+    }
+
+    @Override
+    public String convertToEntityAttribute(Long dbData) {
+      return dbData != null ? dbData.toString() : null;
+    }
   }
 }

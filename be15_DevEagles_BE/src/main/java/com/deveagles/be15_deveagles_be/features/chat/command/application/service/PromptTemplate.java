@@ -15,8 +15,18 @@ public class PromptTemplate {
         userMessage);
   }
 
+  public static String getAiResponsePromptWithHistory(String chatHistory, String userMessage) {
+    return String.format(
+        "너는 우리 회사의 마스코트인 수리라는 이름의 AI 어시스턴트야. "
+            + "이전 대화 맥락을 참고해서 사용자의 메시지에 자연스럽고 도움이 되는 응답을 생성해줘. "
+            + "응답은 한국어로 50자에서 100자 사이로 간결하게 해줘. "
+            + "이전 대화 맥락: %s "
+            + "현재 사용자 메시지: %s",
+        chatHistory, userMessage);
+  }
+
   public static String getMoodQuestionPrompt() {
-    return "사용자의 기분과 감정 상태를 물어보는 질문을 1개만 생성해주세요. " + "질문은 짧고 친근하게, 다양한 감정 표현이 가능하도록 해주세요.";
+    return "사용자의 기분과 감정 상태를 물어보는 창의적인 질문을 1개만 생성해주세요. " + "질문은 짧고 친근하게, 다양한 감정 표현이 가능하도록 해주세요.";
   }
 
   private static final List<String> DEFAULT_AI_RESPONSES =
@@ -34,7 +44,7 @@ public class PromptTemplate {
           "오늘 아침 컨디션은 어떠세요?",
           "오늘 하루는 어떻게 시작하셨나요?",
           "지금 기분을 이모티콘으로 표현한다면 어떤 것일까요?",
-          "오늘 에너지는 1-10 사이라면 몇인가요?");
+          "오늘 에너지는 1-10 사이 중 몇인가요?");
 
   public static String getRandomDefaultResponse() {
     return DEFAULT_AI_RESPONSES.get(random.nextInt(DEFAULT_AI_RESPONSES.size()));

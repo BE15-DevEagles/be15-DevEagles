@@ -199,6 +199,29 @@ export function sendReadMessage(chatRoomId, messageId) {
   }
 }
 
+// AI 채팅 초기화 메시지 전송
+export function sendAiChatInit(chatRoomId) {
+  if (!stompClient || !stompClient.connected) {
+    console.error('웹소켓 연결이 없습니다. AI 초기화를 보낼 수 없습니다.');
+    return false;
+  }
+
+  try {
+    stompClient.send(
+      `/app/chat.ai.init`,
+      {},
+      JSON.stringify({
+        chatroomId: chatRoomId,
+      })
+    );
+    console.log(`AI 채팅 초기화 전송: 채팅방=${chatRoomId}`);
+    return true;
+  } catch (error) {
+    console.error('AI 초기화 전송 중 오류 발생:', error);
+    return false;
+  }
+}
+
 export function unsubscribe(destination) {
   if (subscriptions[destination] && subscriptions[destination].subscription) {
     subscriptions[destination].subscription.unsubscribe();
