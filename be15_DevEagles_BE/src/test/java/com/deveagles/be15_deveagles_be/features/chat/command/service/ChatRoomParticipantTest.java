@@ -6,13 +6,15 @@ import static org.mockito.Mockito.*;
 
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.ChatRoomResponse;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.impl.ChatRoomServiceImpl;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.util.ChatRoomHelper;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.util.ChatRoomValidator;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.util.ParticipantValidator;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.exception.ChatBusinessException;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.exception.ChatErrorCode;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.ChatRoomRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class ChatRoomParticipantTest {
 
   @Mock private ChatRoomRepository chatRoomRepository;
+  @Mock private ChatRoomValidator chatRoomValidator;
+  @Mock private ChatRoomHelper chatRoomHelper;
+  @Mock private ParticipantValidator participantValidator;
 
   @InjectMocks private ChatRoomServiceImpl chatRoomService;
 
@@ -47,8 +52,6 @@ public class ChatRoomParticipantTest {
             .build();
 
     testChatRoom.addParticipant(testUserId1);
-
-    // BeforeEach에서는 모킹을 제거하고 각 테스트에서 필요한 모킹을 설정
   }
 
   @Test
@@ -56,17 +59,21 @@ public class ChatRoomParticipantTest {
   void addParticipantSuccess() {
     // given
     String newUserId = testUserId2;
-    when(chatRoomRepository.findById(chatroomId)).thenReturn(Optional.of(testChatRoom));
-    when(chatRoomRepository.save(any(ChatRoom.class))).thenReturn(testChatRoom);
+    ChatRoomResponse mockResponse = createMockResponse();
+
+    when(chatRoomValidator.validateAndGetChatRoom(chatroomId)).thenReturn(testChatRoom);
+    doNothing().when(participantValidator).validateParticipantNotExists(testChatRoom, newUserId);
+    when(chatRoomHelper.executeAndSave(eq(testChatRoom), any(), any(ChatErrorCode.class)))
+        .thenReturn(mockResponse);
 
     // when
     ChatRoomResponse response = chatRoomService.addParticipantToChatRoom(chatroomId, newUserId);
 
     // then
     assertNotNull(response);
-    assertTrue(response.getParticipants().stream().anyMatch(p -> p.getUserId().equals(newUserId)));
-
-    verify(chatRoomRepository).save(any(ChatRoom.class));
+    verify(chatRoomValidator).validateAndGetChatRoom(chatroomId);
+    verify(participantValidator).validateParticipantNotExists(testChatRoom, newUserId);
+    verify(chatRoomHelper).executeAndSave(eq(testChatRoom), any(), any(ChatErrorCode.class));
   }
 
   @Test
@@ -74,7 +81,10 @@ public class ChatRoomParticipantTest {
   void addExistingParticipantFailure() {
     // given
     String existingUserId = testUserId1;
-    when(chatRoomRepository.findById(chatroomId)).thenReturn(Optional.of(testChatRoom));
+    when(chatRoomValidator.validateAndGetChatRoom(chatroomId)).thenReturn(testChatRoom);
+    doThrow(new ChatBusinessException(ChatErrorCode.PARTICIPANT_ALREADY_EXISTS))
+        .when(participantValidator)
+        .validateParticipantNotExists(testChatRoom, existingUserId);
 
     // when & then
     ChatBusinessException exception =
@@ -83,6 +93,8 @@ public class ChatRoomParticipantTest {
             () -> chatRoomService.addParticipantToChatRoom(chatroomId, existingUserId));
 
     assertEquals(ChatErrorCode.PARTICIPANT_ALREADY_EXISTS, exception.getErrorCode());
+    verify(chatRoomValidator).validateAndGetChatRoom(chatroomId);
+    verify(participantValidator).validateParticipantNotExists(testChatRoom, existingUserId);
   }
 
   @Test
@@ -90,19 +102,23 @@ public class ChatRoomParticipantTest {
   void removeParticipantSuccess() {
     // given
     String userId = testUserId1;
-    when(chatRoomRepository.findById(chatroomId)).thenReturn(Optional.of(testChatRoom));
-    when(chatRoomRepository.save(any(ChatRoom.class))).thenReturn(testChatRoom);
+    ChatRoom.Participant participant = testChatRoom.getParticipant(userId);
+    ChatRoomResponse mockResponse = createMockResponse();
+
+    when(chatRoomValidator.validateAndGetChatRoom(chatroomId)).thenReturn(testChatRoom);
+    when(participantValidator.validateAndGetParticipant(testChatRoom, userId))
+        .thenReturn(participant);
+    when(chatRoomHelper.executeAndSave(eq(testChatRoom), any(), any(ChatErrorCode.class)))
+        .thenReturn(mockResponse);
 
     // when
     ChatRoomResponse response = chatRoomService.removeParticipantFromChatRoom(chatroomId, userId);
 
     // then
     assertNotNull(response);
-    // 참가자 삭제는 soft delete이므로 목록에서 완전히 제거되지 않고 deletedAt 값만 설정됨
-    // 따라서 active 참가자 목록만 확인
-    assertFalse(response.getParticipants().stream().anyMatch(p -> p.getUserId().equals(userId)));
-
-    verify(chatRoomRepository).save(any(ChatRoom.class));
+    verify(chatRoomValidator).validateAndGetChatRoom(chatroomId);
+    verify(participantValidator).validateAndGetParticipant(testChatRoom, userId);
+    verify(chatRoomHelper).executeAndSave(eq(testChatRoom), any(), any(ChatErrorCode.class));
   }
 
   @Test
@@ -110,7 +126,10 @@ public class ChatRoomParticipantTest {
   void removeNonExistingParticipantFailure() {
     // given
     String nonExistingUserId = "nonExistingUser";
-    when(chatRoomRepository.findById(chatroomId)).thenReturn(Optional.of(testChatRoom));
+    when(chatRoomValidator.validateAndGetChatRoom(chatroomId)).thenReturn(testChatRoom);
+    doThrow(new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND))
+        .when(participantValidator)
+        .validateAndGetParticipant(testChatRoom, nonExistingUserId);
 
     // when & then
     ChatBusinessException exception =
@@ -119,6 +138,8 @@ public class ChatRoomParticipantTest {
             () -> chatRoomService.removeParticipantFromChatRoom(chatroomId, nonExistingUserId));
 
     assertEquals(ChatErrorCode.PARTICIPANT_NOT_FOUND, exception.getErrorCode());
+    verify(chatRoomValidator).validateAndGetChatRoom(chatroomId);
+    verify(participantValidator).validateAndGetParticipant(testChatRoom, nonExistingUserId);
   }
 
   @Test
@@ -126,25 +147,26 @@ public class ChatRoomParticipantTest {
   void toggleParticipantNotificationSuccess() {
     // given
     String userId = testUserId1;
-    boolean beforeToggle = testChatRoom.getParticipant(userId).isNotificationEnabled();
-    when(chatRoomRepository.findById(chatroomId)).thenReturn(Optional.of(testChatRoom));
-    when(chatRoomRepository.save(any(ChatRoom.class))).thenReturn(testChatRoom);
+    ChatRoom.Participant participant = testChatRoom.getParticipant(userId);
+    ChatRoomResponse mockResponse = createMockResponse();
+
+    when(chatRoomValidator.validateAndGetChatRoom(chatroomId)).thenReturn(testChatRoom);
+    when(participantValidator.validateAndGetParticipant(testChatRoom, userId))
+        .thenReturn(participant);
+    when(chatRoomHelper.executeParticipantOperationAndSave(
+            eq(testChatRoom), eq(participant), any(), any(ChatErrorCode.class)))
+        .thenReturn(mockResponse);
 
     // when
     ChatRoomResponse response = chatRoomService.toggleParticipantNotification(chatroomId, userId);
 
     // then
     assertNotNull(response);
-
-    // 참가자 찾기
-    Optional<ChatRoomResponse.ParticipantDto> participant =
-        response.getParticipants().stream().filter(p -> p.getUserId().equals(userId)).findFirst();
-
-    assertTrue(participant.isPresent());
-    // 알림 설정이 변경되었는지 확인 (이전과 반대 값이어야 함)
-    assertEquals(!beforeToggle, participant.get().isNotificationEnabled());
-
-    verify(chatRoomRepository).save(any(ChatRoom.class));
+    verify(chatRoomValidator).validateAndGetChatRoom(chatroomId);
+    verify(participantValidator).validateAndGetParticipant(testChatRoom, userId);
+    verify(chatRoomHelper)
+        .executeParticipantOperationAndSave(
+            eq(testChatRoom), eq(participant), any(), any(ChatErrorCode.class));
   }
 
   @Test
@@ -154,8 +176,8 @@ public class ChatRoomParticipantTest {
     String nonExistingChatroomId = "nonExistingChatroom";
     String userId = testUserId1;
 
-    // 존재하지 않는 채팅방에 대한 mock 설정
-    when(chatRoomRepository.findById(nonExistingChatroomId)).thenReturn(Optional.empty());
+    when(chatRoomValidator.validateAndGetChatRoom(nonExistingChatroomId))
+        .thenThrow(new ChatBusinessException(ChatErrorCode.CHAT_ROOM_NOT_FOUND));
 
     // when & then
     ChatBusinessException exception =
@@ -164,6 +186,7 @@ public class ChatRoomParticipantTest {
             () -> chatRoomService.addParticipantToChatRoom(nonExistingChatroomId, userId));
 
     assertEquals(ChatErrorCode.CHAT_ROOM_NOT_FOUND, exception.getErrorCode());
+    verify(chatRoomValidator).validateAndGetChatRoom(nonExistingChatroomId);
   }
 
   @Test
@@ -173,21 +196,8 @@ public class ChatRoomParticipantTest {
     String deletedChatroomId = "deletedChatroom";
     String userId = testUserId1;
 
-    // 삭제된 채팅방 mock 생성
-    ChatRoom deletedChatRoom =
-        ChatRoom.builder()
-            .id(deletedChatroomId)
-            .teamId("team1")
-            .name("Deleted Chat")
-            .type(ChatRoom.ChatRoomType.GROUP)
-            .isDefault(false)
-            .createdAt(LocalDateTime.now())
-            .deletedAt(LocalDateTime.now()) // deletedAt 설정
-            .participants(new ArrayList<>())
-            .build();
-
-    // 삭제된 채팅방에 대한 mock 설정
-    when(chatRoomRepository.findById(deletedChatroomId)).thenReturn(Optional.of(deletedChatRoom));
+    when(chatRoomValidator.validateAndGetChatRoom(deletedChatroomId))
+        .thenThrow(new ChatBusinessException(ChatErrorCode.CHAT_ROOM_NOT_FOUND));
 
     // when & then
     ChatBusinessException exception =
@@ -196,5 +206,19 @@ public class ChatRoomParticipantTest {
             () -> chatRoomService.addParticipantToChatRoom(deletedChatroomId, userId));
 
     assertEquals(ChatErrorCode.CHAT_ROOM_NOT_FOUND, exception.getErrorCode());
+    verify(chatRoomValidator).validateAndGetChatRoom(deletedChatroomId);
+  }
+
+  private ChatRoomResponse createMockResponse() {
+    return ChatRoomResponse.builder()
+        .id(chatroomId)
+        .teamId("team1")
+        .name("Test Chat")
+        .isDefault(false)
+        .type(ChatRoom.ChatRoomType.GROUP)
+        .participants(new ArrayList<>())
+        .createdAt(LocalDateTime.now())
+        .isDeleted(false)
+        .build();
   }
 }

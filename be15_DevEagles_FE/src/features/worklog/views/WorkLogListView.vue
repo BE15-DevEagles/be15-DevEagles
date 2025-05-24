@@ -1,8 +1,10 @@
 <script setup>
   import { ref, onMounted } from 'vue';
+  import { useRouter } from 'vue-router';
   import WorkLog from '@/features/worklog/components/WorkLog.vue';
   import Pagination from '@/components/common/components/Pagaination.vue';
   import { searchWorklogs, fetchMyWorklogs } from '@/features/worklog/api/worklog.js';
+
   const worklogs = ref([]);
   const searchType = ref('all');
   const searchInput = ref('');
@@ -15,9 +17,13 @@
   const worklogScope = ref('mine');
   const pageSize = 10;
   const teamId = 1;
+
+  const router = useRouter();
+
   function formatDateTime(date) {
     return date ? date + ' 00:00:00' : null;
   }
+
   function isSearchMode() {
     return (
       searchInput.value.trim() !== '' ||
@@ -25,10 +31,12 @@
       searchType.value !== 'all'
     );
   }
+
   function clearDates() {
     startDate.value = '';
     endDate.value = '';
   }
+
   function switchScope(scope) {
     if (worklogScope.value !== scope) {
       worklogScope.value = scope;
@@ -36,16 +44,23 @@
       fetchWorklogs();
     }
   }
+
   function triggerSearch() {
     currentPage.value = 1;
     fetchWorklogs();
   }
+
   function onPageChange(page) {
     if (page !== currentPage.value) {
       currentPage.value = page;
       fetchWorklogs();
     }
   }
+
+  function goToDetail(log) {
+    router.push({ name: 'WorklogDetail', params: { id: log.worklogId } });
+  }
+
   async function fetchWorklogs() {
     try {
       if (isSearchMode()) {
@@ -77,6 +92,7 @@
       console.error('업무일지 로드 실패:', error);
     }
   }
+
   onMounted(fetchWorklogs);
 </script>
 
@@ -193,7 +209,12 @@
           </tr>
         </thead>
         <tbody>
-          <WorkLog v-for="log in worklogs" :key="log.worklogId" :log="log" />
+          <WorkLog
+            v-for="log in worklogs"
+            :key="log.worklogId"
+            :log="log"
+            @click="goToDetail(log)"
+          />
           <tr v-if="worklogs.length === 0">
             <td colspan="3" class="text-center text-gray">조회된 업무일지가 없습니다.</td>
           </tr>

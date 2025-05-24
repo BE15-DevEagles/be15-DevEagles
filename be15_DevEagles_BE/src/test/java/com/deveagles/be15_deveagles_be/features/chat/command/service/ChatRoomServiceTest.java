@@ -6,6 +6,10 @@ import static org.mockito.Mockito.*;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.request.CreateChatRoomRequest;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatRoomService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.impl.ChatRoomServiceImpl;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.util.ChatRoomHelper;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.util.ChatRoomOperationHelper;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.util.ChatRoomValidator;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.util.ParticipantValidator;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom.ChatRoomType;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.exception.ChatBusinessException;
@@ -29,12 +33,22 @@ import org.mockito.quality.Strictness;
 class ChatRoomServiceTest {
 
   @Mock private ChatRoomRepository chatRoomRepository;
+  @Mock private ChatRoomValidator chatRoomValidator;
+  @Mock private ParticipantValidator participantValidator;
+  @Mock private ChatRoomHelper chatRoomHelper;
+  @Mock private ChatRoomOperationHelper operationHelper;
 
   private ChatRoomService chatRoomService;
 
   @BeforeEach
   void setUp() {
-    chatRoomService = new ChatRoomServiceImpl(chatRoomRepository);
+    chatRoomService =
+        new ChatRoomServiceImpl(
+            chatRoomRepository,
+            chatRoomValidator,
+            participantValidator,
+            chatRoomHelper,
+            operationHelper);
   }
 
   @Test
@@ -44,11 +58,10 @@ class ChatRoomServiceTest {
     String teamId = "team-123";
     String name = "기본 채팅방";
 
-    ChatRoom existingChatRoom = mock(ChatRoom.class);
-    when(existingChatRoom.isDefault()).thenReturn(true);
-
-    when(chatRoomRepository.findDefaultChatRoomByTeamId(teamId))
-        .thenReturn(Optional.of(existingChatRoom));
+    // validator에서 예외가 발생하도록 설정
+    doThrow(new ChatBusinessException(ChatErrorCode.DEFAULT_CHATROOM_ALREADY_EXISTS))
+        .when(chatRoomValidator)
+        .validateDefaultChatRoomNotExists(teamId);
 
     // when & then
     ChatBusinessException exception =
@@ -58,8 +71,8 @@ class ChatRoomServiceTest {
     assertEquals(ChatErrorCode.DEFAULT_CHATROOM_ALREADY_EXISTS.getCode(), exception.getCode());
     assertEquals(
         ChatErrorCode.DEFAULT_CHATROOM_ALREADY_EXISTS.getMessage(), exception.getOriginalMessage());
-    verify(chatRoomRepository, times(1)).findDefaultChatRoomByTeamId(teamId);
-    verify(chatRoomRepository, never()).save(any(ChatRoom.class));
+    verify(chatRoomValidator, times(1)).validateDefaultChatRoomNotExists(teamId);
+    verify(chatRoomHelper, never()).saveAndConvertToResponse(any(ChatRoom.class));
   }
 
   @Test
@@ -73,6 +86,11 @@ class ChatRoomServiceTest {
 
     when(chatRoomRepository.findById(chatRoomId)).thenReturn(Optional.of(defaultChatRoom));
 
+    // validator에서 예외가 발생하도록 설정
+    doThrow(new ChatBusinessException(ChatErrorCode.DEFAULT_CHATROOM_CANNOT_BE_DELETED))
+        .when(chatRoomValidator)
+        .validateNotDefaultChatRoom(defaultChatRoom);
+
     // when & then
     ChatBusinessException exception =
         assertThrows(ChatBusinessException.class, () -> chatRoomService.deleteChatRoom(chatRoomId));
@@ -82,8 +100,9 @@ class ChatRoomServiceTest {
         ChatErrorCode.DEFAULT_CHATROOM_CANNOT_BE_DELETED.getMessage(),
         exception.getOriginalMessage());
     verify(chatRoomRepository, times(1)).findById(chatRoomId);
+    verify(chatRoomValidator, times(1)).validateNotDefaultChatRoom(defaultChatRoom);
     verify(defaultChatRoom, never()).delete();
-    verify(chatRoomRepository, never()).save(any(ChatRoom.class));
+    verify(chatRoomHelper, never()).saveAndConvertToResponse(any(ChatRoom.class));
   }
 
   @Test
@@ -101,11 +120,10 @@ class ChatRoomServiceTest {
             .participantIds(new ArrayList<>())
             .build();
 
-    ChatRoom existingChatRoom = mock(ChatRoom.class);
-    when(existingChatRoom.isDefault()).thenReturn(true);
-
-    when(chatRoomRepository.findDefaultChatRoomByTeamId(teamId))
-        .thenReturn(Optional.of(existingChatRoom));
+    // validator에서 예외가 발생하도록 설정
+    doThrow(new ChatBusinessException(ChatErrorCode.DEFAULT_CHATROOM_ALREADY_EXISTS))
+        .when(chatRoomValidator)
+        .validateDefaultChatRoomNotExists(teamId);
 
     // when & then
     ChatBusinessException exception =
@@ -114,7 +132,7 @@ class ChatRoomServiceTest {
     assertEquals(ChatErrorCode.DEFAULT_CHATROOM_ALREADY_EXISTS.getCode(), exception.getCode());
     assertEquals(
         ChatErrorCode.DEFAULT_CHATROOM_ALREADY_EXISTS.getMessage(), exception.getOriginalMessage());
-    verify(chatRoomRepository, times(1)).findDefaultChatRoomByTeamId(teamId);
-    verify(chatRoomRepository, never()).save(any(ChatRoom.class));
+    verify(chatRoomValidator, times(1)).validateDefaultChatRoomNotExists(teamId);
+    verify(chatRoomHelper, never()).saveAndConvertToResponse(any(ChatRoom.class));
   }
 }

@@ -6,9 +6,8 @@ import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.respo
 import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.ChatroomReadSummaryResponse;
 import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.ChatroomReadSummaryResponse.UnreadByUserDto;
 import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.ChatroomResponse;
-import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.ChatroomResponse.LastMessageDto;
-import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.ChatroomResponse.ParticipantDto;
 import com.deveagles.be15_deveagles_be.features.chat.query.application.service.ChatroomQueryService;
+import com.deveagles.be15_deveagles_be.features.chat.query.application.service.util.ChatroomResponseConverter;
 import com.deveagles.be15_deveagles_be.features.chat.query.domain.repository.ChatroomQueryRepository;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatroomQueryServiceImpl implements ChatroomQueryService {
 
   private final ChatroomQueryRepository chatroomQueryRepository;
+  private final ChatroomResponseConverter chatroomResponseConverter;
 
   @Override
   public ChatroomListResponse getChatrooms(Long userId, String teamId, int page, int size) {
@@ -35,7 +35,9 @@ public class ChatroomQueryServiceImpl implements ChatroomQueryService {
     int totalCount = chatroomQueryRepository.countChatroomsByUserIdAndTeamId(userId, teamId);
 
     List<ChatroomResponse> chatroomResponses =
-        chatrooms.stream().map(this::convertToChatroomResponse).collect(Collectors.toList());
+        chatrooms.stream()
+            .map(chatroomResponseConverter::convertToChatroomResponse)
+            .collect(Collectors.toList());
 
     return ChatroomListResponse.of(chatroomResponses, totalCount);
   }
@@ -46,7 +48,7 @@ public class ChatroomQueryServiceImpl implements ChatroomQueryService {
 
     Optional<ChatRoom> chatroom = chatroomQueryRepository.findChatroomById(chatroomId);
 
-    return chatroom.map(this::convertToChatroomResponse).orElse(null);
+    return chatroom.map(chatroomResponseConverter::convertToChatroomResponse).orElse(null);
   }
 
   @Override
@@ -102,50 +104,6 @@ public class ChatroomQueryServiceImpl implements ChatroomQueryService {
         .readCount(totalParticipants - unreadByUsers.size())
         .totalParticipants(totalParticipants)
         .unreadByUsers(unreadByUsers)
-        .build();
-  }
-
-  private ChatroomResponse convertToChatroomResponse(ChatRoom chatRoom) {
-    List<ParticipantDto> participants = convertParticipants(chatRoom.getActiveParticipants());
-    LastMessageDto lastMessageDto = convertLastMessage(chatRoom.getLastMessage());
-
-    return ChatroomResponse.builder()
-        .id(chatRoom.getId())
-        .teamId(chatRoom.getTeamId())
-        .name(chatRoom.getName())
-        .isDefault(chatRoom.isDefault())
-        .type(chatRoom.getType().name())
-        .lastMessage(lastMessageDto)
-        .participants(participants)
-        .createdAt(chatRoom.getCreatedAt())
-        .isDeleted(chatRoom.isDeleted())
-        .build();
-  }
-
-  private List<ParticipantDto> convertParticipants(List<Participant> participants) {
-    return participants.stream().map(this::convertParticipantToDto).collect(Collectors.toList());
-  }
-
-  private ParticipantDto convertParticipantToDto(Participant participant) {
-    return ParticipantDto.builder()
-        .userId(participant.getUserId())
-        .lastReadMessageId(participant.getLastReadMessageId())
-        .notificationEnabled(participant.isNotificationEnabled())
-        .createdAt(participant.getCreatedAt())
-        .build();
-  }
-
-  private LastMessageDto convertLastMessage(ChatRoom.LastMessageInfo lastMessage) {
-    if (lastMessage == null) {
-      return null;
-    }
-
-    return LastMessageDto.builder()
-        .id(lastMessage.getId())
-        .content(lastMessage.getContent())
-        .senderId(lastMessage.getSenderId())
-        .senderName(lastMessage.getSenderName())
-        .sentAt(lastMessage.getSentAt())
         .build();
   }
 }

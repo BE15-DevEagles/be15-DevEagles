@@ -13,6 +13,7 @@ import com.deveagles.be15_deveagles_be.common.dto.Pagination;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.request.ChatMessageRequest;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatMessageService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatRoomService;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.EmotionAnalysisService;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatMessage.MessageType;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom.ChatRoomType;
@@ -25,9 +26,7 @@ import com.deveagles.be15_deveagles_be.features.chat.command.infrastructure.adap
 import com.deveagles.be15_deveagles_be.features.chat.command.infrastructure.adapters.HuggingFaceApiAdapter;
 import com.deveagles.be15_deveagles_be.features.chat.command.infrastructure.adapters.HuggingFaceApiAdapter.EmotionAnalysisResponse;
 import com.deveagles.be15_deveagles_be.features.chat.command.infrastructure.adapters.HuggingFaceApiAdapter.EmotionData;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -57,6 +56,8 @@ class MoodInquiryServiceImplTest {
   @Mock private GeminiApiAdapter geminiApiAdapter;
 
   @Mock private HuggingFaceApiAdapter huggingFaceApiAdapter;
+
+  @Mock private EmotionAnalysisService emotionAnalysisService;
 
   @InjectMocks private MoodInquiryServiceImpl moodInquiryService;
 
@@ -96,12 +97,8 @@ class MoodInquiryServiceImplTest {
   @DisplayName("사용자에게 기분 질문 생성 테스트")
   void generateMoodInquiry_returnsNewInquiry() {
     // Given
-    LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-    LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
-
-    when(moodHistoryRepository.existsByUserIdAndCreatedAtBetween(
-            TEST_USER_ID, todayStart, todayEnd))
-        .thenReturn(false);
+    when(moodHistoryRepository.findByUserIdAndCreatedAtBetween(eq(TEST_USER_ID), any(), any()))
+        .thenReturn(Arrays.asList()); // 빈 리스트 반환
 
     when(geminiApiAdapter.generateText(anyString())).thenReturn(geminiResponse);
 
@@ -124,20 +121,19 @@ class MoodInquiryServiceImplTest {
 
   @Test
   @DisplayName("같은 날 중복 기분 질문 방지 테스트")
-  void generateMoodInquiry_whenAlreadyAskedToday_returnsNull() {
+  void generateMoodInquiry_whenAlreadyAskedToday_throwsException() {
     // Given
-    LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-    LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
+    List<UserMoodHistory> existingInquiries = Arrays.asList(moodHistory);
+    when(moodHistoryRepository.findByUserIdAndCreatedAtBetween(eq(TEST_USER_ID), any(), any()))
+        .thenReturn(existingInquiries);
 
-    when(moodHistoryRepository.existsByUserIdAndCreatedAtBetween(
-            TEST_USER_ID, todayStart, todayEnd))
-        .thenReturn(true);
+    // When & Then
+    IllegalStateException exception =
+        assertThrows(
+            IllegalStateException.class,
+            () -> moodInquiryService.generateMoodInquiry(TEST_USER_ID));
 
-    // When
-    UserMoodHistory result = moodInquiryService.generateMoodInquiry(TEST_USER_ID);
-
-    // Then
-    assertNull(result);
+    assertEquals("이미 오늘 기분 질문이 생성되었습니다.", exception.getMessage());
     verify(geminiApiAdapter, never()).generateText(anyString());
     verify(moodHistoryRepository, never()).save(any(UserMoodHistory.class));
   }
@@ -149,10 +145,15 @@ class MoodInquiryServiceImplTest {
     String inquiryId = UUID.randomUUID().toString();
     String userAnswer = "오늘은 기분이 좋아요!";
 
+    EmotionAnalysisService.EmotionAnalysisResult mockAnalysisResult =
+        mock(EmotionAnalysisService.EmotionAnalysisResult.class);
+    when(mockAnalysisResult.isEmpty()).thenReturn(false);
+    when(mockAnalysisResult.getRawJson()).thenReturn("{\"emotion\": \"positive\"}");
+    when(mockAnalysisResult.getMoodType()).thenReturn(MoodType.JOY);
+    when(mockAnalysisResult.getIntensity()).thenReturn(80);
+
     when(moodHistoryRepository.findByInquiryId(inquiryId)).thenReturn(Optional.of(moodHistory));
-
-    when(huggingFaceApiAdapter.analyzeEmotion(userAnswer)).thenReturn(emotionResponse);
-
+    when(emotionAnalysisService.analyzeEmotion(userAnswer)).thenReturn(mockAnalysisResult);
     when(moodHistoryRepository.save(any(UserMoodHistory.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -164,8 +165,8 @@ class MoodInquiryServiceImplTest {
     assertEquals(userAnswer, result.getUserAnswer());
     assertNotNull(result.getAnsweredAt());
 
-    verify(huggingFaceApiAdapter, times(1)).analyzeEmotion(userAnswer);
-    verify(moodHistoryRepository, times(2)).save(any(UserMoodHistory.class));
+    verify(emotionAnalysisService, times(1)).analyzeEmotion(userAnswer);
+    verify(moodHistoryRepository, times(1)).save(any(UserMoodHistory.class));
   }
 
   @Test
@@ -193,15 +194,15 @@ class MoodInquiryServiceImplTest {
         .thenReturn(pagedResult);
 
     // 첫 번째 사용자에 대한 모킹
-    when(moodHistoryRepository.existsByUserIdAndCreatedAtBetween(eq("user1"), any(), any()))
-        .thenReturn(false);
+    when(moodHistoryRepository.findByUserIdAndCreatedAtBetween(eq("user1"), any(), any()))
+        .thenReturn(Arrays.asList()); // 빈 리스트
     when(chatRoomRepository.findByTeamIdAndUserIdAndTypeAndDeletedAtIsNull(
             isNull(), eq("user1"), eq(ChatRoomType.AI)))
         .thenReturn(Optional.of(chatRoom1));
 
     // 두 번째 사용자에 대한 모킹
-    when(moodHistoryRepository.existsByUserIdAndCreatedAtBetween(eq("user2"), any(), any()))
-        .thenReturn(false);
+    when(moodHistoryRepository.findByUserIdAndCreatedAtBetween(eq("user2"), any(), any()))
+        .thenReturn(Arrays.asList()); // 빈 리스트
     when(chatRoomRepository.findByTeamIdAndUserIdAndTypeAndDeletedAtIsNull(
             isNull(), eq("user2"), eq(ChatRoomType.AI)))
         .thenReturn(Optional.of(chatRoom2));
@@ -263,54 +264,79 @@ class MoodInquiryServiceImplTest {
                         && msg.getMessageType() == MessageType.TEXT));
   }
 
+  // 로그인 시 자동 기분 질문 기능 제거됨 - 해당 테스트 삭제
+
   @Test
-  @DisplayName("사용자 로그인 시 기분 질문 전송 테스트")
-  void sendMoodInquiryOnUserLogin_sendsInquiry() {
+  @DisplayName("오늘의 기분 조사 조회 테스트")
+  void getTodayMoodInquiry_returnsInquiry() {
     // Given
-    ChatRoom aiChatRoom = mock(ChatRoom.class);
-    when(aiChatRoom.getId()).thenReturn(TEST_CHATROOM_ID);
-    when(aiChatRoom.getUserId()).thenReturn(TEST_USER_ID);
-    when(aiChatRoom.getType()).thenReturn(ChatRoomType.AI);
-
-    when(moodHistoryRepository.existsByUserIdAndCreatedAtBetween(anyString(), any(), any()))
-        .thenReturn(false);
-
-    when(geminiApiAdapter.generateText(anyString())).thenReturn(geminiResponse);
-
-    UserMoodHistory newMoodHistory = mock(UserMoodHistory.class);
-    when(newMoodHistory.getInquiryId()).thenReturn("test-inquiry-id");
-    when(newMoodHistory.getInquiry()).thenReturn("오늘 기분이 어떠신가요?");
-
-    when(moodHistoryRepository.save(any(UserMoodHistory.class))).thenReturn(newMoodHistory);
-
-    when(chatRoomRepository.findByTeamIdAndUserIdAndTypeAndDeletedAtIsNull(
-            isNull(), eq(TEST_USER_ID), eq(ChatRoomType.AI)))
-        .thenReturn(Optional.of(aiChatRoom));
-
-    when(chatMessageService.sendMessage(any(ChatMessageRequest.class))).thenReturn(null);
+    List<UserMoodHistory> todayInquiries = Arrays.asList(moodHistory);
+    when(moodHistoryRepository.findByUserIdAndCreatedAtBetween(eq(TEST_USER_ID), any(), any()))
+        .thenReturn(todayInquiries);
 
     // When
-    moodInquiryService.sendMoodInquiryOnUserLogin(TEST_USER_ID);
+    Optional<UserMoodHistory> result = moodInquiryService.getTodayMoodInquiry(TEST_USER_ID);
 
     // Then
-    verify(moodHistoryRepository, times(1))
-        .existsByUserIdAndCreatedAtBetween(eq(TEST_USER_ID), any(), any());
-    verify(geminiApiAdapter, times(1)).generateText(anyString());
-    verify(moodHistoryRepository, times(1)).save(any(UserMoodHistory.class));
-    verify(chatRoomRepository, times(1))
-        .findByTeamIdAndUserIdAndTypeAndDeletedAtIsNull(
-            isNull(), eq(TEST_USER_ID), eq(ChatRoomType.AI));
-    verify(chatMessageService, times(1)).sendMessage(any(ChatMessageRequest.class));
+    assertTrue(result.isPresent());
+    assertEquals(moodHistory, result.get());
+  }
 
-    ArgumentCaptor<ChatMessageRequest> messageCaptor =
-        ArgumentCaptor.forClass(ChatMessageRequest.class);
-    verify(chatMessageService).sendMessage(messageCaptor.capture());
+  @Test
+  @DisplayName("오늘의 미답변 기분 조사 조회 테스트")
+  void getTodayUnansweredInquiry_returnsUnansweredInquiry() {
+    // Given
+    UserMoodHistory unansweredMoodHistory = mock(UserMoodHistory.class);
+    when(unansweredMoodHistory.getUserAnswer()).thenReturn(null);
 
-    ChatMessageRequest capturedMessage = messageCaptor.getValue();
-    assertEquals(AI_SENDER_ID, capturedMessage.getSenderId());
-    assertEquals(AI_SENDER_NAME, capturedMessage.getSenderName());
-    assertEquals(MessageType.TEXT, capturedMessage.getMessageType());
-    assertEquals("오늘 기분이 어떠신가요?", capturedMessage.getContent());
-    assertEquals("test-inquiry-id", capturedMessage.getMetadata().get("inquiryId"));
+    List<UserMoodHistory> todayInquiries = Arrays.asList(unansweredMoodHistory);
+    when(moodHistoryRepository.findByUserIdAndCreatedAtBetween(eq(TEST_USER_ID), any(), any()))
+        .thenReturn(todayInquiries);
+
+    // When
+    Optional<UserMoodHistory> result = moodInquiryService.getTodayUnansweredInquiry(TEST_USER_ID);
+
+    // Then
+    assertTrue(result.isPresent());
+    assertEquals(unansweredMoodHistory, result.get());
+  }
+
+  @Test
+  @DisplayName("미답변 기분 조사 ID 조회 테스트")
+  void getPendingInquiryId_returnsPendingId() {
+    // Given
+    String inquiryId = "test-inquiry-id";
+    UserMoodHistory unansweredMoodHistory = mock(UserMoodHistory.class);
+    when(unansweredMoodHistory.getUserAnswer()).thenReturn(null);
+    when(unansweredMoodHistory.getInquiryId()).thenReturn(inquiryId);
+
+    List<UserMoodHistory> todayInquiries = Arrays.asList(unansweredMoodHistory);
+    when(moodHistoryRepository.findByUserIdAndCreatedAtBetween(eq(TEST_USER_ID), any(), any()))
+        .thenReturn(todayInquiries);
+
+    // When
+    Optional<String> result = moodInquiryService.getPendingInquiryId(TEST_USER_ID);
+
+    // Then
+    assertTrue(result.isPresent());
+    assertEquals(inquiryId, result.get());
+  }
+
+  @Test
+  @DisplayName("기분 조사 대기 상태 확인 테스트")
+  void hasPendingMoodInquiry_returnsTrueWhenPending() {
+    // Given
+    UserMoodHistory unansweredMoodHistory = mock(UserMoodHistory.class);
+    when(unansweredMoodHistory.getUserAnswer()).thenReturn(null);
+
+    List<UserMoodHistory> todayInquiries = Arrays.asList(unansweredMoodHistory);
+    when(moodHistoryRepository.findByUserIdAndCreatedAtBetween(eq(TEST_USER_ID), any(), any()))
+        .thenReturn(todayInquiries);
+
+    // When
+    boolean result = moodInquiryService.hasPendingMoodInquiry(TEST_USER_ID);
+
+    // Then
+    assertTrue(result);
   }
 }

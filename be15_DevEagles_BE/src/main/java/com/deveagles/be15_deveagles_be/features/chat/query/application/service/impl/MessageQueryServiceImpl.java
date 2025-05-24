@@ -6,6 +6,7 @@ import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.respo
 import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.MessageReadStatusResponse;
 import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.MessageResponse;
 import com.deveagles.be15_deveagles_be.features.chat.query.application.service.MessageQueryService;
+import com.deveagles.be15_deveagles_be.features.chat.query.application.service.util.MessageResponseConverter;
 import com.deveagles.be15_deveagles_be.features.chat.query.domain.repository.MessageQueryRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ public class MessageQueryServiceImpl implements MessageQueryService {
   private final MessageQueryRepository messageQueryRepository;
   private final RedisTemplate<String, String> redisTemplate;
   private final ObjectMapper objectMapper;
+  private final MessageResponseConverter messageResponseConverter;
 
   private static final String REDIS_CHAT_MESSAGES_KEY_PREFIX = "chat:messages:";
   private static final int DEFAULT_REDIS_LOOKUP_LIMIT = 50;
@@ -90,7 +92,8 @@ public class MessageQueryServiceImpl implements MessageQueryService {
               try {
                 ChatMessageResponse message =
                     objectMapper.readValue(tuple.getValue(), ChatMessageResponse.class);
-                messagesFromRedis.add(convertToMessageResponse(message));
+                messagesFromRedis.add(
+                    messageResponseConverter.convertFromChatMessageResponse(message));
               } catch (Exception e) {
                 log.error(
                     "Redis 메시지 역직렬화 중 오류 발생: data={}, error={}", tuple.getValue(), e.getMessage());
@@ -124,7 +127,7 @@ public class MessageQueryServiceImpl implements MessageQueryService {
           messageQueryRepository.findMessages(chatroomId, before, mongoLimit);
       List<MessageResponse> messagesFromDbResponse =
           messagesFromDb.stream()
-              .map(this::convertChatMessageToMessageResponse)
+              .map(messageResponseConverter::convertFromChatMessage)
               .collect(Collectors.toList());
 
       // Redis와 MongoDB 결과 병합
@@ -216,34 +219,6 @@ public class MessageQueryServiceImpl implements MessageQueryService {
         .unreadCount(notReadByList.size())
         .readBy(readByList)
         .notReadBy(notReadByList)
-        .build();
-  }
-
-  private MessageResponse convertChatMessageToMessageResponse(ChatMessage message) {
-    return MessageResponse.builder()
-        .id(message.getId())
-        .chatroomId(message.getChatroomId())
-        .senderId(message.getSenderId())
-        .senderName(message.getSenderName())
-        .messageType(message.getMessageType().name())
-        .content(message.getContent())
-        .metadata(message.getMetadata())
-        .createdAt(message.getCreatedAt())
-        .deletedAt(message.getDeletedAt())
-        .build();
-  }
-
-  private MessageResponse convertToMessageResponse(ChatMessageResponse message) {
-    return MessageResponse.builder()
-        .id(message.getId())
-        .chatroomId(message.getChatroomId())
-        .senderId(message.getSenderId())
-        .senderName(message.getSenderName())
-        .messageType(message.getMessageType().name())
-        .content(message.getContent())
-        .metadata(message.getMetadata())
-        .createdAt(message.getCreatedAt())
-        .deletedAt(message.isDeleted() ? message.getCreatedAt() : null)
         .build();
   }
 }

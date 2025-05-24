@@ -5,7 +5,6 @@ import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.res
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.AiChatService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatMessageService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatRoomService;
-import com.deveagles.be15_deveagles_be.features.chat.command.application.service.impl.WebSocketMessageService;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom.ChatRoomType;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ReadReceipt;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.ChatRoomRepository;
@@ -23,21 +22,22 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 @Controller
 public class ChatWebSocketController {
 
   private static final Logger log = LoggerFactory.getLogger(ChatWebSocketController.class);
-
   private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
+  private static final String CHATROOM_READ_TOPIC_FORMAT = "/topic/chatroom.%s.read";
 
   private final ChatMessageService chatMessageService;
   private final ChatRoomService chatRoomService;
   private final AiChatService aiChatService;
   private final ChatRoomRepository chatRoomRepository;
   private final ReadReceiptRepository readReceiptRepository;
-  private final WebSocketMessageService webSocketMessageService;
+  private final SimpMessagingTemplate messagingTemplate;
   private final RedisTemplate<String, String> redisTemplate;
 
   public ChatWebSocketController(
@@ -46,14 +46,14 @@ public class ChatWebSocketController {
       AiChatService aiChatService,
       ChatRoomRepository chatRoomRepository,
       ReadReceiptRepository readReceiptRepository,
-      WebSocketMessageService webSocketMessageService,
+      SimpMessagingTemplate messagingTemplate,
       RedisTemplate<String, String> redisTemplate) {
     this.chatMessageService = chatMessageService;
     this.chatRoomService = chatRoomService;
     this.aiChatService = aiChatService;
     this.chatRoomRepository = chatRoomRepository;
     this.readReceiptRepository = readReceiptRepository;
-    this.webSocketMessageService = webSocketMessageService;
+    this.messagingTemplate = messagingTemplate;
     this.redisTemplate = redisTemplate;
   }
 
@@ -192,7 +192,9 @@ public class ChatWebSocketController {
 
     // 4. 읽음 상태 이벤트 전송
     ReadStatusResponse readStatusResponse = new ReadStatusResponse(chatroomId, userId, messageId);
-    webSocketMessageService.sendReadStatusEvent(chatroomId, readStatusResponse);
+    String destination = String.format(CHATROOM_READ_TOPIC_FORMAT, chatroomId);
+    messagingTemplate.convertAndSend(destination, readStatusResponse);
+    log.debug("읽음 상태 이벤트 전송 완료 -> 채팅방ID: {}", chatroomId);
   }
 
   @MessageMapping("/chat.ai.init")
