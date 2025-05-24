@@ -15,3 +15,9 @@ export const getTeamMembers = async teamId => {
   const response = await api.get(`/teams/${teamId}/members`);
   return response.data.data; // ApiResponse 래핑 구조에 맞춤
 };
+
+// 3. 팀원 초대
+export const inviteTeamMember = async (teamId, email) => {
+  const res = await api.post(`/team/members/${teamId}/invite`, { email });
+  return res.data.data; // "팀원 초대가 완료되었습니다."
+};
