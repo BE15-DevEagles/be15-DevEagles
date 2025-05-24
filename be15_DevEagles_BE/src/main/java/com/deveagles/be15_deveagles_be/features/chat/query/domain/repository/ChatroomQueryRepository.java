@@ -8,7 +8,11 @@ public interface ChatroomQueryRepository {
 
   List<ChatRoom> findChatrooms(String teamId, int page, int size);
 
+  List<ChatRoom> findChatroomsByUserIdAndTeamId(Long userId, String teamId, int page, int size);
+
   int countChatrooms(String teamId);
+
+  int countChatroomsByUserIdAndTeamId(Long userId, String teamId);
 
   Optional<ChatRoom> findChatroomById(String chatroomId);
 

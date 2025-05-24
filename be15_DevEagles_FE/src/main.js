@@ -1,16 +1,35 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import App from './App.vue';
 import router from './router';
+import Toast, { POSITION } from 'vue-toastification';
+import 'vue-toastification/dist/index.css';
+import './assets/css/toast.css';
+import App from './App.vue';
+import './assets/css/index.css';
 import { useAuthStore } from '@/store/auth.js';
 import { setupChat } from './features/chat/config/chatConfig';
-import './assets/css/index.css';
 
 const app = createApp(App);
 const pinia = createPinia();
 
+const toastOptions = {
+  position: POSITION.TOP_RIGHT,
+  timeout: 4000,
+  closeOnClick: true,
+  pauseOnFocusLoss: true,
+  pauseOnHover: true,
+  draggable: true,
+  draggablePercent: 0.6,
+  showCloseButtonOnHover: false,
+  hideProgressBar: false,
+  closeButton: 'button',
+  icon: true,
+  rtl: false,
+};
+
 app.use(pinia);
 app.use(router);
+app.use(Toast, toastOptions);
 
 app.mount('#app');
 

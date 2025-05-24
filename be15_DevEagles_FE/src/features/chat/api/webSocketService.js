@@ -1,5 +1,6 @@
-import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import { normalizeTimestamp } from '@/features/chat/utils/timeUtils.js';
 
 let stompClient = null;
 let subscriptions = {};
@@ -7,12 +8,11 @@ let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 
 export function initializeWebSocket() {
-  if (stompClient !== null && stompClient.connected) {
-    console.log('웹소켓이 이미 연결되어 있습니다.');
+  if (stompClient && stompClient.connected) {
+    console.log('이미 웹소켓이 연결되어 있습니다.');
     return;
   }
 
-  reconnectAttempts = 0;
   connectWebSocket();
 }
 
@@ -83,6 +83,32 @@ export function subscribeToChatRoom(chatRoomId, callback) {
     subscription: stompClient.subscribe(destination, message => {
       try {
         const receivedMessage = JSON.parse(message.body);
+
+        // 받은 메시지 구조를 상세히 로깅
+        console.log('[webSocketService] 받은 메시지 전체 구조:', {
+          ...receivedMessage,
+          hasTimestamp: !!receivedMessage.timestamp,
+          hasCreatedAt: !!receivedMessage.createdAt,
+          timestampValue: receivedMessage.timestamp,
+          createdAtValue: receivedMessage.createdAt,
+        });
+
+        // 타임스탬프 검증 및 자동 설정 (timeUtils 사용)
+        if (!receivedMessage.timestamp && !receivedMessage.createdAt) {
+          receivedMessage.timestamp = normalizeTimestamp(null);
+          console.warn('[webSocketService] 웹소켓 메시지에 타임스탬프 없어 현재 시간 설정:', {
+            messageId: receivedMessage.id,
+            newTimestamp: receivedMessage.timestamp,
+          });
+        } else if (!receivedMessage.timestamp && receivedMessage.createdAt) {
+          // createdAt이 있으면 timestamp로 복사
+          receivedMessage.timestamp = receivedMessage.createdAt;
+          console.log('[webSocketService] createdAt을 timestamp로 복사:', {
+            messageId: receivedMessage.id,
+            timestamp: receivedMessage.timestamp,
+          });
+        }
+
         callback(receivedMessage);
       } catch (error) {
         console.error('메시지 처리 중 오류 발생:', error);
@@ -94,6 +120,37 @@ export function subscribeToChatRoom(chatRoomId, callback) {
   console.log(`채팅방 ${chatRoomId} 구독 완료`);
 }
 
+export function subscribeToReadStatus(chatRoomId, callback) {
+  if (!stompClient || !stompClient.connected) {
+    console.log('웹소켓 연결이 없습니다. 연결을 시도합니다.');
+    initializeWebSocket();
+    // 웹소켓 연결이 완료될 때까지 구독 정보 저장
+    subscriptions[`chatroom.${chatRoomId}.read`] = { callback };
+    setTimeout(() => subscribeToReadStatus(chatRoomId, callback), 1000);
+    return;
+  }
+
+  const destination = `/topic/chatroom.${chatRoomId}.read`;
+
+  if (subscriptions[destination]) {
+    unsubscribe(destination);
+  }
+
+  subscriptions[destination] = {
+    subscription: stompClient.subscribe(destination, message => {
+      try {
+        const readStatus = JSON.parse(message.body);
+        callback(readStatus);
+      } catch (error) {
+        console.error('읽음 상태 처리 중 오류 발생:', error);
+      }
+    }),
+    callback,
+  };
+
+  console.log(`채팅방 ${chatRoomId} 읽음 상태 구독 완료`);
+}
+
 export function sendWebSocketMessage(chatRoomId, message, userId, userName) {
   if (!stompClient || !stompClient.connected) {
     console.error('웹소켓 연결이 없습니다. 메시지를 보낼 수 없습니다.');
@@ -101,20 +158,66 @@ export function sendWebSocketMessage(chatRoomId, message, userId, userName) {
   }
 
   try {
-    stompClient.send(
-      `/app/chat.send`,
-      {},
-      JSON.stringify({
-        chatroomId: chatRoomId,
-        content: message,
-        senderId: userId,
-        senderName: userName,
-        messageType: 'TEXT',
-      })
-    );
+    const messageData = {
+      chatroomId: chatRoomId,
+      content: message,
+      senderId: userId,
+      senderName: userName,
+      messageType: 'TEXT',
+    };
+
+    console.log('[webSocketService] 메시지 전송:', messageData.content?.substring(0, 30));
+
+    stompClient.send(`/app/chat.send`, {}, JSON.stringify(messageData));
     return true;
   } catch (error) {
     console.error('메시지 전송 중 오류 발생:', error);
+    return false;
+  }
+}
+
+export function sendReadMessage(chatRoomId, messageId) {
+  if (!stompClient || !stompClient.connected) {
+    console.error('웹소켓 연결이 없습니다. 읽음 상태를 보낼 수 없습니다.');
+    return false;
+  }
+
+  try {
+    stompClient.send(
+      `/app/chat.read`,
+      {},
+      JSON.stringify({
+        chatroomId: chatRoomId,
+        messageId: messageId,
+      })
+    );
+    console.log(`읽음 상태 전송: 채팅방=${chatRoomId}, 메시지=${messageId}`);
+    return true;
+  } catch (error) {
+    console.error('읽음 상태 전송 중 오류 발생:', error);
+    return false;
+  }
+}
+
+// AI 채팅 초기화 메시지 전송
+export function sendAiChatInit(chatRoomId) {
+  if (!stompClient || !stompClient.connected) {
+    console.error('웹소켓 연결이 없습니다. AI 초기화를 보낼 수 없습니다.');
+    return false;
+  }
+
+  try {
+    stompClient.send(
+      `/app/chat.ai.init`,
+      {},
+      JSON.stringify({
+        chatroomId: chatRoomId,
+      })
+    );
+    console.log(`AI 채팅 초기화 전송: 채팅방=${chatRoomId}`);
+    return true;
+  } catch (error) {
+    console.error('AI 초기화 전송 중 오류 발생:', error);
     return false;
   }
 }

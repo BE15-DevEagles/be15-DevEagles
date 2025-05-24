@@ -45,12 +45,7 @@ public class AiChatController {
   @PostMapping
   public ResponseEntity<ApiResponse<ChatRoomResponse>> createOrGetAiChatRoom(
       @RequestParam String userId,
-      @RequestParam(required = false, defaultValue = "AI 어시스턴트") String aiName,
-      @AuthenticationPrincipal CustomUser customUser) {
-
-    if (customUser != null && !String.valueOf(customUser.getUserId()).equals(userId)) {
-      userId = String.valueOf(customUser.getUserId());
-    }
+      @RequestParam(required = false, defaultValue = "수리AI") String aiName) {
 
     ChatRoomResponse chatRoom = chatRoomService.createOrGetPersonalAiChatRoom(null, userId, aiName);
 

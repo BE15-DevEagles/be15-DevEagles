@@ -61,7 +61,8 @@ public class SecurityConfig {
                         "/api/v1/users/duplcheck",
                         "/api/v1/auth/verify",
                         "/api/v1/summary",
-                        "api/v1/timecapsules")
+                        "api/v1/timecapsules",
+                        "api/v1/chat")
                     .permitAll()
                     .requestMatchers(
                         "/v3/api-docs/**",
@@ -69,7 +70,7 @@ public class SecurityConfig {
                         "/swagger-ui.html",
                         "/swagger-resources/**")
                     .permitAll()
-                    .requestMatchers("/ws/**")
+                    .requestMatchers("api/v1/ws/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

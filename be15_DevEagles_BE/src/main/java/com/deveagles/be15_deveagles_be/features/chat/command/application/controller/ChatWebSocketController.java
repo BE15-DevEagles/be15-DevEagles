@@ -7,8 +7,15 @@ import com.deveagles.be15_deveagles_be.features.chat.command.application.service
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatRoomService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.impl.WebSocketMessageService;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom.ChatRoomType;
+import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ReadReceipt;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.ChatRoomRepository;
+import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.ReadReceiptRepository;
 import java.security.Principal;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +30,13 @@ public class ChatWebSocketController {
 
   private static final Logger log = LoggerFactory.getLogger(ChatWebSocketController.class);
 
+  private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
+
   private final ChatMessageService chatMessageService;
   private final ChatRoomService chatRoomService;
   private final AiChatService aiChatService;
   private final ChatRoomRepository chatRoomRepository;
+  private final ReadReceiptRepository readReceiptRepository;
   private final WebSocketMessageService webSocketMessageService;
   private final RedisTemplate<String, String> redisTemplate;
 
@@ -35,12 +45,14 @@ public class ChatWebSocketController {
       ChatRoomService chatRoomService,
       AiChatService aiChatService,
       ChatRoomRepository chatRoomRepository,
+      ReadReceiptRepository readReceiptRepository,
       WebSocketMessageService webSocketMessageService,
       RedisTemplate<String, String> redisTemplate) {
     this.chatMessageService = chatMessageService;
     this.chatRoomService = chatRoomService;
     this.aiChatService = aiChatService;
     this.chatRoomRepository = chatRoomRepository;
+    this.readReceiptRepository = readReceiptRepository;
     this.webSocketMessageService = webSocketMessageService;
     this.redisTemplate = redisTemplate;
   }
@@ -101,6 +113,9 @@ public class ChatWebSocketController {
     String messageId = request.getMessageId();
 
     boolean redisSuccess = false;
+    boolean mongoSuccess = false;
+
+    // 1. Redis에 읽음 상태 저장 (빠른 응답용)
     try {
       String redisKey = "chat:last_read_message:" + chatroomId;
       redisTemplate.opsForHash().put(redisKey, userId, messageId);
@@ -119,26 +134,63 @@ public class ChatWebSocketController {
           e);
     }
 
-    // Redis 실패 시 MongoDB에 직접 저장 (폴백 메커니즘)
-    if (!redisSuccess) {
+    // 2. ReadReceipt MongoDB에 저장 (상세 이력용)
+    try {
+      // UTC로 현재 시간 생성 (시간대 문제 해결)
+      LocalDateTime utcTime = ZonedDateTime.now(ZoneOffset.UTC).toLocalDateTime();
+
+      ReadReceipt readReceipt =
+          ReadReceipt.builder()
+              .messageId(messageId)
+              .userId(userId)
+              .chatroomId(chatroomId)
+              .readAt(utcTime)
+              .build();
+
+      // 중복 체크 후 저장
+      Optional<ReadReceipt> existing =
+          readReceiptRepository.findByMessageIdAndUserId(messageId, userId);
+      if (existing.isEmpty()) {
+        readReceiptRepository.save(readReceipt);
+        log.info(
+            "ReadReceipt saved: userId={}, messageId={}, chatroomId={}",
+            userId,
+            messageId,
+            chatroomId);
+      } else {
+        log.debug("ReadReceipt already exists: userId={}, messageId={}", userId, messageId);
+      }
+      mongoSuccess = true;
+    } catch (Exception e) {
+      log.error(
+          "Failed to save ReadReceipt: userId={}, messageId={}, error={}",
+          userId,
+          messageId,
+          e.getMessage(),
+          e);
+    }
+
+    // 3. ChatRoom의 participant lastReadMessage 업데이트 (폴백)
+    if (!redisSuccess && !mongoSuccess) {
       try {
         chatRoomService.updateLastReadMessage(chatroomId, userId, messageId);
         log.info(
-            "User {} marked message {} as read in chatroom {} (MongoDB fallback)",
+            "User {} marked message {} as read in chatroom {} (ChatRoom fallback)",
             userId,
             messageId,
             chatroomId);
       } catch (Exception e) {
         log.error(
-            "Failed to update read status in MongoDB for user {} in chatroom {}: {}",
+            "Failed to update read status in ChatRoom for user {} in chatroom {}: {}",
             userId,
             chatroomId,
             e.getMessage(),
             e);
-        return; //  TODO : 두 방식 모두 실패하면 처리 중단 추후 카프카 연결결
+        return;
       }
     }
 
+    // 4. 읽음 상태 이벤트 전송
     ReadStatusResponse readStatusResponse = new ReadStatusResponse(chatroomId, userId, messageId);
     webSocketMessageService.sendReadStatusEvent(chatroomId, readStatusResponse);
   }

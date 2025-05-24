@@ -7,6 +7,8 @@ import lombok.Getter;
 
 @Getter
 public class FindInfoRequest {
+  private int page = 1;
+  private int size = 10;
   private Long teamId;
   private SearchType searchType; // ALL, AUTHOR, KEYWORD, DATE
   private String keyword; // 검색 키워드 (작성자 or 내용 관련)

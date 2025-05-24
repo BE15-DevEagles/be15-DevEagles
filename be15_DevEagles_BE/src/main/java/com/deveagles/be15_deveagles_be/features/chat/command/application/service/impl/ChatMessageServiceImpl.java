@@ -12,7 +12,9 @@ import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.C
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.ChatRoomRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -30,6 +32,8 @@ public class ChatMessageServiceImpl implements ChatMessageService {
   private final WebSocketMessageService webSocketMessageService;
   private final RedisTemplate<String, String> redisTemplate;
   private final ObjectMapper objectMapper;
+
+  private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
 
   public ChatMessageServiceImpl(
       ChatMessageRepository chatMessageRepository,
@@ -52,25 +56,23 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             .findById(request.getChatroomId())
             .orElseThrow(() -> new ChatBusinessException(ChatErrorCode.CHAT_ROOM_NOT_FOUND));
 
-    boolean isParticipant =
-        chatRoom.getActiveParticipants().stream()
-            .anyMatch(participant -> participant.getUserId().equals(request.getSenderId()));
+    // AI 사용자에 대한 특별 처리
+    boolean isAiUser = "ai-assistant".equals(request.getSenderId());
+    boolean isAiChatRoom = chatRoom.getType() == ChatRoom.ChatRoomType.AI;
 
-    if (!isParticipant) {
-      throw new ChatBusinessException(ChatErrorCode.CHAT_ROOM_ACCESS_DENIED);
+    // AI 사용자가 AI 채팅방에서 메시지를 보내는 경우 권한 검증 생략
+    if (!isAiUser || !isAiChatRoom) {
+      boolean isParticipant =
+          chatRoom.getActiveParticipants().stream()
+              .anyMatch(participant -> participant.getUserId().equals(request.getSenderId()));
+
+      if (!isParticipant) {
+        throw new ChatBusinessException(ChatErrorCode.CHAT_ROOM_ACCESS_DENIED);
+      }
     }
 
-    // TODO: 메시지 유형별 처리 로직 추가 - 파일 업로드 기능 구현 후 활성화
-    // switch (request.getMessageType()) {
-    //    case IMAGE:
-    //        validateImageMetadata(request.getMetadata());
-    //        break;
-    //    case FILE:
-    //        validateFileMetadata(request.getMetadata());
-    //        break;
-    //    default:
-    //        break;
-    // }
+    // UTC로 현재 시간 생성 (시간대 문제 해결)
+    LocalDateTime utcTime = ZonedDateTime.now(ZoneOffset.UTC).toLocalDateTime();
 
     ChatMessage message =
         ChatMessage.builder()
@@ -80,7 +82,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             .messageType(request.getMessageType())
             .content(request.getContent())
             .metadata(request.getMetadata())
-            .createdAt(LocalDateTime.now())
+            .createdAt(utcTime)
             .build();
 
     // MongoDB에 메시지 저장 (Primary Storage)
@@ -96,7 +98,10 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     try {
       String messageJson = objectMapper.writeValueAsString(response);
       String redisKey = "chat:messages:" + request.getChatroomId();
-      double score = savedMessage.getCreatedAt().toInstant(ZoneOffset.UTC).toEpochMilli();
+
+      // UTC 기준으로 score 계산 (시간대 문제 해결)
+      double score = savedMessage.getCreatedAt().atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
+
       redisTemplate.opsForZSet().add(redisKey, messageJson, score);
 
       Long size = redisTemplate.opsForZSet().size(redisKey);
@@ -104,7 +109,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         redisTemplate.opsForZSet().removeRange(redisKey, 0, 0);
       }
     } catch (Exception e) {
-
       System.err.println("Failed to cache message in Redis: " + e.getMessage());
     }
 

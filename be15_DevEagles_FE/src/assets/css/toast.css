@@ -1,0 +1,36 @@
+/* 토스트 알림 커스터마이즈 */
+.Vue-Toastification__toast {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-family: 'Pretendard', sans-serif;
+}
+
+.Vue-Toastification__toast--info {
+  background-color: var(--color-neutral-white);
+  color: var(--color-gray-700);
+  border-left: 4px solid var(--color-primary-300);
+}
+
+.Vue-Toastification__toast-body {
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.Vue-Toastification__progress-bar {
+  background-color: var(--color-primary-300);
+}
+
+.Vue-Toastification__close-button {
+  color: var(--color-gray-400);
+  opacity: 1;
+}
+
+.Vue-Toastification__close-button:hover {
+  color: var(--color-gray-600);
+}
+
+.Vue-Toastification__icon {
+  margin-right: 8px;
+  color: var(--color-primary-300);
+}
