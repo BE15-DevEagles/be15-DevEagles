@@ -29,6 +29,8 @@
   import BaseModal from '@/components/common/components/BaseModal.vue';
   import BaseButton from '@/components/common/components/BaseButton.vue';
   import defaultImage from '/assets/image/profile-default.png';
+  import { updateTeamThumbnail } from '@/features/team/api/team'; // ✅ API import
+  import { useRoute } from 'vue-router';
 
   const props = defineProps({
     modelValue: Boolean,
@@ -42,7 +44,10 @@
   const selectedFile = ref(null);
   const previewImage = ref(props.currentUrl || null);
 
-  // ✅ v-model 양방향 연결
+  const route = useRoute();
+  const teamId = Number(route.params.teamId); // ✅ teamId 추출
+
+  // v-model 동기화
   watch(
     () => props.modelValue,
     val => {
@@ -74,9 +79,21 @@
     selectedFile.value = null;
   };
 
-  const submit = () => {
-    if (!selectedFile.value) return;
-    emit('submit', selectedFile.value);
-    modalVisible.value = false; // 모달 닫기
+  const submit = async () => {
+    if (!selectedFile.value) {
+      alert('이미지를 선택해주세요.');
+      return;
+    }
+
+    try {
+      await updateTeamThumbnail(teamId, selectedFile.value); // ✅ API 호출
+      emit('submit'); // 부모에서 fetchTeamInfo 호출됨
+      emit('update:modelValue', false); // 모달 닫기
+      alert('팀 썸네일이 변경되었습니다.');
+      window.location.reload();
+    } catch (err) {
+      alert('썸네일 변경에 실패했습니다.');
+      console.error(err);
+    }
   };
 </script>

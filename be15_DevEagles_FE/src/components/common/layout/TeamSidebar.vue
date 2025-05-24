@@ -77,10 +77,12 @@
 
 <script setup>
   import { ref, onMounted, watch } from 'vue';
+  import { useRouter } from 'vue-router';
   import { useTeamStore } from '@/store/team';
   import { useChatStore } from '@/store/chat';
   import CreateTeamModal from '@/features/team/components/CreateTeamModal.vue';
 
+  const router = useRouter(); // ✅ router 인스턴스
   const teamStore = useTeamStore();
   const chatStore = useChatStore();
 
@@ -91,9 +93,10 @@
     await teamStore.fetchTeams();
   });
 
-  // 팀 전환 처리
+  // 팀 전환 처리 + 홈 이동
   function switchTeam(teamId) {
     teamStore.setCurrentTeam(teamId);
+    router.push('/'); // ✅ 홈 페이지로 이동
   }
 
   // 팀 변경 감지 및 관련 데이터 갱신
