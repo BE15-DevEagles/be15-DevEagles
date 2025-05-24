@@ -3,6 +3,7 @@ import {
   subscribeToChatRoom,
   subscribeToReadStatus,
   sendReadMessage,
+  sendAiChatInit,
   unsubscribe,
   isWebSocketConnected,
 } from '@/features/chat/api/webSocketService.js';
@@ -121,6 +122,25 @@ export function useChatWebSocket() {
     }
   };
 
+  // AI 채팅 초기화
+  const initializeAiChat = chatRoomId => {
+    if (!chatRoomId) {
+      console.warn('[useChatWebSocket] AI 초기화 실패 - 채팅방 ID 없음');
+      return false;
+    }
+
+    try {
+      const success = sendAiChatInit(chatRoomId);
+      if (success) {
+        console.log('[useChatWebSocket] AI 채팅 초기화 성공:', chatRoomId);
+      }
+      return success;
+    } catch (error) {
+      console.error('[useChatWebSocket] AI 초기화 실패:', error);
+      return false;
+    }
+  };
+
   // 컴포넌트 정리
   onUnmounted(() => {
     unsubscribeFromChat();
@@ -134,5 +154,6 @@ export function useChatWebSocket() {
     markMessageAsRead,
     markLatestMessageAsRead,
     updateConnectionStatus,
+    initializeAiChat,
   };
 }
