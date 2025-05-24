@@ -21,3 +21,9 @@ export const inviteTeamMember = async (teamId, email) => {
   const res = await api.post(`/team/members/${teamId}/invite`, { email });
   return res.data.data; // "팀원 초대가 완료되었습니다."
 };
+
+// 4. 팀원 추방
+export const fireTeamMember = async (teamId, email) => {
+  const res = await api.post(`/team/members/${teamId}/fire`, { email });
+  return res.data.data; // "팀원 추방이 완료되었습니다."
+};
