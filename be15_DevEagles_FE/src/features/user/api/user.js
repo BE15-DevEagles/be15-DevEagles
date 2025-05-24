@@ -40,6 +40,12 @@ export const logout = () => api.post(`/auth/logout`);
 
 export const validUserStatus = () => api.post(`/auth/valid`);
 
+export const findUserId = params => api.post(`/auth/findid`, params);
+
+export const sendAuth = params => api.post(`/auth/sendauth`, params);
+
+export const verifyEmailCode = params => api.post(`/auth/verify`, params);
+
 export const signUp = formData =>
   api.post(`/users`, formData, {
     headers: {
@@ -48,10 +54,6 @@ export const signUp = formData =>
   });
 
 export const checkDuplicate = params => api.post(`/users/duplcheck`, params);
-
-export const sendAuth = params => api.post(`/auth/sendauth`, params);
-
-export const verifyEmailCode = params => api.post(`/auth/verify`, params);
 
 export const mypage = () => api.get(`/users/me`);
 

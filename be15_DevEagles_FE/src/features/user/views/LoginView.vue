@@ -20,9 +20,9 @@
       />
 
       <div class="login-links">
-        <a href="#">아이디 찾기</a>
+        <a href="#" @click.prevent="showFindIdModal = true">아이디 찾기</a>
         <span>|</span>
-        <a href="#">비밀번호 찾기</a>
+        <a href="#" @click.prevent="showFindPwModal = true">비밀번호 찾기</a>
       </div>
 
       <div class="login-buttons">
@@ -51,6 +51,28 @@
       <BaseButton type="primary" @click="router.push('/')">확인</BaseButton>
     </template>
   </BaseModal>
+
+  <FindIdModal v-model="showFindIdModal" @submit="onFindIdSubmit" />
+
+  <BaseModal v-model="showFindIdResModal" title="">
+    <div class="modal-body center-content">
+      <template v-if="isFound">
+        <p>
+          <strong>회원님의 아이디는</strong><br />
+          {{ foundUserId }} <strong>입니다.</strong>
+        </p>
+      </template>
+      <template v-else>
+        <p>
+          존재하지 않는 회원정보입니다.<br />
+          확인 후 다시 입력해주세요.
+        </p>
+      </template>
+    </div>
+    <template #footer>
+      <BaseButton type="primary" @click="showFindIdResModal = false">확인</BaseButton>
+    </template>
+  </BaseModal>
 </template>
 
 <script setup>
@@ -59,10 +81,11 @@
   import BaseInput from '@/components/common/components/BaseForm.vue';
   import BaseButton from '@/components/common/components/BaseButton.vue';
   import { useAuthStore } from '@/store/auth.js';
-  import { login, validUserStatus } from '@/features/user/api/user.js';
+  import { findUserId, login, sendAuth, validUserStatus } from '@/features/user/api/user.js';
   import Logo from '/assets/image/logo-goody-with-text.png';
   import BaseModal from '@/components/common/components/BaseModal.vue';
   import { setupChat } from '@/features/chat/config/chatConfig.js';
+  import FindIdModal from '@/features/user/components/FindIdModal.vue';
 
   const router = useRouter();
   const authStore = useAuthStore();
@@ -75,6 +98,29 @@
   const shake = ref(false); // 🔥 shake 트리거
   const showVerifyModal = ref(false);
   const showRecoverModal = ref(false);
+  const showFindIdModal = ref(false);
+  const showFindPwModal = ref(false);
+  const showFindIdResModal = ref(false);
+
+  const isFound = ref(false);
+  const foundUserId = ref('');
+
+  const onFindIdSubmit = async ({ userName, phoneNumber }) => {
+    try {
+      const res = await findUserId({ userName, phoneNumber });
+      showFindIdModal.value = false;
+      if (res.data.success && res.data.data) {
+        foundUserId.value = res.data.data.email;
+        isFound.value = true;
+      } else {
+        isFound.value = false;
+      }
+      showFindIdResModal.value = true;
+    } catch (e) {
+      isFound.value = false;
+      showFindIdResModal.value = true;
+    }
+  };
 
   const fetchUser = async () => {
     try {
@@ -109,7 +155,10 @@
     }
   };
 
-  const goVerifyEmail = () => {};
+  const goVerifyEmail = async () => {
+    showVerifyModal.value = false;
+    await sendAuth({ email: params.value.username });
+  };
 
   const goToSignup = () => {
     router.push('/signup');
