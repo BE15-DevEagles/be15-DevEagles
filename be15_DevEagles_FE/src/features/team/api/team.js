@@ -27,3 +27,10 @@ export const fireTeamMember = async (teamId, email) => {
   const res = await api.post(`/team/members/${teamId}/fire`, { email });
   return res.data.data; // "팀원 추방이 완료되었습니다."
 };
+
+// 5. 팀장 권한 양도
+// 5. 팀장 권한 양도
+export const transferTeamLeader = async (teamId, email) => {
+  const res = await api.patch(`/team/members/${teamId}/transfer`, { email });
+  return res.data.data; // "팀장 권한이 성공적으로 양도되었습니다."
+};

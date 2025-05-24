@@ -81,7 +81,9 @@
       <div class="p-4 border-t border-gray-100">
         <div v-if="isTeamLeader" class="flex gap-2 justify-end mb-3">
           <BaseButton type="secondary" size="sm" @click="handleFireMember">추방</BaseButton>
-          <BaseButton type="secondary" size="sm">팀장 양도</BaseButton>
+          <BaseButton type="secondary" size="sm" @click="handleTransferLeadership"
+            >팀장 양도</BaseButton
+          >
         </div>
       </div>
     </div>
@@ -104,7 +106,7 @@
   import BaseButton from '@/components/common/components/BaseButton.vue';
   import TeamMemberInviteModal from '@/features/team/components/TeamMemberInviteModal.vue';
   import UpdateTeamThumbnailModal from '@/features/team/components/UpdateTeamThumbnailModal.vue';
-  import { getTeamMembers, fireTeamMember } from '@/features/team/api/team';
+  import { getTeamMembers, fireTeamMember, transferTeamLeader } from '@/features/team/api/team';
 
   const route = useRoute();
   const teamId = computed(() => Number(route.params.teamId));
@@ -197,6 +199,31 @@
       selectedUserId.value = null;
     } catch (err) {
       const message = err?.response?.data?.message || '팀원 추방 중 오류가 발생했습니다.';
+      alert(message);
+    }
+  }
+
+  async function handleTransferLeadership() {
+    if (!selectedUserId.value) {
+      alert('양도할 팀원을 선택해주세요.');
+      return;
+    }
+
+    const selected = members.value.find(m => m.userId === selectedUserId.value);
+    if (!selected) {
+      alert('유효하지 않은 팀원입니다.');
+      return;
+    }
+
+    if (!confirm(`${selected.userName}님에게 팀장을 양도하시겠습니까?`)) return;
+
+    try {
+      await transferTeamLeader(teamId.value, selected.email);
+      alert('팀장 권한이 양도되었습니다.');
+      await fetchTeamInfo(teamId.value);
+      selectedUserId.value = null;
+    } catch (err) {
+      const message = err?.response?.data?.message || '팀장 양도 중 오류가 발생했습니다.';
       alert(message);
     }
   }
