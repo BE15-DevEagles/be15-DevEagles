@@ -56,8 +56,9 @@ export function useAiChat() {
         return null;
       }
     } catch (err) {
-      error.value = '기분 질문 생성 실패';
+      error.value = '기분 질문을 생성할 수 없습니다. 잠시 후 다시 시도해 주세요.';
       console.error('[useAiChat] 기분 질문 실패:', err);
+      setAiThinking(false); // AI 상태도 해제
       throw err;
     } finally {
       isProcessingMood.value = false;
@@ -77,8 +78,9 @@ export function useAiChat() {
 
       return result;
     } catch (err) {
-      error.value = '기분 답변 저장 실패';
+      error.value = '답변을 저장할 수 없습니다. 네트워크를 확인해 주세요.';
       console.error('[useAiChat] 기분 답변 실패:', err);
+      setAiThinking(false); // AI 상태도 해제
       throw err;
     } finally {
       isProcessingMood.value = false;
@@ -130,6 +132,9 @@ export function useAiChat() {
         }
       } catch (err) {
         console.error('[useAiChat] 기분 답변 처리 오류:', err);
+        error.value = 'AI 응답을 처리할 수 없습니다. 잠시 후 다시 시도해 주세요.';
+        setAiThinking(false); // 실패시 AI 상태 해제
+        return false;
       }
     }
 
