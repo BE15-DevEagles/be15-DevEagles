@@ -2,30 +2,33 @@
   <div class="profile-upload">
     <div class="profile-preview-wrapper">
       <div class="profile-preview" @click="triggerFileInput">
-        <img :src="previewImage || defaultImage" alt="프로필 이미지" class="profile-img" />
-        <div class="upload-overlay">이미지 등록</div>
+        <img :src="previewImage || defaultImg" alt="프로필 이미지" class="profile-img" />
+        <div class="upload-overlay">{{ label }}</div>
       </div>
-      <button v-if="previewImage" class="remove-image" @click.stop="removeImage">&times;</button>
+      <button
+        v-if="previewImage && !previewImage.includes('profile-default.png')"
+        class="remove-image"
+        @click.stop="removeImage"
+      >
+        &times;
+      </button>
     </div>
-    <input
-      id="profile"
-      ref="fileInput"
-      type="file"
-      accept="image/*"
-      hidden
-      @change="handleImageUpload"
-    />
+    <input ref="fileInput" type="file" accept="image/*" hidden @change="handleImageUpload" />
   </div>
 </template>
 
 <script setup>
-  import { ref, defineEmits, defineProps } from 'vue';
-  import defaultImage from '/assets/image/profile-default.png';
+  import { ref, watch, defineProps, defineEmits } from 'vue';
 
   const props = defineProps({
-    modelValue: {
+    modelValue: String,
+    label: {
       type: String,
-      default: '',
+      default: '이미지 등록',
+    },
+    defaultImage: {
+      type: String,
+      default: '/assets/image/profile-default.png',
     },
   });
 
@@ -33,6 +36,15 @@
 
   const fileInput = ref(null);
   const previewImage = ref(props.modelValue);
+  const defaultImg = props.defaultImage;
+
+  watch(
+    () => props.modelValue,
+    newVal => {
+      previewImage.value = newVal;
+    },
+    { immediate: true }
+  );
 
   const triggerFileInput = () => {
     fileInput.value?.click();

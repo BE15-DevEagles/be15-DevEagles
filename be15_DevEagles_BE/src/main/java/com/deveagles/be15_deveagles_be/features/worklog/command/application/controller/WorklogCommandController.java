@@ -58,7 +58,6 @@ public class WorklogCommandController {
   public ResponseEntity<ApiResponse<WorklogDetailResponse>> getWorklog(
       @PathVariable Long worklogId, @AuthenticationPrincipal CustomUser customUser) {
     Long userId = customUser.getUserId();
-    System.out.println("ASDFASDFASDF");
     WorklogDetailResponse response = worklogService.getWorklogById(worklogId, userId);
 
     return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(response));
