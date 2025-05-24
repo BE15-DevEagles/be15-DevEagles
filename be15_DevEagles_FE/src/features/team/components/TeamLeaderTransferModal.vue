@@ -1,14 +1,12 @@
 <template>
   <Teleport to="body">
-    <!-- 팀원 초대 메인 모달 -->
-    <BaseModal v-model="isOpen" title="팀원 초대">
-      <form @submit.prevent="handleSubmit">
-        <BaseForm v-model="email" label="팀원 이메일" />
-      </form>
+    <!-- 팀장 양도 확인 모달 -->
+    <BaseModal v-model="isOpen" title="팀장 양도 확인">
+      <p class="modal-text">선택한 팀원에게 팀장 권한을 양도하시겠습니까?</p>
 
       <template #footer>
         <BaseButton type="error" @click="closeModal">취소</BaseButton>
-        <BaseButton type="primary" :loading="loading" @click="handleSubmit">초대</BaseButton>
+        <BaseButton type="primary" :loading="loading" @click="handleSubmit">확인</BaseButton>
       </template>
     </BaseModal>
 
@@ -31,16 +29,13 @@
 <script setup>
   import { ref, computed } from 'vue';
   import BaseModal from '@/components/common/components/BaseModal.vue';
-  import BaseForm from '@/components/common/components/BaseForm.vue';
   import BaseButton from '@/components/common/components/BaseButton.vue';
-  import api from '@/api/axios';
-  import { useRoute } from 'vue-router';
+  import { transferTeamLeader } from '@/features/team/api/team';
 
   const props = defineProps({
-    modelValue: {
-      type: Boolean,
-      required: true,
-    },
+    modelValue: { type: Boolean, required: true },
+    teamId: { type: Number, required: true },
+    email: { type: String, required: true }, // 선택된 팀원 이메일
   });
 
   const emit = defineEmits(['update:modelValue', 'success', 'fail']);
@@ -50,21 +45,14 @@
     set: val => emit('update:modelValue', val),
   });
 
-  const email = ref('');
   const loading = ref(false);
-
-  // 상태 모달
   const showStatusModal = ref(false);
   const modalTitle = ref('');
   const modalMessage = ref('');
   const isError = ref(false);
 
-  const route = useRoute();
-  const teamId = computed(() => Number(route.params.teamId));
-
   const closeModal = () => {
     isOpen.value = false;
-    email.value = '';
   };
 
   const closeStatusModal = () => {
@@ -76,27 +64,18 @@
   };
 
   const handleSubmit = async () => {
-    if (!email.value.trim()) {
-      isError.value = true;
-      modalTitle.value = '입력 오류';
-      modalMessage.value = '팀원 이메일을 입력해주세요.';
-      showStatusModal.value = true;
-      return;
-    }
-
     loading.value = true;
 
     try {
-      await api.post(`/team/members/${teamId.value}/invite`, { email: email.value });
+      await transferTeamLeader(props.teamId, props.email);
 
       isError.value = false;
-      modalTitle.value = '초대 완료';
-      modalMessage.value = '팀원이 초대되었습니다.';
+      modalTitle.value = '양도 완료';
+      modalMessage.value = '팀장 권한이 성공적으로 양도되었습니다.';
     } catch (err) {
       isError.value = true;
-      modalTitle.value = '초대 실패';
-      modalMessage.value =
-        err.response?.data?.message || '팀원 초대에 실패했습니다. 다시 시도해주세요.';
+      modalTitle.value = '양도 실패';
+      modalMessage.value = err.response?.data?.message || '팀장 양도 중 문제가 발생했습니다.';
       emit('fail', modalMessage.value);
     } finally {
       loading.value = false;

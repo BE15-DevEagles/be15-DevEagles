@@ -1,14 +1,12 @@
 <template>
   <Teleport to="body">
-    <!-- 팀원 초대 메인 모달 -->
-    <BaseModal v-model="isOpen" title="팀원 초대">
-      <form @submit.prevent="handleSubmit">
-        <BaseForm v-model="email" label="팀원 이메일" />
-      </form>
+    <!-- 팀 탈퇴 확인 모달 -->
+    <BaseModal v-model="isOpen" title="팀 탈퇴 확인">
+      <p class="modal-text">정말로 이 팀에서 탈퇴하시겠습니까?</p>
 
       <template #footer>
         <BaseButton type="error" @click="closeModal">취소</BaseButton>
-        <BaseButton type="primary" :loading="loading" @click="handleSubmit">초대</BaseButton>
+        <BaseButton type="primary" :loading="loading" @click="handleWithdraw">확인</BaseButton>
       </template>
     </BaseModal>
 
@@ -19,7 +17,7 @@
       </p>
       <template #footer>
         <div class="modal-footer-buttons">
-          <BaseButton :type="isError ? 'error' : 'primary'" @click="closeStatusModal">
+          <BaseButton :type="isError ? 'error' : 'primary'" @click="handleFinalConfirm">
             확인
           </BaseButton>
         </div>
@@ -31,16 +29,12 @@
 <script setup>
   import { ref, computed } from 'vue';
   import BaseModal from '@/components/common/components/BaseModal.vue';
-  import BaseForm from '@/components/common/components/BaseForm.vue';
   import BaseButton from '@/components/common/components/BaseButton.vue';
-  import api from '@/api/axios';
-  import { useRoute } from 'vue-router';
+  import { withdrawTeam } from '@/features/team/api/team';
 
   const props = defineProps({
-    modelValue: {
-      type: Boolean,
-      required: true,
-    },
+    modelValue: { type: Boolean, required: true },
+    teamId: { type: Number, required: true },
   });
 
   const emit = defineEmits(['update:modelValue', 'success', 'fail']);
@@ -50,56 +44,41 @@
     set: val => emit('update:modelValue', val),
   });
 
-  const email = ref('');
   const loading = ref(false);
-
-  // 상태 모달
   const showStatusModal = ref(false);
   const modalTitle = ref('');
   const modalMessage = ref('');
   const isError = ref(false);
 
-  const route = useRoute();
-  const teamId = computed(() => Number(route.params.teamId));
-
   const closeModal = () => {
     isOpen.value = false;
-    email.value = '';
   };
 
-  const closeStatusModal = () => {
+  const handleFinalConfirm = () => {
     showStatusModal.value = false;
     if (!isError.value) {
-      closeModal();
-      emit('success');
+      window.location.href = '/';
     }
   };
 
-  const handleSubmit = async () => {
-    if (!email.value.trim()) {
-      isError.value = true;
-      modalTitle.value = '입력 오류';
-      modalMessage.value = '팀원 이메일을 입력해주세요.';
-      showStatusModal.value = true;
-      return;
-    }
-
+  const handleWithdraw = async () => {
     loading.value = true;
 
     try {
-      await api.post(`/team/members/${teamId.value}/invite`, { email: email.value });
+      await withdrawTeam(props.teamId);
 
       isError.value = false;
-      modalTitle.value = '초대 완료';
-      modalMessage.value = '팀원이 초대되었습니다.';
+      modalTitle.value = '탈퇴 완료';
+      modalMessage.value = '팀에서 성공적으로 탈퇴하였습니다.';
+      emit('success');
     } catch (err) {
       isError.value = true;
-      modalTitle.value = '초대 실패';
-      modalMessage.value =
-        err.response?.data?.message || '팀원 초대에 실패했습니다. 다시 시도해주세요.';
+      modalTitle.value = '탈퇴 실패';
+      modalMessage.value = err.response?.data?.message || '팀 탈퇴 중 오류가 발생했습니다.';
       emit('fail', modalMessage.value);
     } finally {
       loading.value = false;
+      isOpen.value = false;
       showStatusModal.value = true;
     }
   };
