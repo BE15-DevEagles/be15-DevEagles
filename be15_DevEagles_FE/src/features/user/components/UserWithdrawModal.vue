@@ -67,7 +67,7 @@
     }
 
     try {
-      const res = await verifyPassword(password.value);
+      const res = await verifyPassword({ password: password.value });
       if (res.data.success) {
         await withdrawUser();
         await logout();

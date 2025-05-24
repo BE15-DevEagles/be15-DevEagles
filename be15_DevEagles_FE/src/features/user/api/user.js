@@ -64,7 +64,7 @@ export const updateUserInfo = formData =>
     },
   });
 
-export const verifyPassword = password => api.post(`/users/valid`, { password });
+export const verifyPassword = password => api.post(`/users/valid`, password);
 
 export const editPassword = password =>
   api.patch(
