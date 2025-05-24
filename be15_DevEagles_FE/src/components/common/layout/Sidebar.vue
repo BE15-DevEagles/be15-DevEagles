@@ -97,7 +97,7 @@
         router.push('/calendar/team');
         break;
       case '업무일지':
-        router.push('/worklog');
+        router.push('/worklog/my');
         break;
       case 'Todo 목록':
         router.push({ path: '/todos', query: { status: 'all' } });

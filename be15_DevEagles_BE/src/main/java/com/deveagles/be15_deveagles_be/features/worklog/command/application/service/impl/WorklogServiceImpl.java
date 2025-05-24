@@ -208,7 +208,6 @@ public class WorklogServiceImpl implements WorklogService {
       Long userId, SearchWorklogRequest request) {
     validateTeamExists(request.getTeamId());
     validateTeamMemberExists(request.getTeamId(), userId);
-    String userName = userCommandService.getUserDetails(userId).getUserName();
     String teamName = teamCommandService.getTeamDetail(request.getTeamId()).getTeamName();
     Pageable pageable = PageRequestUtil.createPageRequest(request.getPage(), request.getSize());
     Page<Worklog> worklogPage = worklogRepository.findByTeamId(request.getTeamId(), pageable);
@@ -218,7 +217,7 @@ public class WorklogServiceImpl implements WorklogService {
                 w ->
                     WorklogResponse.builder()
                         .worklogId(w.getWorklogId())
-                        .userName(userName)
+                        .userName(userCommandService.getUserDetails(w.getUserId()).getUserName())
                         .teamName(teamName)
                         .summary(w.getSummary())
                         .writtenAt(w.getWrittenAt())
