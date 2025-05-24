@@ -59,3 +59,5 @@ export const updateUserInfo = formData =>
       'Content-Type': 'multipart/form-data',
     },
   });
+
+export const verifyPassword = password => api.post(`/users/valid`, password);
