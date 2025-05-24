@@ -103,9 +103,33 @@ public class AiChatServiceImpl implements AiChatService {
     return recentMessages.stream().filter(msg -> AI_USER_ID.equals(msg.getSenderId())).findFirst();
   }
 
-  private String generateAiResponse(String userMessage) {
-    GeminiTextResponse response =
-        geminiApiAdapter.generateText(PromptTemplate.getAiResponsePrompt(userMessage));
+  private String buildChatHistory(String chatroomId) {
+    List<ChatMessage> recentMessages =
+        chatMessageRepository.findRecentMessagesByChatroomId(chatroomId, 10);
+
+    if (recentMessages.isEmpty()) {
+      return "";
+    }
+
+    StringBuilder historyBuilder = new StringBuilder();
+    for (int i = recentMessages.size() - 1; i >= 0; i--) {
+      ChatMessage message = recentMessages.get(i);
+      String senderName = AI_USER_ID.equals(message.getSenderId()) ? "수리" : "사용자";
+      historyBuilder.append(senderName).append(": ").append(message.getContent()).append("\n");
+    }
+
+    return historyBuilder.toString().trim();
+  }
+
+  private String generateAiResponse(String userMessage, String chatroomId) {
+    String chatHistory = buildChatHistory(chatroomId);
+
+    String prompt =
+        chatHistory.isEmpty()
+            ? PromptTemplate.getAiResponsePrompt(userMessage)
+            : PromptTemplate.getAiResponsePromptWithHistory(chatHistory, userMessage);
+
+    GeminiTextResponse response = geminiApiAdapter.generateText(prompt);
     if (!response.isEmpty()) {
       return response.getText();
     }
@@ -195,7 +219,7 @@ public class AiChatServiceImpl implements AiChatService {
       }
     }
 
-    String aiResponse = generateAiResponse(userMessage.getContent());
+    String aiResponse = generateAiResponse(userMessage.getContent(), userMessage.getChatroomId());
 
     ChatMessageRequest aiMessageRequest =
         ChatMessageRequest.builder()
