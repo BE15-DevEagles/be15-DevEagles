@@ -44,3 +44,5 @@ export const checkDuplicate = params => api.post(`/users/duplcheck`, params);
 export const sendAuth = params => api.post(`/auth/sendauth`, params);
 
 export const verifyEmailCode = params => api.post(`/auth/verify`, params);
+
+export const mypage = () => api.post(`/users/me`);
