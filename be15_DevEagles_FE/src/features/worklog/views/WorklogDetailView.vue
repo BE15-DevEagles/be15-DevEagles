@@ -1,18 +1,25 @@
 <script setup>
-  import { onMounted, ref, computed } from 'vue';
-  import { useRoute } from 'vue-router';
-  import { useWorklogStore } from '@/store/worklog';
-  import api from '@/api/axios';
+  import { onMounted, ref } from 'vue';
+  import { useRoute, useRouter } from 'vue-router';
+  import api from '@/api/axios.js';
+
+  // 댓글 컴포넌트 준비
+  import CommentForm from '@/features/comment/components/CommentForm.vue';
+  import CommentList from '@/features/comment/view/CommentList.vue';
 
   const route = useRoute();
+  const router = useRouter();
   const worklogId = route.params.id;
 
-  const store = useWorklogStore();
-  const preview = computed(() => store.preview);
   const full = ref(null);
+  const commentListKey = ref(0);
 
   function formatDate(dateStr) {
     return dateStr ? new Date(dateStr).toLocaleDateString() : '-';
+  }
+
+  function refreshComments() {
+    commentListKey.value++;
   }
 
   onMounted(async () => {
@@ -27,26 +34,52 @@
 </script>
 
 <template>
-  <section class="p-6">
-    <!-- preview 먼저 표시 -->
-    <div v-if="preview">
-      <h1 class="font-screen-title mb-4">{{ preview.userName }}의 업무일지</h1>
-      <div class="mb-2 text-sm text-gray">작성일: {{ formatDate(preview.writtenAt) }}</div>
-      <div class="mb-4 text-gray">{{ preview.summary }}</div>
+  <section class="p-6 max-w-4xl mx-auto space-y-6">
+    <!-- 제목 영역 -->
+    <div v-if="full" class="border-b border-gray-300 pb-4">
+      <h1 class="text-3xl font-bold text-dark mb-4 text-center">{{ full.summary }}</h1>
+      <div class="flex justify-between px-2 text-sm text-gray-700 font-semibold mb-1">
+        <span class="text-left">👤 작성자: {{ full.userName }}</span>
+        <span class="text-right">🧑‍🤝‍🧑 소속 팀: {{ full.teamName }}</span>
+      </div>
+      <div class="text-sm text-gray-500 pl-2 mt-1">🗓 작성일: {{ formatDate(full.writtenAt) }}</div>
     </div>
 
-    <!-- 로딩 중 메시지 (preview는 위에서 계속 표시됨) -->
+    <!-- 로딩 중 메시지 -->
     <div v-if="!full" class="text-center py-10 animate-pulse text-gray-500">
       🔄 상세 내용을 불러오는 중...
     </div>
 
-    <!-- 업무일지 상세 내용 -->
-    <div v-else>
-      <hr class="my-4" />
-      <div class="mb-3"><strong>소속 팀:</strong> {{ full.teamName }}</div>
-      <div class="mb-3"><strong>업무 내용:</strong> {{ full.workContent || '없음' }}</div>
-      <div class="mb-3"><strong>특이 사항:</strong> {{ full.note || '없음' }}</div>
-      <div class="mb-3"><strong>익일 계획:</strong> {{ full.planContent || '없음' }}</div>
+    <!-- 본문 내용 -->
+    <div v-else class="space-y-8">
+      <!-- 보고서 형식 카드 -->
+      <div class="bg-gray-50 p-6 rounded-lg shadow border border-gray-200">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">📌 업무 내용</h2>
+        <div class="text-gray-700 whitespace-pre-line leading-relaxed">
+          {{ full.workContent || '없음' }}
+        </div>
+      </div>
+
+      <div class="bg-gray-50 p-6 rounded-lg shadow border border-gray-200">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">⚠️ 특이 사항</h2>
+        <div class="text-gray-700 whitespace-pre-line leading-relaxed">
+          {{ full.note || '없음' }}
+        </div>
+      </div>
+
+      <div class="bg-gray-50 p-6 rounded-lg shadow border border-gray-200">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">📅 익일 업무 계획</h2>
+        <div class="text-gray-700 whitespace-pre-line leading-relaxed">
+          {{ full.planContent || '없음' }}
+        </div>
+      </div>
+
+      <!-- 댓글 영역 -->
+      <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">💬 댓글</h2>
+        <CommentForm :worklog-id="worklogId" @comment-added="refreshComments" />
+        <CommentList :key="commentListKey" :worklog-id="worklogId" />
+      </div>
     </div>
   </section>
 </template>

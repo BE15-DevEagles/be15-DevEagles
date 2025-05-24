@@ -252,6 +252,7 @@ public class WorklogServiceImpl implements WorklogService {
     return WorklogDetailResponse.builder()
         .worklogId(worklog.getWorklogId())
         .summary(worklog.getSummary())
+        .workContent(worklog.getWorkContent())
         .note(worklog.getNote())
         .planContent(worklog.getPlanContent())
         .userName(userName)

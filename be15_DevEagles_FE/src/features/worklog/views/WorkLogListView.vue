@@ -1,7 +1,6 @@
 <script setup>
   import { ref, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
-  import { useWorklogStore } from '@/store/worklog';
   import WorkLog from '@/features/worklog/components/WorkLog.vue';
   import Pagination from '@/components/common/components/Pagaination.vue';
   import { searchWorklogs, fetchMyWorklogs } from '@/features/worklog/api/worklog.js';
@@ -20,7 +19,6 @@
   const teamId = 1;
 
   const router = useRouter();
-  const store = useWorklogStore();
 
   function formatDateTime(date) {
     return date ? date + ' 00:00:00' : null;
@@ -60,7 +58,6 @@
   }
 
   function goToDetail(log) {
-    store.setWorklogPreview(log);
     router.push({ name: 'WorklogDetail', params: { id: log.worklogId } });
   }
 
