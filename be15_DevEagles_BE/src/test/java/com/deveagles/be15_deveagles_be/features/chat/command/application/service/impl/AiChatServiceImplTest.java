@@ -9,7 +9,6 @@ import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.req
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.ChatMessageResponse;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatMessageService;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.MoodInquiryService;
-import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatMessage;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatMessage.MessageType;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.UserMoodHistory;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.UserMoodHistory.MoodType;
@@ -88,8 +87,8 @@ class AiChatServiceImplTest {
   @DisplayName("일반 사용자 메시지에 AI가 응답하는지 테스트")
   void processUserMessage_normalConversation_returnsAiResponse() {
     // Given
-    when(moodHistoryRepository.findByUserIdAndCreatedAtBetween(anyString(), any(), any()))
-        .thenReturn(Collections.emptyList());
+    // 기분 조사 없음
+    when(moodInquiryService.getPendingInquiryId(TEST_USER_ID)).thenReturn(Optional.empty());
 
     when(chatMessageRepository.findRecentMessagesByChatroomId(anyString(), anyInt()))
         .thenReturn(Collections.emptyList());
@@ -107,6 +106,7 @@ class AiChatServiceImplTest {
     assertEquals(AI_NAME, result.getSenderName());
     assertEquals(MessageType.TEXT, result.getMessageType());
 
+    verify(moodInquiryService, times(1)).getPendingInquiryId(TEST_USER_ID);
     verify(geminiApiAdapter, times(1)).generateText(anyString());
     verify(chatMessageService, times(1)).sendMessage(any(ChatMessageRequest.class));
   }
@@ -115,17 +115,14 @@ class AiChatServiceImplTest {
   @DisplayName("감정 질문이 있을 때 MoodInquiryService가 호출되는지 테스트")
   void processUserMessage_withMoodInquiry_callsMoodInquiryService() {
     // Given
+    String inquiryId = "inquiry-id";
     UserMoodHistory moodHistory = mock(UserMoodHistory.class);
-    when(moodHistory.getInquiryId()).thenReturn("inquiry-id");
-    when(moodHistory.getUserAnswer()).thenReturn(null);
-    when(moodHistory.getMoodType()).thenReturn(MoodType.NEUTRAL);
+    when(moodHistory.getMoodType()).thenReturn(MoodType.JOY);
 
-    List<UserMoodHistory> inquiries = Collections.singletonList(moodHistory);
-
-    when(moodHistoryRepository.findByUserIdAndCreatedAtBetween(anyString(), any(), any()))
-        .thenReturn(inquiries);
-
-    when(moodInquiryService.saveMoodAnswer(anyString(), anyString())).thenReturn(moodHistory);
+    // 기분 조사 대기 중
+    when(moodInquiryService.getPendingInquiryId(TEST_USER_ID)).thenReturn(Optional.of(inquiryId));
+    when(moodInquiryService.saveMoodAnswer(inquiryId, userMessage.getContent()))
+        .thenReturn(moodHistory);
 
     when(chatMessageService.sendMessage(any(ChatMessageRequest.class))).thenReturn(aiResponse);
 
@@ -134,31 +131,23 @@ class AiChatServiceImplTest {
 
     // Then
     assertNotNull(result);
-    verify(moodInquiryService, times(1)).saveMoodAnswer(anyString(), anyString());
+    verify(moodInquiryService, times(1)).getPendingInquiryId(TEST_USER_ID);
+    verify(moodInquiryService, times(1)).saveMoodAnswer(inquiryId, userMessage.getContent());
     verify(geminiApiAdapter, never()).generateText(anyString()); // Gemini API 호출 안 함
   }
 
   @Test
-  @DisplayName("채팅방의 마지막 AI 메시지가 감정 질문일 때 테스트")
-  void processUserMessage_lastMessageWasMoodInquiry_callsMoodInquiryService() {
+  @DisplayName("Gemini API null 응답 시 기본 응답 사용 테스트")
+  void processUserMessage_whenGeminiReturnsNull_usesDefaultResponse() {
     // Given
-    when(moodHistoryRepository.findByUserIdAndCreatedAtBetween(anyString(), any(), any()))
+    // 기분 조사 없음
+    when(moodInquiryService.getPendingInquiryId(TEST_USER_ID)).thenReturn(Optional.empty());
+
+    when(chatMessageRepository.findRecentMessagesByChatroomId(anyString(), anyInt()))
         .thenReturn(Collections.emptyList());
 
-    // 메타데이터에 inquiryId가 있는 마지막 AI 메시지 설정
-    ChatMessage lastAiMessage = mock(ChatMessage.class);
-    Map<String, Object> metadata = new HashMap<>();
-    metadata.put("inquiryId", "inquiry-id");
-    when(lastAiMessage.getMetadata()).thenReturn(metadata);
-
-    List<ChatMessage> recentMessages = Collections.singletonList(lastAiMessage);
-    when(chatMessageRepository.findRecentMessagesByChatroomId(anyString(), anyInt()))
-        .thenReturn(recentMessages);
-    when(lastAiMessage.getSenderId()).thenReturn(AI_USER_ID);
-
-    UserMoodHistory moodHistory = mock(UserMoodHistory.class);
-    when(moodHistory.getMoodType()).thenReturn(MoodType.NEUTRAL);
-    when(moodInquiryService.saveMoodAnswer(anyString(), anyString())).thenReturn(moodHistory);
+    // null 응답 반환
+    when(geminiApiAdapter.generateText(anyString())).thenReturn(null);
 
     when(chatMessageService.sendMessage(any(ChatMessageRequest.class))).thenReturn(aiResponse);
 
@@ -167,7 +156,8 @@ class AiChatServiceImplTest {
 
     // Then
     assertNotNull(result);
-    verify(moodInquiryService, times(1)).saveMoodAnswer(anyString(), anyString());
+    verify(geminiApiAdapter, times(1)).generateText(anyString());
+    verify(chatMessageService, times(1)).sendMessage(any(ChatMessageRequest.class));
   }
 
   @Test
@@ -197,8 +187,8 @@ class AiChatServiceImplTest {
   @DisplayName("Gemini API 응답이 비어있을 때 기본 응답 사용 테스트")
   void processUserMessage_whenGeminiReturnsEmpty_usesDefaultResponse() {
     // Given
-    when(moodHistoryRepository.findByUserIdAndCreatedAtBetween(anyString(), any(), any()))
-        .thenReturn(Collections.emptyList());
+    // 기분 조사 없음
+    when(moodInquiryService.getPendingInquiryId(TEST_USER_ID)).thenReturn(Optional.empty());
 
     when(chatMessageRepository.findRecentMessagesByChatroomId(anyString(), anyInt()))
         .thenReturn(Collections.emptyList());
@@ -213,6 +203,7 @@ class AiChatServiceImplTest {
 
     // Then
     assertNotNull(result);
+    verify(moodInquiryService, times(1)).getPendingInquiryId(TEST_USER_ID);
     verify(geminiApiAdapter, times(1)).generateText(anyString());
     verify(chatMessageService, times(1)).sendMessage(any(ChatMessageRequest.class));
   }

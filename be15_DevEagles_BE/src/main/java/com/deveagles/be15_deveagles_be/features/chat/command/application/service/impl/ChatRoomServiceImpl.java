@@ -5,9 +5,12 @@ import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.res
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.NotificationSettingResponse;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.NotificationToggleResponse;
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatRoomService;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.util.ChatRoomHelper;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.util.ChatRoomOperationHelper;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.util.ChatRoomValidator;
+import com.deveagles.be15_deveagles_be.features.chat.command.application.service.util.ParticipantValidator;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.ChatRoom.ChatRoomType;
-import com.deveagles.be15_deveagles_be.features.chat.command.domain.exception.ChatBusinessException;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.exception.ChatErrorCode;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.factory.ChatRoomFactory;
 import com.deveagles.be15_deveagles_be.features.chat.command.domain.repository.ChatRoomRepository;
@@ -22,20 +25,29 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatRoomServiceImpl implements ChatRoomService {
 
   private final ChatRoomRepository chatRoomRepository;
+  private final ChatRoomValidator chatRoomValidator;
+  private final ParticipantValidator participantValidator;
+  private final ChatRoomHelper chatRoomHelper;
+  private final ChatRoomOperationHelper operationHelper;
 
-  public ChatRoomServiceImpl(ChatRoomRepository chatRoomRepository) {
+  public ChatRoomServiceImpl(
+      ChatRoomRepository chatRoomRepository,
+      ChatRoomValidator chatRoomValidator,
+      ParticipantValidator participantValidator,
+      ChatRoomHelper chatRoomHelper,
+      ChatRoomOperationHelper operationHelper) {
     this.chatRoomRepository = chatRoomRepository;
+    this.chatRoomValidator = chatRoomValidator;
+    this.participantValidator = participantValidator;
+    this.chatRoomHelper = chatRoomHelper;
+    this.operationHelper = operationHelper;
   }
 
   @Override
   @Transactional
   public ChatRoomResponse createChatRoom(CreateChatRoomRequest request) {
     if (request.isDefault()) {
-      Optional<ChatRoom> existingDefaultChatRoom =
-          chatRoomRepository.findDefaultChatRoomByTeamId(request.getTeamId());
-      if (existingDefaultChatRoom.isPresent()) {
-        throw new ChatBusinessException(ChatErrorCode.DEFAULT_CHATROOM_ALREADY_EXISTS);
-      }
+      chatRoomValidator.validateDefaultChatRoomNotExists(request.getTeamId());
     }
 
     ChatRoom chatRoom =
@@ -46,24 +58,16 @@ public class ChatRoomServiceImpl implements ChatRoomService {
             request.isDefault(),
             request.getParticipantIds());
 
-    ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
-
-    return ChatRoomResponse.from(savedChatRoom);
+    return chatRoomHelper.saveAndConvertToResponse(chatRoom);
   }
 
   @Override
   @Transactional
   public ChatRoomResponse createDefaultChatRoom(String teamId, String name) {
-    Optional<ChatRoom> existingDefaultChatRoom =
-        chatRoomRepository.findDefaultChatRoomByTeamId(teamId);
-    if (existingDefaultChatRoom.isPresent()) {
-      throw new ChatBusinessException(ChatErrorCode.DEFAULT_CHATROOM_ALREADY_EXISTS);
-    }
+    chatRoomValidator.validateDefaultChatRoomNotExists(teamId);
 
     ChatRoom chatRoom = ChatRoomFactory.createDefaultChatRoom(teamId, name, new ArrayList<>());
-    ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
-
-    return ChatRoomResponse.from(savedChatRoom);
+    return chatRoomHelper.saveAndConvertToResponse(chatRoom);
   }
 
   @Override
@@ -78,9 +82,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
 
     ChatRoom chatRoom = ChatRoomFactory.createAiChatRoom(teamId, userId, name);
-    ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
-
-    return ChatRoomResponse.from(savedChatRoom);
+    return chatRoomHelper.saveAndConvertToResponse(chatRoom);
   }
 
   @Override
@@ -90,15 +92,10 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
     if (chatRoomOptional.isPresent()) {
       ChatRoom chatRoom = chatRoomOptional.get();
-
-      if (chatRoom.isDefault()) {
-        throw new ChatBusinessException(ChatErrorCode.DEFAULT_CHATROOM_CANNOT_BE_DELETED);
-      }
+      chatRoomValidator.validateNotDefaultChatRoom(chatRoom);
 
       chatRoom.delete();
-      ChatRoom deletedChatRoom = chatRoomRepository.save(chatRoom);
-
-      return Optional.of(ChatRoomResponse.from(deletedChatRoom));
+      return Optional.of(chatRoomHelper.saveAndConvertToResponse(chatRoom));
     }
 
     return Optional.empty();
@@ -107,111 +104,74 @@ public class ChatRoomServiceImpl implements ChatRoomService {
   @Override
   @Transactional
   public ChatRoomResponse addParticipantToChatRoom(String chatroomId, String userId) {
-    ChatRoom chatRoom = getChatRoomById(chatroomId);
+    ChatRoom chatRoom = chatRoomValidator.validateAndGetChatRoom(chatroomId);
+    participantValidator.validateParticipantNotExists(chatRoom, userId);
 
-    if (chatRoom.getParticipant(userId) != null) {
-      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_ALREADY_EXISTS);
-    }
-
-    try {
-      chatRoom.addParticipant(userId);
-      ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
-      return ChatRoomResponse.from(savedChatRoom);
-    } catch (Exception e) {
-      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_ADD_FAILED, e.getMessage());
-    }
+    return chatRoomHelper.executeAndSave(
+        chatRoom, room -> room.addParticipant(userId), ChatErrorCode.PARTICIPANT_ADD_FAILED);
   }
 
   @Override
   @Transactional
   public ChatRoomResponse removeParticipantFromChatRoom(String chatroomId, String userId) {
-    ChatRoom chatRoom = getChatRoomById(chatroomId);
+    ChatRoom chatRoom = chatRoomValidator.validateAndGetChatRoom(chatroomId);
+    participantValidator.validateAndGetParticipant(chatRoom, userId);
 
-    if (chatRoom.getParticipant(userId) == null) {
-      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND);
-    }
-
-    try {
-      chatRoom.removeParticipant(userId);
-      ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
-      return ChatRoomResponse.from(savedChatRoom);
-    } catch (Exception e) {
-      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_REMOVE_FAILED, e.getMessage());
-    }
+    return chatRoomHelper.executeAndSave(
+        chatRoom, room -> room.removeParticipant(userId), ChatErrorCode.PARTICIPANT_REMOVE_FAILED);
   }
 
   @Override
   @Transactional
   public ChatRoomResponse toggleParticipantNotification(String chatroomId, String userId) {
-    ChatRoom chatRoom = getChatRoomById(chatroomId);
+    ChatRoom chatRoom = chatRoomValidator.validateAndGetChatRoom(chatroomId);
+    ChatRoom.Participant participant =
+        participantValidator.validateAndGetParticipant(chatRoom, userId);
 
-    ChatRoom.Participant participant = chatRoom.getParticipant(userId);
-    if (participant == null) {
-      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND);
-    }
-
-    try {
-      participant.toggleNotification();
-      ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
-      return ChatRoomResponse.from(savedChatRoom);
-    } catch (Exception e) {
-      throw new ChatBusinessException(
-          ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED, e.getMessage());
-    }
+    return chatRoomHelper.executeParticipantOperationAndSave(
+        chatRoom,
+        participant,
+        ChatRoom.Participant::toggleNotification,
+        ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED);
   }
 
   @Override
   @Transactional
   public ChatRoomResponse updateLastReadMessage(
       String chatroomId, String userId, String messageId) {
-    ChatRoom chatRoom = getChatRoomById(chatroomId);
+    ChatRoom chatRoom = chatRoomValidator.validateAndGetChatRoom(chatroomId);
+    ChatRoom.Participant participant =
+        participantValidator.validateAndGetParticipant(chatRoom, userId);
 
-    ChatRoom.Participant participant = chatRoom.getParticipant(userId);
-    if (participant == null) {
-      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND);
-    }
-
-    try {
-      participant.updateLastReadMessage(messageId);
-      ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
-      return ChatRoomResponse.from(savedChatRoom);
-    } catch (Exception e) {
-      throw new ChatBusinessException(
-          ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED, e.getMessage());
-    }
+    return chatRoomHelper.executeParticipantOperationAndSave(
+        chatRoom,
+        participant,
+        p -> p.updateLastReadMessage(messageId),
+        ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED);
   }
 
   @Override
   @Transactional
   public void markChatRoomAsRead(String chatroomId, String userId) {
-    ChatRoom chatRoom = getChatRoomById(chatroomId);
+    ChatRoom chatRoom = chatRoomValidator.validateAndGetChatRoom(chatroomId);
+    ChatRoom.Participant participant =
+        participantValidator.validateAndGetParticipant(chatRoom, userId);
 
-    ChatRoom.Participant participant = chatRoom.getParticipant(userId);
-    if (participant == null) {
-      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND);
-    }
-
-    try {
-      // 채팅방의 마지막 메시지를 읽음 처리
-      if (chatRoom.getLastMessage() != null) {
-        participant.updateLastReadMessage(chatRoom.getLastMessage().getId());
-        chatRoomRepository.save(chatRoom);
-      }
-    } catch (Exception e) {
-      throw new ChatBusinessException(
-          ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED, e.getMessage());
-    }
+    operationHelper.executeWithExceptionHandling(
+        () -> {
+          operationHelper.updateLastReadMessageIfExists(chatRoom, participant);
+          chatRoomRepository.save(chatRoom);
+        },
+        ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED,
+        "채팅방 읽음 처리 실패");
   }
 
   @Override
   @Transactional(readOnly = true)
   public Boolean getChatNotificationSetting(String chatroomId, String userId) {
-    ChatRoom chatRoom = getChatRoomById(chatroomId);
-
-    ChatRoom.Participant participant = chatRoom.getParticipant(userId);
-    if (participant == null) {
-      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND);
-    }
+    ChatRoom chatRoom = chatRoomValidator.validateAndGetChatRoom(chatroomId);
+    ChatRoom.Participant participant =
+        participantValidator.validateAndGetParticipant(chatRoom, userId);
 
     return participant.isNotificationEnabled();
   }
@@ -220,21 +180,19 @@ public class ChatRoomServiceImpl implements ChatRoomService {
   @Transactional
   public NotificationToggleResponse toggleCurrentUserNotification(
       String chatroomId, String userId) {
-    ChatRoom chatRoom = getChatRoomById(chatroomId);
+    ChatRoom chatRoom = chatRoomValidator.validateAndGetChatRoom(chatroomId);
+    ChatRoom.Participant participant =
+        participantValidator.validateAndGetParticipant(chatRoom, userId);
 
-    ChatRoom.Participant participant = chatRoom.getParticipant(userId);
-    if (participant == null) {
-      throw new ChatBusinessException(ChatErrorCode.PARTICIPANT_NOT_FOUND);
-    }
+    operationHelper.executeWithExceptionHandling(
+        () -> {
+          participant.toggleNotification();
+          chatRoomRepository.save(chatRoom);
+        },
+        ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED,
+        "알림 설정 변경 실패");
 
-    try {
-      participant.toggleNotification();
-      chatRoomRepository.save(chatRoom);
-      return NotificationToggleResponse.of(participant.isNotificationEnabled());
-    } catch (Exception e) {
-      throw new ChatBusinessException(
-          ChatErrorCode.PARTICIPANT_NOTIFICATION_TOGGLE_FAILED, e.getMessage());
-    }
+    return NotificationToggleResponse.of(participant.isNotificationEnabled());
   }
 
   @Override
@@ -255,15 +213,5 @@ public class ChatRoomServiceImpl implements ChatRoomService {
             })
         .filter(response -> response != null)
         .collect(Collectors.toList());
-  }
-
-  private ChatRoom getChatRoomById(String chatroomId) {
-    Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findById(chatroomId);
-
-    if (chatRoomOptional.isEmpty() || chatRoomOptional.get().isDeleted()) {
-      throw new ChatBusinessException(ChatErrorCode.CHAT_ROOM_NOT_FOUND);
-    }
-
-    return chatRoomOptional.get();
   }
 }

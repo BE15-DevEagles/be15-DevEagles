@@ -25,8 +25,15 @@ public class PromptTemplate {
         chatHistory, userMessage);
   }
 
+  public static final String MOOD_INQUIRY_PROMPT =
+      "사용자의 기분과 감정 상태를 물어보는 창의적인 질문을 1개만 생성해주세요. " + "질문은 짧고 친근하게, 다양한 감정 표현이 가능하도록 해주세요.";
+
   public static String getMoodQuestionPrompt() {
-    return "사용자의 기분과 감정 상태를 물어보는 창의적인 질문을 1개만 생성해주세요. " + "질문은 짧고 친근하게, 다양한 감정 표현이 가능하도록 해주세요.";
+    return MOOD_INQUIRY_PROMPT;
+  }
+
+  public static String getDefaultMoodQuestion() {
+    return getRandomMoodInquiry();
   }
 
   private static final List<String> DEFAULT_AI_RESPONSES =

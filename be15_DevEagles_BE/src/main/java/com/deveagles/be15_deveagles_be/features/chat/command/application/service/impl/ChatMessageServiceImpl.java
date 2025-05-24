@@ -18,7 +18,10 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -27,23 +30,26 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ChatMessageServiceImpl implements ChatMessageService {
 
+  private static final Logger log = LoggerFactory.getLogger(ChatMessageServiceImpl.class);
+  private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
+  private static final String CHATROOM_TOPIC_FORMAT = "/topic/chatroom.%s";
+  private static final String CHATROOM_DELETE_TOPIC_FORMAT = "/topic/chatroom.%s.delete";
+
   private final ChatMessageRepository chatMessageRepository;
   private final ChatRoomRepository chatRoomRepository;
-  private final WebSocketMessageService webSocketMessageService;
+  private final SimpMessagingTemplate messagingTemplate;
   private final RedisTemplate<String, String> redisTemplate;
   private final ObjectMapper objectMapper;
-
-  private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
 
   public ChatMessageServiceImpl(
       ChatMessageRepository chatMessageRepository,
       ChatRoomRepository chatRoomRepository,
-      WebSocketMessageService webSocketMessageService,
+      SimpMessagingTemplate messagingTemplate,
       RedisTemplate<String, String> redisTemplate,
       ObjectMapper objectMapper) {
     this.chatMessageRepository = chatMessageRepository;
     this.chatRoomRepository = chatRoomRepository;
-    this.webSocketMessageService = webSocketMessageService;
+    this.messagingTemplate = messagingTemplate;
     this.redisTemplate = redisTemplate;
     this.objectMapper = objectMapper;
   }
@@ -93,7 +99,10 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
     ChatMessageResponse response = ChatMessageResponse.from(savedMessage);
 
-    webSocketMessageService.sendChatroomMessage(request.getChatroomId(), response);
+    // 웹소켓으로 채팅방 메시지 전송
+    String destination = String.format(CHATROOM_TOPIC_FORMAT, request.getChatroomId());
+    messagingTemplate.convertAndSend(destination, response);
+    log.debug("채팅방 메시지 전송 완료 -> 채팅방ID: {}, 메시지ID: {}", request.getChatroomId(), response.getId());
 
     try {
       String messageJson = objectMapper.writeValueAsString(response);
@@ -160,7 +169,12 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     ChatMessage updatedMessage = chatMessageRepository.save(message);
 
     ChatMessageResponse response = ChatMessageResponse.from(updatedMessage);
-    webSocketMessageService.sendMessageDeletedEvent(message.getChatroomId(), response);
+
+    // 웹소켓으로 메시지 삭제 이벤트 전송
+    String destination = String.format(CHATROOM_DELETE_TOPIC_FORMAT, message.getChatroomId());
+    messagingTemplate.convertAndSend(destination, response);
+    log.debug(
+        "메시지 삭제 이벤트 전송 완료 -> 채팅방ID: {}, 메시지ID: {}", message.getChatroomId(), response.getId());
 
     return Optional.of(response);
   }

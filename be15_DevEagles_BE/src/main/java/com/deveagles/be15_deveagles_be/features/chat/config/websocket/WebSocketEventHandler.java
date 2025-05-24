@@ -1,8 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.chat.config.websocket;
 
 import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.response.UserStatusMessage;
-import com.deveagles.be15_deveagles_be.features.chat.command.application.service.impl.MoodInquiryServiceImpl;
-import com.deveagles.be15_deveagles_be.features.chat.command.application.service.impl.WebSocketMessageService;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
@@ -21,13 +20,12 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 public class WebSocketEventHandler {
 
   private static final Logger logger = LoggerFactory.getLogger(WebSocketEventHandler.class);
+  private static final String USER_STATUS_TOPIC = "/topic/status";
+  private static final String REDIS_KEY_ONLINE_USERS = "chat:online_users";
 
-  private final WebSocketMessageService webSocketMessageService;
-  private final MoodInquiryServiceImpl moodInquiryService;
+  private final SimpMessagingTemplate messagingTemplate;
   private final RedisTemplate<String, String> redisTemplate;
   private final Map<String, String> connectedUsers = new ConcurrentHashMap<>();
-
-  private static final String REDIS_KEY_ONLINE_USERS = "chat:online_users";
 
   @EventListener
   public void handleWebSocketConnectListener(SessionConnectEvent event) {
@@ -56,15 +54,6 @@ public class WebSocketEventHandler {
       } catch (Exception e) {
         logger.error(
             "Failed to add user {} to online_users in Redis: {}", userId, e.getMessage(), e);
-      }
-
-      if (!connectedUsers.containsValue(userId)) {
-        try {
-          logger.info("첫 로그인 감지: 사용자ID={}, 기분 질문 시도", userId);
-          moodInquiryService.sendMoodInquiryOnUserLogin(userId);
-        } catch (Exception e) {
-          logger.error("기분 질문 전송 중 오류 발생: 사용자ID={}, 오류={}", userId, e.getMessage());
-        }
       }
 
       connectedUsers.put(sessionId, userId);
@@ -111,7 +100,7 @@ public class WebSocketEventHandler {
 
   private void notifyUserStatusChange(String userId, boolean isOnline) {
     UserStatusMessage statusMessage = new UserStatusMessage(userId, isOnline);
-    webSocketMessageService.sendUserStatusEvent(statusMessage);
+    messagingTemplate.convertAndSend(USER_STATUS_TOPIC, statusMessage);
     logger.debug("사용자 상태 변경 알림 전송: {}", statusMessage);
   }
 }

@@ -13,6 +13,7 @@ import com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate.Ch
 import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.ChatroomListResponse;
 import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.ChatroomReadSummaryResponse;
 import com.deveagles.be15_deveagles_be.features.chat.query.application.dto.response.ChatroomResponse;
+import com.deveagles.be15_deveagles_be.features.chat.query.application.service.util.ChatroomResponseConverter;
 import com.deveagles.be15_deveagles_be.features.chat.query.domain.repository.ChatroomQueryRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class ChatroomQueryServiceImplTest {
 
   @Mock private ChatroomQueryRepository chatroomQueryRepository;
+  @Mock private ChatroomResponseConverter chatroomResponseConverter;
 
   @InjectMocks private ChatroomQueryServiceImpl chatroomQueryService;
 
@@ -94,11 +96,25 @@ public class ChatroomQueryServiceImplTest {
     int page = 0;
     int size = 10;
 
+    ChatroomResponse mockChatroomResponse =
+        ChatroomResponse.builder()
+            .id(CHATROOM_ID)
+            .teamId(TEAM_ID)
+            .name("테스트 채팅방")
+            .isDefault(false)
+            .type(ChatRoomType.GROUP.name())
+            .participants(new ArrayList<>())
+            .createdAt(LocalDateTime.now().minusDays(7))
+            .isDeleted(false)
+            .build();
+
     when(chatroomQueryRepository.findChatroomsByUserIdAndTeamId(
             eq(USER_ID), eq(TEAM_ID), eq(page), eq(size)))
         .thenReturn(chatRooms);
     when(chatroomQueryRepository.countChatroomsByUserIdAndTeamId(eq(USER_ID), eq(TEAM_ID)))
         .thenReturn(1);
+    when(chatroomResponseConverter.convertToChatroomResponse(mockChatRoom))
+        .thenReturn(mockChatroomResponse);
 
     // when
     ChatroomListResponse response = chatroomQueryService.getChatrooms(USER_ID, TEAM_ID, page, size);
@@ -109,11 +125,11 @@ public class ChatroomQueryServiceImplTest {
     assertThat(response.getChatrooms()).hasSize(1);
     assertThat(response.getChatrooms().get(0).getId()).isEqualTo(CHATROOM_ID);
     assertThat(response.getChatrooms().get(0).getTeamId()).isEqualTo(TEAM_ID);
-    assertThat(response.getChatrooms().get(0).getParticipants()).hasSize(2);
 
     verify(chatroomQueryRepository)
         .findChatroomsByUserIdAndTeamId(eq(USER_ID), eq(TEAM_ID), eq(page), eq(size));
     verify(chatroomQueryRepository).countChatroomsByUserIdAndTeamId(eq(USER_ID), eq(TEAM_ID));
+    verify(chatroomResponseConverter).convertToChatroomResponse(mockChatRoom);
   }
 
   @Test
@@ -147,8 +163,30 @@ public class ChatroomQueryServiceImplTest {
   @DisplayName("채팅방 상세 조회 테스트")
   void getChatroom_Success() {
     // given
+    ChatroomResponse mockChatroomResponse =
+        ChatroomResponse.builder()
+            .id(CHATROOM_ID)
+            .teamId(TEAM_ID)
+            .name("테스트 채팅방")
+            .isDefault(false)
+            .type(ChatRoomType.GROUP.name())
+            .lastMessage(
+                ChatroomResponse.LastMessageDto.builder()
+                    .id(mockLastMessage.getId())
+                    .content(mockLastMessage.getContent())
+                    .senderId(mockLastMessage.getSenderId())
+                    .senderName(mockLastMessage.getSenderName())
+                    .sentAt(mockLastMessage.getSentAt())
+                    .build())
+            .participants(new ArrayList<>())
+            .createdAt(LocalDateTime.now().minusDays(7))
+            .isDeleted(false)
+            .build();
+
     when(chatroomQueryRepository.findChatroomById(eq(CHATROOM_ID)))
         .thenReturn(Optional.of(mockChatRoom));
+    when(chatroomResponseConverter.convertToChatroomResponse(mockChatRoom))
+        .thenReturn(mockChatroomResponse);
 
     // when
     ChatroomResponse response = chatroomQueryService.getChatroom(USER_ID, CHATROOM_ID);
@@ -160,9 +198,9 @@ public class ChatroomQueryServiceImplTest {
     assertThat(response.getType()).isEqualTo(ChatRoomType.GROUP.name());
     assertThat(response.getLastMessage()).isNotNull();
     assertThat(response.getLastMessage().getId()).isEqualTo(mockLastMessage.getId());
-    assertThat(response.getParticipants()).hasSize(2);
 
     verify(chatroomQueryRepository).findChatroomById(eq(CHATROOM_ID));
+    verify(chatroomResponseConverter).convertToChatroomResponse(mockChatRoom);
   }
 
   @Test
