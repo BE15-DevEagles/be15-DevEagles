@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { Layout, ErrorPage } from '@/components/common/layout';
-import { userRoutes } from '@/features/user/router.js';
+import { userRoutes } from '@/features/user/userRouter.js';
 import { useAuthStore } from '@/store/auth';
 import { calendarRoutes } from '@/features/todolist/router.js';
+import { myPageRoutes } from '@/features/user/mypageRouter.js';
 
 const routes = [
   ...userRoutes,
@@ -17,6 +18,7 @@ const routes = [
       },
       // 여기 Layout 하위 라우트 계속 추가 가능
       ...calendarRoutes,
+      ...myPageRoutes,
     ],
   },
   {
