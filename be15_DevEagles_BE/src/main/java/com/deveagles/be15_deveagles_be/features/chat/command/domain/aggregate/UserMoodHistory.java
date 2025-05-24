@@ -1,10 +1,5 @@
 package com.deveagles.be15_deveagles_be.features.chat.command.domain.aggregate;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -18,9 +13,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,14 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class UserMoodHistory {
-
-  private static final ObjectMapper objectMapper;
-
-  static {
-    objectMapper = new ObjectMapper();
-    objectMapper.registerModule(new JavaTimeModule());
-    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-  }
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -90,81 +74,21 @@ public class UserMoodHistory {
     NEUTRAL
   }
 
+  /** 사용자 답변을 설정하고 답변 시간을 기록 */
   public void answer(String answer) {
     this.userAnswer = answer;
     this.answeredAt = LocalDateTime.now();
   }
 
+  /** 감정 분석 결과를 설정 */
   public void setEmotionAnalysis(String emotionAnalysis) {
     this.emotionAnalysis = emotionAnalysis;
-    analyzeStrongestEmotion();
   }
 
-  private void analyzeStrongestEmotion() {
-    if (emotionAnalysis == null || emotionAnalysis.isBlank()) {
-      return;
-    }
-
-    try {
-      List<List<Map<String, Object>>> emotions =
-          objectMapper.readValue(
-              emotionAnalysis, new TypeReference<List<List<Map<String, Object>>>>() {});
-
-      if (emotions.isEmpty() || emotions.get(0).isEmpty()) {
-        return;
-      }
-
-      Map<String, Object> strongestEmotion = null;
-      double maxScore = -1.0;
-
-      for (Map<String, Object> emotion : emotions.get(0)) {
-        String label = (String) emotion.get("label");
-        double score = ((Number) emotion.get("score")).doubleValue();
-
-        if (score > maxScore) {
-          maxScore = score;
-          strongestEmotion = emotion;
-        }
-      }
-
-      if (strongestEmotion != null) {
-        String label = (String) strongestEmotion.get("label");
-        double score = ((Number) strongestEmotion.get("score")).doubleValue();
-
-        try {
-          this.moodType = MoodType.valueOf(label.toUpperCase());
-        } catch (IllegalArgumentException e) {
-          this.moodType = MoodType.NEUTRAL;
-          log.warn("알 수 없는 감정 라벨: {}, NEUTRAL로 설정됨", label);
-        }
-
-        this.intensity = (int) (score * 100);
-      }
-    } catch (JsonProcessingException e) {
-      log.error("감정 분석 JSON 파싱 실패: {}", e.getMessage());
-    } catch (Exception e) {
-      log.error("감정 분석 처리 중 오류 발생: {}", e.getMessage());
-    }
-  }
-
-  public List<Map<String, Object>> getEmotionAnalysis() {
-    if (emotionAnalysis == null || emotionAnalysis.isBlank()) {
-      return new ArrayList<>();
-    }
-
-    try {
-      List<List<Map<String, Object>>> emotions =
-          objectMapper.readValue(
-              emotionAnalysis, new TypeReference<List<List<Map<String, Object>>>>() {});
-
-      if (!emotions.isEmpty()) {
-        return emotions.get(0);
-      }
-    } catch (JsonProcessingException e) {
-      log.error("감정 분석 JSON 파싱 실패: {}", e.getMessage());
-    }
-
-    return new ArrayList<>();
+  /** 기분 유형과 강도를 업데이트 (서비스 레이어에서 호출) */
+  public void updateMoodTypeAndIntensity(MoodType moodType, int intensity) {
+    this.moodType = moodType;
+    this.intensity = intensity;
   }
 
   @Converter

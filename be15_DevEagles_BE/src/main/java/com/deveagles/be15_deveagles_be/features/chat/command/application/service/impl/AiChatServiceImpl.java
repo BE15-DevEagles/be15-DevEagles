@@ -185,40 +185,17 @@ public class AiChatServiceImpl implements AiChatService {
 
     updateSessionActivity(userMessage.getSenderId(), userMessage.getChatroomId());
 
-    LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-    LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
-
-    List<UserMoodHistory> todayMoodInquiries =
-        moodHistoryRepository.findByUserIdAndCreatedAtBetween(
-            userMessage.getSenderId(), todayStart, todayEnd);
-
-    Optional<UserMoodHistory> unansweredInquiry =
-        todayMoodInquiries.stream().filter(inquiry -> inquiry.getUserAnswer() == null).findFirst();
-
-    if (unansweredInquiry.isPresent()) {
-      UserMoodHistory savedMood =
-          moodInquiryService.saveMoodAnswer(
-              unansweredInquiry.get().getInquiryId(), userMessage.getContent());
-
-      if (savedMood != null) {
-        return generateMoodFeedbackResponse(userMessage, savedMood);
-      }
-    }
-
-    Optional<ChatMessage> lastAiMessage = findLastAiMessageInChatroom(userMessage.getChatroomId());
-    if (lastAiMessage.isPresent()
-        && lastAiMessage.get().getMetadata() != null
-        && lastAiMessage.get().getMetadata().containsKey("inquiryId")) {
-
-      String inquiryId = (String) lastAiMessage.get().getMetadata().get("inquiryId");
+    // 기분 질문에 대한 답변인지 확인
+    String inquiryId = findPendingMoodInquiryId(userMessage);
+    if (inquiryId != null) {
       UserMoodHistory savedMood =
           moodInquiryService.saveMoodAnswer(inquiryId, userMessage.getContent());
-
       if (savedMood != null) {
         return generateMoodFeedbackResponse(userMessage, savedMood);
       }
     }
 
+    // 일반 AI 응답 생성
     String aiResponse = generateAiResponse(userMessage.getContent(), userMessage.getChatroomId());
 
     ChatMessageRequest aiMessageRequest =
@@ -231,5 +208,33 @@ public class AiChatServiceImpl implements AiChatService {
             .build();
 
     return chatMessageService.sendMessage(aiMessageRequest);
+  }
+
+  /** 사용자 메시지가 기분 질문에 대한 답변인지 확인하고 inquiryId 반환 */
+  private String findPendingMoodInquiryId(ChatMessageRequest userMessage) {
+    // 1. 오늘의 미답변 기분 질문 확인
+    LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+    LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
+
+    List<UserMoodHistory> todayMoodInquiries =
+        moodHistoryRepository.findByUserIdAndCreatedAtBetween(
+            userMessage.getSenderId(), todayStart, todayEnd);
+
+    Optional<UserMoodHistory> unansweredInquiry =
+        todayMoodInquiries.stream().filter(inquiry -> inquiry.getUserAnswer() == null).findFirst();
+
+    if (unansweredInquiry.isPresent()) {
+      return unansweredInquiry.get().getInquiryId();
+    }
+
+    // 2. 마지막 AI 메시지에 inquiryId가 있는지 확인
+    Optional<ChatMessage> lastAiMessage = findLastAiMessageInChatroom(userMessage.getChatroomId());
+    if (lastAiMessage.isPresent()
+        && lastAiMessage.get().getMetadata() != null
+        && lastAiMessage.get().getMetadata().containsKey("inquiryId")) {
+      return (String) lastAiMessage.get().getMetadata().get("inquiryId");
+    }
+
+    return null;
   }
 }

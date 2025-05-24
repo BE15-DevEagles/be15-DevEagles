@@ -89,13 +89,13 @@ public class AiChatController {
       userId = String.valueOf(customUser.getUserId());
     }
 
-    UserMoodHistory moodInquiry = moodInquiryService.generateMoodInquiry(userId);
-    if (moodInquiry == null) {
+    try {
+      UserMoodHistory moodInquiry = moodInquiryService.generateMoodInquiry(userId);
+      return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(moodInquiry));
+    } catch (IllegalStateException e) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-          .body(ApiResponse.failure("MOOD_INQUIRY_EXISTS", "이미 오늘 기분 질문이 전송되었습니다."));
+          .body(ApiResponse.failure("MOOD_INQUIRY_EXISTS", e.getMessage()));
     }
-
-    return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(moodInquiry));
   }
 
   @PostMapping("/mood-answer")
@@ -111,13 +111,13 @@ public class AiChatController {
           .body(ApiResponse.failure("INVALID_REQUEST", "inquiryId와 answer는 필수 입력값입니다."));
     }
 
-    UserMoodHistory savedMood = moodInquiryService.saveMoodAnswer(inquiryId, answer);
-    if (savedMood == null) {
+    try {
+      UserMoodHistory savedMood = moodInquiryService.saveMoodAnswer(inquiryId, answer);
+      return ResponseEntity.ok(ApiResponse.success(savedMood));
+    } catch (IllegalArgumentException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
-          .body(ApiResponse.failure("INQUIRY_NOT_FOUND", "해당 질문 ID가 존재하지 않습니다."));
+          .body(ApiResponse.failure("INQUIRY_NOT_FOUND", e.getMessage()));
     }
-
-    return ResponseEntity.ok(ApiResponse.success(savedMood));
   }
 
   @GetMapping("/mood-history")
