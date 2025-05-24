@@ -14,7 +14,6 @@ export function useChatRoom() {
   const authStore = useAuthStore();
   const chatStore = useChatStore();
 
-  // 채팅 히스토리 로드 (무한 스크롤 지원)
   const loadChatHistory = async (chatRoomId, before = null, limit = 30) => {
     if (!chatRoomId) {
       console.warn('[useChatRoom] 채팅방 ID가 없습니다.');
@@ -35,7 +34,6 @@ export function useChatRoom() {
 
       let messages = [];
 
-      // 응답 구조에 따라 처리
       if (response && Array.isArray(response.messages)) {
         messages = response.messages;
       } else if (response && Array.isArray(response)) {
@@ -48,17 +46,14 @@ export function useChatRoom() {
         }
       }
 
-      // 메시지 타임스탬프 검증 및 정규화 (timeUtils 사용)
       messages = messages.map(msg => {
         if (!msg.timestamp && !msg.createdAt) {
           console.warn('[useChatRoom] 메시지에 타임스탬프 없음:', msg.id);
         }
-        // timestamp 우선, 없으면 createdAt 사용, 둘 다 없으면 현재 시간
         msg.timestamp = normalizeTimestamp(msg.timestamp || msg.createdAt);
         return msg;
       });
 
-      // 백엔드에서 DESC 순으로 받아온 메시지를 ASC 순으로 뒤집기 (오래된 메시지가 먼저)
       messages.reverse();
 
       console.log('[useChatRoom] 로드된 메시지 수:', messages.length);
@@ -72,7 +67,6 @@ export function useChatRoom() {
     }
   };
 
-  // 메시지 전송
   const sendMessage = async (chatRoomId, content) => {
     if (!chatRoomId || !content?.trim()) {
       console.warn('[useChatRoom] 메시지 전송 실패 - 필수 정보 부족');
@@ -123,7 +117,6 @@ export function useChatRoom() {
     }
   };
 
-  // 채팅방 읽음 처리 (REST API)
   const markChatAsRead = async chatRoomId => {
     if (!chatRoomId) {
       console.warn('[useChatRoom] 읽음 처리 실패 - 채팅방 ID 없음');
@@ -134,7 +127,6 @@ export function useChatRoom() {
       console.log('[useChatRoom] 채팅방 읽음 처리:', chatRoomId);
       await markAsRead(chatRoomId);
 
-      // 스토어의 읽지 않은 메시지 수 업데이트
       if (chatStore.markChatAsRead) {
         chatStore.markChatAsRead(chatRoomId);
       }
