@@ -1,6 +1,6 @@
 <template>
   <div class="login-container input-reset-scope">
-    <div :class="['login-box', { shake }]">
+    <form :class="['login-box', { shake }]" @submit.prevent="fetchUser">
       <img :src="Logo" alt="로고" class="logo" />
 
       <BaseInput
@@ -26,10 +26,10 @@
       </div>
 
       <div class="login-buttons">
-        <BaseButton @click="goToSignup">회원가입</BaseButton>
-        <BaseButton type="primary" @click="fetchUser">로그인</BaseButton>
+        <a class="btn btn-primary" @click.prevent="goToSignup">회원가입</a>
+        <button class="btn btn-primary" type="submit">로그인</button>
       </div>
-    </div>
+    </form>
   </div>
   <BaseModal v-model="showVerifyModal" title="미인증 회원">
     <p class="modal-text">
