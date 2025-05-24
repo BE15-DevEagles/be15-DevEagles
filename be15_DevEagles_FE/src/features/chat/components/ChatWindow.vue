@@ -233,7 +233,14 @@
                 :class="message.isMe ? 'flex-row-reverse' : 'flex-row'"
               >
                 <!-- 메시지 버블 -->
+                <AiMessageBubble
+                  v-if="isCurrentChatAi && isAiMessage(message)"
+                  :message="message"
+                  :is-thinking="isAiThinking"
+                  :is-processing="isProcessingMood"
+                />
                 <div
+                  v-else
                   class="px-3 py-2 rounded-lg max-w-full break-words"
                   :class="[
                     message.isMe
@@ -268,7 +275,9 @@
         <input
           v-model="newMessage"
           type="text"
-          placeholder="메시지를 입력하세요..."
+          :placeholder="
+            isWaitingForMood ? '기분을 자유롭게 표현해주세요...' : '메시지를 입력하세요...'
+          "
           class="flex-grow bg-transparent outline-none font-body px-2 text-sm"
           :disabled="isSending"
           @keyup.enter="handleSendMessage"
@@ -327,6 +336,15 @@
       <div v-if="!isConnected" class="text-xs text-orange-500 mt-2 text-center">
         실시간 연결이 끊어졌습니다. 메시지가 즉시 전달되지 않을 수 있습니다.
       </div>
+
+      <!-- AI 응답 대기 상태 표시 -->
+      <div
+        v-if="isCurrentChatAi && isAiThinking"
+        class="text-xs text-blue-500 mt-2 text-center flex items-center justify-center gap-2"
+      >
+        <div class="loading-spinner-small"></div>
+        <span>수리 AI가 응답을 준비하고 있어요...</span>
+      </div>
     </div>
   </div>
 </template>
@@ -342,6 +360,9 @@
   import { useChatScroll } from '@/features/chat/composables/useChatScroll';
   import { useChatWindow } from '@/features/chat/composables/useChatWindow';
   import { useDebounce } from '@/features/chat/composables/useDebounce';
+  import { useAiChat } from '@/features/chat/composables/useAiChat';
+  import AiMessageBubble from './AiMessageBubble.vue';
+  import api from '@/api/axios';
 
   const props = defineProps({
     chat: {
@@ -378,6 +399,7 @@
     unsubscribeFromChat,
     markMessageAsRead,
     markLatestMessageAsRead,
+    initializeAiChat,
   } = useChatWebSocket();
 
   const {
@@ -408,6 +430,20 @@
 
   const { initializeChat, handleIncomingMessage, loadMoreMessages } = useChatWindow();
 
+  // AI 채팅 컴포저블 추가
+  const {
+    isAiThinking,
+    isProcessingMood,
+    setAiThinking,
+    handleUserMessageForMood,
+    handleAiMessage,
+    isAiChatRoom,
+    isAiMessage,
+    isWaitingForMoodResponse,
+    findPendingMoodInquiry,
+    clearError: clearAiError,
+  } = useAiChat();
+
   // 무한 스크롤 콜백 함수
   const infiniteScrollCallback = () => {
     return loadMoreMessages(props.chat?.id, {
@@ -434,6 +470,16 @@
     return props.chat?.id ? checkNotificationEnabled(props.chat.id) : true;
   });
 
+  // AI 채팅방 여부 확인
+  const isCurrentChatAi = computed(() => {
+    return isAiChatRoom(props.chat);
+  });
+
+  // 기분 질문 대기 중인지 확인
+  const isWaitingForMood = computed(() => {
+    return isCurrentChatAi.value && isWaitingForMoodResponse(messages.value);
+  });
+
   // 스크롤 핸들러
   const handleInfiniteScroll = event => {
     handleScroll(event, scrollTop => {
@@ -446,6 +492,11 @@
 
   // 메시지 핸들러
   const onIncomingMessage = message => {
+    // AI 메시지 처리
+    if (isCurrentChatAi.value && isAiMessage(message)) {
+      handleAiMessage(message);
+    }
+
     handleIncomingMessage(message, {
       currentChatId: props.chat?.id,
       addMessage,
@@ -470,13 +521,41 @@
         subscribeToChat(chatId, onIncomingMessage, handleReadStatusMessage),
       markChatAsRead,
       clearError,
-      onReady: () => {
+      onReady: async () => {
         // 스크롤 컨테이너 설정
         if (messagesContainer.value) {
           setScrollContainer(messagesContainer.value);
         }
         // 하단으로 스크롤
         nextTick(() => scrollToBottom(true));
+
+        // AI 채팅방인 경우 초기화
+        if (isCurrentChatAi.value && props.chat?.id) {
+          console.log('[ChatWindow] AI 채팅방 감지:', {
+            chatId: props.chat.id,
+            chatType: props.chat.type,
+            chatName: props.chat.name,
+            isAiChat: props.chat.isAiChat,
+          });
+
+          // 백엔드에서 실제 채팅방 정보 확인
+          try {
+            const response = await api.get(`/chatrooms/${props.chat.id}`);
+            console.log('[ChatWindow] 백엔드 채팅방 정보:', response.data);
+          } catch (error) {
+            console.error('[ChatWindow] 채팅방 정보 조회 실패:', error);
+          }
+
+          console.log('[ChatWindow] AI 채팅방 초기화 시작:', props.chat.id);
+          const success = initializeAiChat(props.chat.id);
+          console.log('[ChatWindow] AI 초기화 결과:', success);
+        } else {
+          console.log('[ChatWindow] 일반 채팅방:', {
+            isCurrentChatAi: isCurrentChatAi.value,
+            chatId: props.chat?.id,
+            chatType: props.chat?.type,
+          });
+        }
       },
     });
   };
@@ -491,7 +570,29 @@
 
     try {
       // 즉시 UI에 임시 메시지 추가
-      addTemporaryMessage(messageText, authStore.userId, authStore.userName || authStore.nickname);
+      const tempMessage = addTemporaryMessage(
+        messageText,
+        authStore.userId,
+        authStore.userName || authStore.nickname
+      );
+
+      // AI 채팅방에서 기분 질문 답변 처리
+      if (isCurrentChatAi.value) {
+        console.log('[ChatWindow] AI 채팅방에서 메시지 전송:', {
+          message: messageText,
+          chatId: props.chat.id,
+          isAiChat: isCurrentChatAi.value,
+        });
+
+        const isMoodAnswer = await handleUserMessageForMood(tempMessage, messages.value);
+        if (isMoodAnswer) {
+          console.log('[ChatWindow] 기분 질문 답변으로 처리됨');
+          setAiThinking(true); // AI 응답 대기 상태 표시
+        } else {
+          console.log('[ChatWindow] 일반 AI 메시지로 전송');
+          setAiThinking(true); // AI 응답 대기 상태 표시
+        }
+      }
 
       // 입력창 초기화 및 스크롤
       newMessage.value = '';
@@ -550,6 +651,7 @@
         // 모든 상태 클리어
         clearMessages();
         clearError();
+        clearAiError();
         resetInfiniteScroll();
         resetScroll();
 

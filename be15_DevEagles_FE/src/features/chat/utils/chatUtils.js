@@ -149,5 +149,40 @@ export function transformChatRoom(room, currentUserId) {
     notificationEnabled: currentUserParticipant?.notificationEnabled ?? true,
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,
+    isAiChat: room.type === 'AI',
+  };
+}
+
+/**
+ * AI 채팅방인지 확인
+ */
+export function isAiChatRoom(chat) {
+  return chat?.type === 'AI' || chat?.isAiChat === true;
+}
+
+/**
+ * AI 채팅방 기본 데이터 생성
+ */
+export function createAiChatRoomData(userId, aiName = '수리 AI') {
+  return {
+    type: 'AI',
+    name: aiName,
+    userId: userId,
+    isAiChat: true,
+    thumbnail: '/assets/image/suri.jpg',
+    lastMessage: 'AI와 대화를 시작해보세요!',
+    lastMessageTime: '방금 전',
+    unreadCount: 0,
+    participants: [
+      {
+        userId: userId,
+        notificationEnabled: true,
+      },
+      {
+        userId: 'ai-assistant',
+        userName: aiName,
+        isOnline: true,
+      },
+    ],
   };
 }
