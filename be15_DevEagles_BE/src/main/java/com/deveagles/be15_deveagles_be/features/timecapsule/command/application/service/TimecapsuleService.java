@@ -17,6 +17,17 @@ public class TimecapsuleService {
   private final TimecapsuleRepository timecapsuleRepository;
 
   public void createTimecapsule(CreateTimecapsuleRequest request, Long userId) {
+    // 팀이 선택되지 않은 경우 (teamId가 null)
+    if (request.getTeamId() == null) {
+      throw new IllegalArgumentException("팀을 선택해야 타임캡슐을 생성할 수 있습니다.");
+    }
+
+    // 생성 날짜가 오늘 이후가 아닌 경우 (오늘 또는 과거)
+    LocalDate today = LocalDate.now();
+    if (request.getOpenDate() == null || !request.getOpenDate().isAfter(today)) {
+      throw new IllegalArgumentException("타임캡슐 오픈 날짜는 반드시 오늘 이후여야 합니다.");
+    }
+
     Timecapsule timecapsule =
         Timecapsule.builder()
             .timecapsuleContent(request.getTimecapsuleContent())
