@@ -65,6 +65,7 @@
               <a
                 href="#"
                 class="block px-4 py-2 text-[var(--color-gray-700)] hover:bg-[var(--color-gray-100)] font-one-liner"
+                @click.prevent="handleMyPage"
                 >나의 정보</a
               >
 
@@ -105,5 +106,9 @@
     } catch (error) {
       console.error('로그아웃 실패:', error);
     }
+  };
+
+  const handleMyPage = () => {
+    router.push('/mypage');
   };
 </script>

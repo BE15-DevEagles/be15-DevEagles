@@ -24,10 +24,23 @@
           <h2 class="text-xl font-bold">{{ teamName || '팀 이름 없음' }}</h2>
         </div>
         <div class="flex gap-3">
-          <BaseButton v-if="isTeamLeader" type="" class="text-black hover:text-[#dc2626]" size="sm"
-            >팀 삭제</BaseButton
+          <BaseButton
+            v-if="isTeamLeader"
+            type=""
+            class="text-black hover:text-[#dc2626]"
+            size="sm"
+            @click="handleDeleteTeam"
           >
-          <BaseButton type="" class="text-black hover:text-[#dc2626]" size="sm">팀 탈퇴</BaseButton>
+            팀 삭제
+          </BaseButton>
+          <BaseButton
+            type=""
+            class="text-black hover:text-[#dc2626]"
+            size="sm"
+            @click="handleWithdrawTeam"
+          >
+            팀 탈퇴
+          </BaseButton>
         </div>
       </div>
 
@@ -78,18 +91,20 @@
       <!-- 하단 버튼 -->
       <div class="p-4 border-t border-gray-100">
         <div v-if="isTeamLeader" class="flex gap-2 justify-end mb-3">
-          <BaseButton type="secondary" size="sm">추방</BaseButton>
-          <BaseButton type="secondary" size="sm">팀장 양도</BaseButton>
+          <BaseButton type="secondary" size="sm" @click="handleFireMember">추방</BaseButton>
+          <BaseButton type="secondary" size="sm" @click="handleTransferLeadership"
+            >팀장 양도</BaseButton
+          >
         </div>
       </div>
     </div>
   </div>
 
   <!-- 모달들 -->
-  <TeamMemberInviteModal v-model="isInviteModalOpen" @submit="handleInvite" />
+  <TeamMemberInviteModal v-model="isInviteModalOpen" @success="fetchMembers" />
   <UpdateTeamThumbnailModal
     v-model="isThumbnailModalOpen"
-    :current-url="teamThumbnail"
+    :current-url="teamThumbnailUrl"
     @submit="handleThumbnailSubmit"
   />
 </template>
@@ -102,7 +117,13 @@
   import BaseButton from '@/components/common/components/BaseButton.vue';
   import TeamMemberInviteModal from '@/features/team/components/TeamMemberInviteModal.vue';
   import UpdateTeamThumbnailModal from '@/features/team/components/UpdateTeamThumbnailModal.vue';
-  import { getTeamMembers } from '@/features/team/api/team';
+  import {
+    getTeamMembers,
+    fireTeamMember,
+    transferTeamLeader,
+    withdrawTeam,
+    deleteTeam,
+  } from '@/features/team/api/team';
 
   const route = useRoute();
   const teamId = computed(() => Number(route.params.teamId));
@@ -120,9 +141,17 @@
 
   const isTeamLeader = computed(() => Number(teamOwnerId.value) === Number(currentUserId.value));
 
-  function openThumbnailModal() {
-    if (isTeamLeader.value) isThumbnailModalOpen.value = true;
-  }
+  const members = ref([]);
+  const selectedUserId = ref(null);
+
+  onMounted(() => {
+    authStore.initAuth();
+    currentUserId.value = authStore.userId;
+    if (!isNaN(teamId.value) && teamId.value > 0) {
+      fetchTeamInfo(teamId.value);
+      fetchMembers();
+    }
+  });
 
   async function fetchTeamInfo(id) {
     try {
@@ -137,7 +166,19 @@
     }
   }
 
-  async function updateThumbnail(file) {
+  async function fetchMembers() {
+    try {
+      members.value = await getTeamMembers(teamId.value);
+    } catch (e) {
+      console.error('팀원 불러오기 실패:', e);
+    }
+  }
+
+  function openThumbnailModal() {
+    if (isTeamLeader.value) isThumbnailModalOpen.value = true;
+  }
+
+  async function handleThumbnailSubmit(file) {
     try {
       isUploading.value = true;
       const formData = new FormData();
@@ -153,27 +194,80 @@
     }
   }
 
-  function handleInvite(email) {
-    console.log('✅ 초대 이메일:', email);
-  }
+  async function handleFireMember() {
+    if (!selectedUserId.value) {
+      alert('추방할 팀원을 선택해주세요.');
+      return;
+    }
 
-  const selectedUserId = ref(null);
-  const members = ref([]);
+    const selected = members.value.find(m => m.userId === selectedUserId.value);
+    if (!selected) {
+      alert('유효하지 않은 팀원입니다.');
+      return;
+    }
 
-  async function fetchMembers() {
+    const confirmKick = confirm(`${selected.userName} (${selected.email}) 님을 추방하시겠습니까?`);
+    if (!confirmKick) return;
+
     try {
-      members.value = await getTeamMembers(teamId.value);
-    } catch (e) {
-      console.error('팀원 불러오기 실패:', e);
+      await fireTeamMember(teamId.value, selected.email);
+      alert('팀원 추방이 완료되었습니다.');
+      await fetchMembers();
+      selectedUserId.value = null;
+    } catch (err) {
+      const message = err?.response?.data?.message || '팀원 추방 중 오류가 발생했습니다.';
+      alert(message);
     }
   }
 
-  onMounted(() => {
-    authStore.initAuth();
-    currentUserId.value = authStore.userId;
-    if (!isNaN(teamId.value) && teamId.value > 0) {
-      fetchTeamInfo(teamId.value);
-      fetchMembers();
+  async function handleTransferLeadership() {
+    if (!selectedUserId.value) {
+      alert('양도할 팀원을 선택해주세요.');
+      return;
     }
-  });
+
+    const selected = members.value.find(m => m.userId === selectedUserId.value);
+    if (!selected) {
+      alert('유효하지 않은 팀원입니다.');
+      return;
+    }
+
+    if (!confirm(`${selected.userName}님에게 팀장을 양도하시겠습니까?`)) return;
+
+    try {
+      await transferTeamLeader(teamId.value, selected.email);
+      alert('팀장 권한이 양도되었습니다.');
+      await fetchTeamInfo(teamId.value);
+      selectedUserId.value = null;
+    } catch (err) {
+      const message = err?.response?.data?.message || '팀장 양도 중 오류가 발생했습니다.';
+      alert(message);
+    }
+  }
+
+  async function handleWithdrawTeam() {
+    if (!confirm('정말로 이 팀에서 탈퇴하시겠습니까?')) return;
+
+    try {
+      await withdrawTeam(teamId.value);
+      alert('팀 탈퇴가 완료되었습니다.');
+      window.location.href = '/';
+    } catch (err) {
+      const message = err?.response?.data?.message || '팀 탈퇴 중 오류가 발생했습니다.';
+      alert(message);
+    }
+  }
+
+  async function handleDeleteTeam() {
+    if (!confirm('정말로 이 팀을 삭제하시겠습니까? (팀원이 없어야 삭제 가능합니다)')) return;
+
+    try {
+      await deleteTeam(teamId.value);
+      alert('팀 삭제가 완료되었습니다.');
+      window.location.href = '/';
+    } catch (err) {
+      const message = err?.response?.data?.message || '팀 삭제 중 오류가 발생했습니다.';
+      alert(message);
+    }
+  }
 </script>

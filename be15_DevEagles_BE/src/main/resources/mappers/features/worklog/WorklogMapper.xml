@@ -15,40 +15,73 @@
         JOIN user u ON w.user_id = u.user_id
         JOIN team t ON w.team_id = t.team_id
         WHERE w.team_id = #{teamId}
-        <choose>
-            <when test="searchType == 'ALL'">
-                <if test="keyword != null and keyword != ''">
-                    AND (
-                    LOWER(u.user_name) LIKE CONCAT('%', LOWER(#{keyword}), '%')
-                    OR LOWER(w.summary) LIKE CONCAT('%', LOWER(#{keyword}), '%')
-                    OR LOWER(w.work_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
-                    OR LOWER(w.note) LIKE CONCAT('%', LOWER(#{keyword}), '%')
-                    OR LOWER(w.plan_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
-                    )
-                </if>
-            </when>
-            <when test="searchType == 'AUTHOR'">
-                <if test="keyword != null and keyword != ''">
-                    AND LOWER(u.user_name) = LOWER(#{keyword})
-                </if>
-            </when>
-            <when test="searchType == 'KEYWORD'">
-                <if test="keyword != null and keyword != ''">
-                    AND (
-                    LOWER(w.summary) LIKE CONCAT('%', LOWER(#{keyword}), '%')
-                    OR LOWER(w.work_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
-                    OR LOWER(w.note) LIKE CONCAT('%', LOWER(#{keyword}), '%')
-                    OR LOWER(w.plan_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
-                    )
-                </if>
-            </when>
-            <when test="searchType == 'DATE'">
-                <if test="startDate != null and endDate != null">
-                    AND w.written_at BETWEEN #{startDate} AND #{endDate}
-                </if>
-            </when>
-        </choose>
+        <if test="startDate != null and endDate != null">
+            AND w.written_at BETWEEN #{startDate} AND #{endDate}
+        </if>
+
+        <if test="searchType == 'ALL' and keyword != null and keyword != ''">
+            AND (
+            LOWER(u.user_name) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.summary) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.work_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.note) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.plan_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            )
+        </if>
+
+        <if test="searchType == 'AUTHOR' and keyword != null and keyword != ''">
+            AND LOWER(u.user_name) = LOWER(#{keyword})
+        </if>
+
+        <if test="searchType == 'KEYWORD' and keyword != null and keyword != ''">
+            AND (
+            LOWER(w.summary) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.work_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.note) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.plan_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            )
+        </if>
+
         ORDER BY w.written_at DESC
+        LIMIT #{size} OFFSET #{offset}
+
+
+
+    </select>
+
+    <select id="countWorklogs" resultType="int">
+        SELECT COUNT(*)
+        FROM worklog w
+        JOIN user u ON w.user_id = u.user_id
+        JOIN team t ON w.team_id = t.team_id
+        WHERE w.team_id = #{teamId}
+
+        <if test="startDate != null and endDate != null">
+            AND w.written_at BETWEEN #{startDate} AND #{endDate}
+        </if>
+
+        <if test="searchType == 'ALL' and keyword != null and keyword != ''">
+            AND (
+            LOWER(u.user_name) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.summary) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.work_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.note) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.plan_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            )
+        </if>
+
+        <if test="searchType == 'AUTHOR' and keyword != null and keyword != ''">
+            AND LOWER(u.user_name) = LOWER(#{keyword})
+        </if>
+
+        <if test="searchType == 'KEYWORD' and keyword != null and keyword != ''">
+            AND (
+            LOWER(w.summary) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.work_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.note) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            OR LOWER(w.plan_content) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+            )
+        </if>
     </select>
 
 </mapper>
